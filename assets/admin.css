@@ -1,0 +1,56 @@
+.wp-builder-hidden {
+  display: none;
+}
+
+.wp-builder-controls {
+  margin-bottom: 16px;
+}
+
+.wp-builder-section-card {
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.wp-builder-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.wp-builder-style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.wp-builder-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.wp-builder-field input,
+.wp-builder-field textarea,
+.wp-builder-field select {
+  width: 100%;
+}
+
+.wp-builder-element-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.wp-builder-element-card {
+  border: 1px solid #e2e4e7;
+  border-radius: 6px;
+  background: #f9f9f9;
+  padding: 12px;
+  margin-bottom: 12px;
+}
