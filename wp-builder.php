@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: WP Builder
+ * Plugin Name: Builder
  * Description: A basic Elementor-style builder with infinitely nestable container elements for posts and pages.
  * Version: 0.1.0
- * Author: WP Builder
+ * Author: Builder
  * Text Domain: wp-builder
  */
 
@@ -164,8 +164,8 @@ final class WP_Builder {
 
 	public function register_template_menu(): void {
 		add_menu_page(
-			__( 'WP Builder', 'wp-builder' ),
-			__( 'WP Builder', 'wp-builder' ),
+			__( 'Builder', 'wp-builder' ),
+			__( 'Builder', 'wp-builder' ),
 			'edit_posts',
 			'wp-builder-templates',
 			'__return_null',
@@ -253,7 +253,7 @@ final class WP_Builder {
 
 			add_meta_box(
 				'wp-builder-launcher',
-				__( 'WP Builder', 'wp-builder' ),
+				__( 'Builder', 'wp-builder' ),
 				array( $this, 'render_builder_meta_box' ),
 				$post_type,
 				'side',
@@ -273,7 +273,7 @@ final class WP_Builder {
 		printf(
 			'<p><a class="button button-primary button-large" href="%1$s">%2$s</a></p>',
 			esc_url( $this->get_builder_url( $post->ID ) ),
-			esc_html__( 'Edit with WP Builder', 'wp-builder' )
+			esc_html__( 'Builder', 'wp-builder' )
 		);
 
 		printf(
@@ -291,8 +291,8 @@ final class WP_Builder {
 	public function register_builder_page(): void {
 		add_submenu_page(
 			null,
-			__( 'WP Builder', 'wp-builder' ),
-			__( 'WP Builder', 'wp-builder' ),
+			__( 'Builder', 'wp-builder' ),
+			__( 'Builder', 'wp-builder' ),
 			'read',
 			self::MENU_SLUG,
 			array( $this, 'render_builder_page' )
@@ -307,7 +307,7 @@ final class WP_Builder {
 		$actions['wp_builder'] = sprintf(
 			'<a href="%1$s">%2$s</a>',
 			esc_url( $this->get_builder_url( $post->ID ) ),
-			esc_html__( 'Edit with WP Builder', 'wp-builder' )
+			esc_html__( 'Builder', 'wp-builder' )
 		);
 
 		return $actions;
@@ -326,7 +326,7 @@ final class WP_Builder {
 		$admin_bar->add_node(
 			array(
 				'id'    => 'wp-builder',
-				'title' => __( 'Edit with WP Builder', 'wp-builder' ),
+				'title' => __( 'Builder', 'wp-builder' ),
 				'href'  => $this->get_builder_url( $post_id ),
 			)
 		);
@@ -341,7 +341,7 @@ final class WP_Builder {
 		$post    = $post_id ? get_post( $post_id ) : null;
 
 		if ( ! $post || ! $this->is_supported_post_type( $post->post_type ) ) {
-			wp_die( esc_html__( 'This post type is not supported by WP Builder.', 'wp-builder' ) );
+			wp_die( esc_html__( 'This post type is not supported by Builder.', 'wp-builder' ) );
 		}
 
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
@@ -419,13 +419,13 @@ final class WP_Builder {
 			exit;
 		}
 
-		wp_die( esc_html__( 'No post selected for WP Builder.', 'wp-builder' ) );
+		wp_die( esc_html__( 'No post selected for Builder.', 'wp-builder' ) );
 	}
 
 	private function render_builder_document( WP_Post $post ): void {
 		$title = sprintf(
 			/* translators: %s: post title. */
-			__( 'WP Builder: %s', 'wp-builder' ),
+			__( 'Builder: %s', 'wp-builder' ),
 			get_the_title( $post )
 		);
 		?>
@@ -460,7 +460,7 @@ final class WP_Builder {
 		<div class="wp-builder-shell" id="wp-builder-app">
 			<header class="wp-builder-header">
 				<div class="wp-builder-title">
-					<span class="wp-builder-kicker"><?php esc_html_e( 'WP Builder', 'wp-builder' ); ?></span>
+					<span class="wp-builder-kicker"><?php esc_html_e( 'Builder', 'wp-builder' ); ?></span>
 					<input type="text" id="wp-builder-title" class="wp-builder-title-input" value="<?php echo esc_attr( get_the_title( $post_id ) ); ?>" aria-label="<?php esc_attr_e( 'Post title', 'wp-builder' ); ?>">
 				</div>
 				<div class="wp-builder-actions">
@@ -529,7 +529,7 @@ final class WP_Builder {
 					<div class="wp-builder-field-group">
 						<label class="wp-builder-inspector-label" for="wp-builder-page-template"><?php esc_html_e( 'Template', 'wp-builder' ); ?></label>
 						<select id="wp-builder-page-template" class="wp-builder-select" disabled>
-							<option value="wp-builder-canvas" selected><?php esc_html_e( 'WP Builder Canvas', 'wp-builder' ); ?></option>
+							<option value="wp-builder-canvas" selected><?php esc_html_e( 'Builder Canvas', 'wp-builder' ); ?></option>
 						</select>
 					</div>
 					<?php elseif ( ! empty( $page_templates ) ) : ?>
@@ -616,7 +616,7 @@ final class WP_Builder {
 				'title'      => get_the_title( $post_id ),
 				'docTitle'   => sprintf(
 					/* translators: %s: post title. */
-					__( 'WP Builder: %s', 'wp-builder' ),
+					__( 'Builder: %s', 'wp-builder' ),
 					get_the_title( $post_id )
 				),
 				'previewUrl' => $preview_url,
@@ -699,7 +699,7 @@ final class WP_Builder {
 				'postTitle'    => get_the_title( $post_id ),
 				'docTitle'     => sprintf(
 					/* translators: %s: post title. */
-					__( 'WP Builder: %s', 'wp-builder' ),
+					__( 'Builder: %s', 'wp-builder' ),
 					get_the_title( $post_id )
 				),
 				'previewUrl'   => $preview_url,
@@ -950,8 +950,8 @@ final class WP_Builder {
 	}
 
 	public function register_page_templates( array $templates, $theme, $post, string $post_type ): array {
-		$templates['wp-builder-canvas']     = __( 'WP Builder Canvas', 'wp-builder' );
-		$templates['wp-builder-full-width'] = __( 'WP Builder Full Width', 'wp-builder' );
+		$templates['wp-builder-canvas']     = __( 'Builder Canvas', 'wp-builder' );
+		$templates['wp-builder-full-width'] = __( 'Builder Full Width', 'wp-builder' );
 		return $templates;
 	}
 
@@ -961,7 +961,7 @@ final class WP_Builder {
 			$post          = get_post( $post_id );
 			$page_template = get_post_meta( $post_id, '_wp_page_template', true );
 
-			// Custom builder templates always use the WP Builder Canvas template.
+			// Custom builder templates always use the Builder Canvas template.
 			if ( $post && self::TEMPLATE_CPT === $post->post_type ) {
 				$canvas = plugin_dir_path( __FILE__ ) . 'templates/wp-builder-canvas.php';
 				if ( file_exists( $canvas ) ) {

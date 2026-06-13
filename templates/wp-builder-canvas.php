@@ -1,9 +1,9 @@
 <?php
 /**
- * Template Name: WP Builder Canvas
+ * Template Name: Builder Canvas
  *
  * A blank canvas page template — no theme header or footer.
- * Content is rendered directly by the WP Builder plugin.
+ * Content is rendered directly by the Builder plugin.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

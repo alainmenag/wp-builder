@@ -1,9 +1,9 @@
 <?php
 /**
- * Template Name: WP Builder Full Width
+ * Template Name: Builder Full Width
  *
  * Builder content rendered inside the theme's header and footer — no sidebar.
- * Content is rendered directly by the WP Builder plugin.
+ * Content is rendered directly by the Builder plugin.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
