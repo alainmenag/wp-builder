@@ -102,6 +102,18 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 				/* translators: link to open the selected template in the builder */
 				'raw'       => '<a href="#" style="font-size:11px" onclick="var p=document.querySelector(\'#elementor-panel\'),s=p&&p.querySelector(\'select[data-setting=template_id]\'),t=p&&p.querySelector(\'input[data-setting=custom_id]\'),id=(s&&s.value)||(t&&t.value);if(id)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+encodeURIComponent(id)+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Template', 'wp-builder' ) . '</a>',
 				'separator' => 'none',
+				'condition'   => array( 'use_custom_id' => '', 'template_id!' => '' ),
+			)
+		);
+
+		$this->add_control(
+			'edit_template_link_2',
+			array(
+				'type'      => \Elementor\Controls_Manager::RAW_HTML,
+				/* translators: link to open the selected template in the builder */
+				'raw'       => '<a href="#" style="font-size:11px" onclick="var p=document.querySelector(\'#elementor-panel\'),s=p&&p.querySelector(\'select[data-setting=custom_id]\'),t=p&&p.querySelector(\'input[data-setting=custom_id]\'),id=(s&&s.value)||(t&&t.value);if(id)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+encodeURIComponent(id)+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Template', 'wp-builder' ) . '</a>',
+				'separator' => 'none',
+				'condition'   => array( 'use_custom_id' => 'yes', 'custom_id!' => '' ),
 			)
 		);
 
