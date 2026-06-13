@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: WP Builder
- * Description: A very basic visual page builder with sections and simple elements.
- * Version: 0.1.0
+ * Description: A visual page builder with nestable sections, columns and elements.
+ * Version: 0.2.0
  * Author: Alain Menag
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -95,12 +95,12 @@ if ( ! $screen || 'wpb_layout' !== $screen->post_type ) {
 return;
 }
 
-wp_enqueue_style( 'wp-builder-admin', plugin_dir_url( __FILE__ ) . 'assets/admin.css', array(), '0.1.0' );
-wp_enqueue_script( 'wp-builder-admin', plugin_dir_url( __FILE__ ) . 'assets/admin.js', array(), '0.1.0', true );
+wp_enqueue_style( 'wp-builder-admin', plugin_dir_url( __FILE__ ) . 'assets/admin.css', array(), '0.2.0' );
+wp_enqueue_script( 'wp-builder-admin', plugin_dir_url( __FILE__ ) . 'assets/admin.js', array(), '0.2.0', true );
 }
 
 public function enqueue_frontend_assets() {
-wp_enqueue_style( 'wp-builder-frontend', plugin_dir_url( __FILE__ ) . 'assets/frontend.css', array(), '0.1.0' );
+wp_enqueue_style( 'wp-builder-frontend', plugin_dir_url( __FILE__ ) . 'assets/frontend.css', array(), '0.2.0' );
 }
 
 public function render_shortcode( $atts ) {
@@ -128,49 +128,96 @@ return '';
 }
 
 ob_start();
-echo '<div class="wp-builder-layout">';
+echo '<div class="wpb-layout">';
 foreach ( $layout as $section ) {
 $section_styles = isset( $section['styles'] ) && is_array( $section['styles'] ) ? $this->build_style_string( $section['styles'] ) : '';
-echo '<section class="wp-builder-section"' . ( $section_styles ? ' style="' . esc_attr( $section_styles ) . '"' : '' ) . '>';
+echo '<section class="wpb-section"' . ( $section_styles ? ' style="' . esc_attr( $section_styles ) . '"' : '' ) . '>';
 
-$elements = isset( $section['elements'] ) && is_array( $section['elements'] ) ? $section['elements'] : array();
+/* Backward-compat: old flat layouts stored elements directly on the section */
+$columns = isset( $section['columns'] ) && is_array( $section['columns'] ) ? $section['columns'] : array();
+if ( empty( $columns ) && isset( $section['elements'] ) && is_array( $section['elements'] ) ) {
+$columns = array(
+array(
+'width'    => '100',
+'styles'   => array(),
+'elements' => $section['elements'],
+),
+);
+}
+
+echo '<div class="wpb-columns">';
+foreach ( $columns as $column ) {
+$col_width  = isset( $column['width'] ) ? absint( $column['width'] ) : 100;
+$col_width  = max( 10, min( 100, $col_width ) );
+$col_styles = isset( $column['styles'] ) && is_array( $column['styles'] ) ? $this->build_style_string( $column['styles'] ) : '';
+$col_style  = 'width:' . $col_width . '%;' . $col_styles;
+
+echo '<div class="wpb-col" style="' . esc_attr( $col_style ) . '">';
+
+$elements = isset( $column['elements'] ) && is_array( $column['elements'] ) ? $column['elements'] : array();
 foreach ( $elements as $element ) {
-$type    = isset( $element['type'] ) ? $element['type'] : '';
-$styles  = isset( $element['styles'] ) && is_array( $element['styles'] ) ? $this->build_style_string( $element['styles'] ) : '';
-$attr    = $styles ? ' style="' . esc_attr( $styles ) . '"' : '';
+$this->render_element( $element );
+}
+
+echo '</div>';
+}
+echo '</div>';
+
+echo '</section>';
+}
+echo '</div>';
+
+return (string) ob_get_clean();
+}
+
+private function render_element( $element ) {
+if ( ! is_array( $element ) ) {
+return;
+}
+
+$type   = isset( $element['type'] ) ? $element['type'] : 'text';
+$styles = isset( $element['styles'] ) && is_array( $element['styles'] ) ? $this->build_style_string( $element['styles'] ) : '';
+$attr   = $styles ? ' style="' . esc_attr( $styles ) . '"' : '';
 
 switch ( $type ) {
 case 'heading':
 $level   = isset( $element['level'] ) ? strtolower( (string) $element['level'] ) : 'h2';
 $level   = in_array( $level, array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' ), true ) ? $level : 'h2';
 $content = isset( $element['content'] ) ? wp_kses_post( $element['content'] ) : '';
-echo '<' . esc_html( $level ) . ' class="wp-builder-heading"' . $attr . '>' . $content . '</' . esc_html( $level ) . '>';
+echo '<' . esc_html( $level ) . ' class="wpb-heading"' . $attr . '>' . $content . '</' . esc_html( $level ) . '>';
 break;
+
 case 'image':
 $src = isset( $element['src'] ) ? esc_url( $element['src'] ) : '';
 $alt = isset( $element['alt'] ) ? sanitize_text_field( $element['alt'] ) : '';
 if ( $src ) {
-echo '<img class="wp-builder-image" src="' . $src . '" alt="' . esc_attr( $alt ) . '"' . $attr . ' />';
+echo '<img class="wpb-image" src="' . $src . '" alt="' . esc_attr( $alt ) . '"' . $attr . ' />';
 }
 break;
+
 case 'video':
 $src = isset( $element['src'] ) ? esc_url( $element['src'] ) : '';
 if ( $src ) {
-echo '<div class="wp-builder-video"' . $attr . '><iframe src="' . $src . '" loading="lazy" allowfullscreen></iframe></div>';
+echo '<div class="wpb-video"' . $attr . '><iframe src="' . $src . '" loading="lazy" allowfullscreen></iframe></div>';
 }
 break;
+
+case 'button':
+$label = isset( $element['content'] ) ? wp_kses_post( $element['content'] ) : 'Click me';
+$href  = isset( $element['href'] ) ? esc_url( $element['href'] ) : '#';
+echo '<a href="' . $href . '" class="wpb-button"' . $attr . '>' . $label . '</a>';
+break;
+
+case 'spacer':
+echo '<div class="wpb-spacer"' . $attr . '></div>';
+break;
+
 case 'text':
 default:
 $content = isset( $element['content'] ) ? wp_kses_post( $element['content'] ) : '';
-echo '<div class="wp-builder-text"' . $attr . '>' . $content . '</div>';
+echo '<div class="wpb-text"' . $attr . '>' . $content . '</div>';
 break;
 }
-}
-echo '</section>';
-}
-echo '</div>';
-
-return (string) ob_get_clean();
 }
 
 private function sanitize_layout( $layout ) {
@@ -182,23 +229,73 @@ continue;
 }
 
 $new_section = array(
-'styles'   => $this->sanitize_styles( isset( $section['styles'] ) && is_array( $section['styles'] ) ? $section['styles'] : array() ),
+'styles'  => $this->sanitize_styles(
+isset( $section['styles'] ) && is_array( $section['styles'] ) ? $section['styles'] : array()
+),
+'columns' => array(),
+);
+
+/* Gather columns; handle old flat layouts where elements live directly on the section */
+$columns = isset( $section['columns'] ) && is_array( $section['columns'] ) ? $section['columns'] : array();
+if ( empty( $columns ) && isset( $section['elements'] ) && is_array( $section['elements'] ) ) {
+$columns = array(
+array(
+'width'    => '100',
+'styles'   => array(),
+'elements' => $section['elements'],
+),
+);
+}
+
+foreach ( $columns as $column ) {
+if ( ! is_array( $column ) ) {
+continue;
+}
+
+$col_width = isset( $column['width'] ) ? absint( $column['width'] ) : 100;
+$col_width = max( 10, min( 100, $col_width ) );
+
+$new_column = array(
+'width'    => (string) $col_width,
+'styles'   => $this->sanitize_styles(
+isset( $column['styles'] ) && is_array( $column['styles'] ) ? $column['styles'] : array()
+),
 'elements' => array(),
 );
 
-$elements = isset( $section['elements'] ) && is_array( $section['elements'] ) ? $section['elements'] : array();
+$elements = isset( $column['elements'] ) && is_array( $column['elements'] ) ? $column['elements'] : array();
 foreach ( $elements as $element ) {
-if ( ! is_array( $element ) ) {
-continue;
+$sanitized_element = $this->sanitize_element( $element );
+if ( $sanitized_element ) {
+$new_column['elements'][] = $sanitized_element;
 }
-$type = isset( $element['type'] ) ? sanitize_key( $element['type'] ) : 'text';
-if ( ! in_array( $type, array( 'text', 'heading', 'image', 'video' ), true ) ) {
+}
+
+$new_section['columns'][] = $new_column;
+}
+
+$sanitized[] = $new_section;
+}
+
+return $sanitized;
+}
+
+private function sanitize_element( $element ) {
+if ( ! is_array( $element ) ) {
+return null;
+}
+
+$allowed_types = array( 'text', 'heading', 'image', 'video', 'button', 'spacer' );
+$type          = isset( $element['type'] ) ? sanitize_key( $element['type'] ) : 'text';
+if ( ! in_array( $type, $allowed_types, true ) ) {
 $type = 'text';
 }
 
 $new_element = array(
 'type'   => $type,
-'styles' => $this->sanitize_styles( isset( $element['styles'] ) && is_array( $element['styles'] ) ? $element['styles'] : array() ),
+'styles' => $this->sanitize_styles(
+isset( $element['styles'] ) && is_array( $element['styles'] ) ? $element['styles'] : array()
+),
 );
 
 if ( isset( $element['content'] ) ) {
@@ -210,18 +307,15 @@ $new_element['src'] = esc_url_raw( (string) $element['src'] );
 if ( isset( $element['alt'] ) ) {
 $new_element['alt'] = sanitize_text_field( (string) $element['alt'] );
 }
+if ( isset( $element['href'] ) ) {
+$new_element['href'] = esc_url_raw( (string) $element['href'] );
+}
 if ( isset( $element['level'] ) ) {
-$level = strtolower( sanitize_text_field( (string) $element['level'] ) );
+$level               = strtolower( sanitize_text_field( (string) $element['level'] ) );
 $new_element['level'] = in_array( $level, array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' ), true ) ? $level : 'h2';
 }
 
-$new_section['elements'][] = $new_element;
-}
-
-$sanitized[] = $new_section;
-}
-
-return $sanitized;
+return $new_element;
 }
 
 private function sanitize_styles( $styles ) {

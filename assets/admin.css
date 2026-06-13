@@ -1,56 +1,228 @@
-.wp-builder-hidden {
+/* WP Builder – Admin styles */
+
+/* hidden textarea holding JSON */
+#wp-builder-layout {
   display: none;
 }
 
-.wp-builder-controls {
-  margin-bottom: 16px;
-}
-
-.wp-builder-section-card {
-  border: 1px solid #dcdcde;
-  border-radius: 8px;
-  background: #fff;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.wp-builder-section-header {
+/* ---- Top bar ---- */
+.wpb-top-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: #1d2327;
+  border-radius: 8px;
 }
 
-.wp-builder-style-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
+.wpb-top-bar-label {
+  color: #fff;
+  font-size: 13px;
 }
 
-.wp-builder-field {
+.wpb-preset-select {
+  min-width: 200px;
+}
+
+/* ---- Section card ---- */
+.wpb-section-card {
+  border: 2px solid #2271b1;
+  border-radius: 10px;
+  background: #f0f6fc;
+  padding: 0 0 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+/* ---- Shared row-header ---- */
+.wpb-row-header {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+}
+
+.wpb-section-head {
+  background: #2271b1;
+  color: #fff;
+}
+
+.wpb-section-head strong {
+  flex: 1;
+  color: #fff;
+  font-size: 13px;
+}
+
+/* ---- Collapsible panels ---- */
+.wpb-collapsed {
+  display: none !important;
+}
+
+.wpb-style-toggle {
+  margin: 8px 14px 4px;
+  font-size: 11px !important;
+  height: 26px !important;
+  line-height: 24px !important;
+  padding: 0 10px !important;
+}
+
+.wpb-style-panel {
+  padding: 10px 14px 0;
+}
+
+/* ---- Columns row ---- */
+.wpb-columns-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 14px 8px;
+  align-items: flex-start;
+}
+
+/* ---- Column card ---- */
+.wpb-column-card {
+  flex-shrink: 0;
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wpb-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f6f7f7;
+  border-bottom: 1px solid #dcdcde;
+}
+
+.wpb-col-head strong {
+  flex: 1;
   font-size: 12px;
 }
 
-.wp-builder-field input,
-.wp-builder-field textarea,
-.wp-builder-field select {
-  width: 100%;
-}
-
-.wp-builder-element-actions {
+.wpb-width-wrap {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
 }
 
-.wp-builder-element-card {
+.wpb-width-input {
+  width: 52px !important;
+  padding: 2px 4px !important;
+  height: 24px !important;
+  font-size: 12px !important;
+}
+
+/* ---- Elements within a column ---- */
+.wpb-elements-wrap {
+  padding: 8px 10px 0;
+}
+
+/* ---- Element card ---- */
+.wpb-element-card {
   border: 1px solid #e2e4e7;
   border-radius: 6px;
-  background: #f9f9f9;
-  padding: 12px;
-  margin-bottom: 12px;
+  background: #fafafa;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.wpb-element-head {
+  cursor: pointer;
+  padding: 6px 10px;
+  background: #f6f7f7;
+  border-bottom: 1px solid #e2e4e7;
+  user-select: none;
+}
+
+.wpb-element-head:hover {
+  background: #edf0f2;
+}
+
+.wpb-badge {
+  flex: 1;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #dde4ee;
+  color: #1d2327;
+}
+
+.wpb-badge--heading  { background: #d0e8ff; color: #135e96; }
+.wpb-badge--image    { background: #d8f5d0; color: #1a6c1a; }
+.wpb-badge--video    { background: #fde8d8; color: #8a3500; }
+.wpb-badge--button   { background: #fdf0d0; color: #7a5200; }
+.wpb-badge--spacer   { background: #ede8f8; color: #4a1f9c; }
+
+.wpb-element-body {
+  padding: 10px;
+}
+
+/* ---- Style grid ---- */
+.wpb-style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 4px 0;
+}
+
+/* ---- Field ---- */
+.wpb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.wpb-field span {
+  font-weight: 600;
+  color: #50575e;
+}
+
+.wpb-field input,
+.wpb-field textarea,
+.wpb-field select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.wpb-field textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+/* ---- Add element row ---- */
+.wpb-add-el-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #f6f7f7;
+  border-top: 1px solid #e2e4e7;
+}
+
+.wpb-add-el-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- Add column button ---- */
+.wpb-add-col-btn {
+  margin: 4px 14px;
+  font-size: 12px !important;
+}
+
+/* ---- Small buttons ---- */
+.wpb-btn-sm {
+  font-size: 11px !important;
+  padding: 0 7px !important;
+  height: 24px !important;
+  line-height: 22px !important;
+  min-height: 0 !important;
 }

@@ -1,32 +1,60 @@
-.wp-builder-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+/* WP Builder – Front-end styles */
+
+.wpb-layout {
+  width: 100%;
 }
 
-.wp-builder-section {
+/* ---- Section ---- */
+.wpb-section {
   width: 100%;
   box-sizing: border-box;
 }
 
-.wp-builder-heading,
-.wp-builder-text {
-  margin: 0 0 16px;
+/* ---- Columns row ---- */
+.wpb-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.wp-builder-image {
+/* ---- Individual column ---- */
+.wpb-col {
+  flex: 1 1 0;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* ---- Heading ---- */
+.wpb-heading {
+  margin: 0 0 16px;
+  line-height: 1.25;
+}
+
+/* ---- Text ---- */
+.wpb-text {
+  margin: 0 0 16px;
+  line-height: 1.7;
+}
+
+/* ---- Image ---- */
+.wpb-image {
   display: block;
   width: 100%;
   height: auto;
+  object-fit: cover;
 }
 
-.wp-builder-video {
+/* ---- Video (responsive 16:9) ---- */
+.wpb-video {
   position: relative;
   width: 100%;
   padding-top: 56.25%;
+  margin-bottom: 16px;
 }
 
-.wp-builder-video iframe {
+.wpb-video iframe {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -34,8 +62,43 @@
   border: 0;
 }
 
+/* ---- Button ---- */
+.wpb-button {
+  display: inline-block;
+  padding: 12px 28px;
+  background: #2271b1;
+  color: #fff !important;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 16px;
+  transition: background 0.2s;
+}
+
+.wpb-button:hover {
+  background: #135e96;
+  color: #fff !important;
+}
+
+/* ---- Spacer ---- */
+.wpb-spacer {
+  display: block;
+}
+
+/* ---- Responsive: stack columns on mobile ---- */
 @media (max-width: 768px) {
-  .wp-builder-section {
-    padding: 24px 16px !important;
+  .wpb-columns {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .wpb-col {
+    width: 100% !important;
+  }
+
+  .wpb-section {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
 }
