@@ -292,9 +292,9 @@ final class WP_Builder {
 					</div>
 					<div id="wp-builder-inspector-editor" class="wp-builder-inspector-editor" hidden>
 						<label class="wp-builder-inspector-label" for="wp-builder-html-content">
-							<?php esc_html_e( 'HTML Content', 'wp-builder' ); ?>
+							<?php esc_html_e( 'Content', 'wp-builder' ); ?>
 						</label>
-						<textarea id="wp-builder-html-content" class="wp-builder-html-editor" rows="12" spellcheck="false" placeholder="<?php esc_attr_e( 'Enter your HTML here…', 'wp-builder' ); ?>"></textarea>
+						<textarea id="wp-builder-html-content" class="wp-builder-html-editor" rows="12" spellcheck="false" placeholder="<?php esc_attr_e( 'Enter your here…', 'wp-builder' ); ?>"></textarea>
 					</div>
 					<div id="wp-builder-inspector-container" class="wp-builder-inspector-container-editor" hidden>
 						<hr class="wp-builder-inspector-divider">

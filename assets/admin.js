@@ -550,7 +550,7 @@
 		deleteButton.addEventListener('click', deleteSelection);
 	}
 
-	// HTML content editor
+	// Content editor
 	if (htmlTextarea) {
 		htmlTextarea.addEventListener('input', function () {
 			if (!state.selectedId) {
