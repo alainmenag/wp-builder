@@ -52,25 +52,23 @@ body.wp-builder-body {
 	min-height: 100vh;
 }
 
-.wp-builder-header {
-	align-items: center;
-	background: var(--wpb-bg-surface);
+.wp-builder-inspector-header {
 	border-bottom: 1px solid var(--wpb-border-subtle);
 	display: flex;
-	gap: 24px;
-	justify-content: space-between;
-	min-height: 72px;
-	padding: 12px 24px;
+	flex-direction: column;
+	gap: 8px;
+	margin: -18px -18px 18px;
+	padding: 12px 18px;
 }
 
-.wp-builder-kicker {
-	color: var(--wpb-text-muted);
-	display: block;
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0;
-	line-height: 1.3;
-	text-transform: uppercase;
+.wp-builder-inspector-header .wp-builder-title-button {
+	width: 100%;
+}
+
+.wp-builder-inspector-header-actions {
+	align-items: center;
+	display: flex;
+	gap: 6px;
 }
 
 .wp-builder-title h1 {
@@ -172,7 +170,7 @@ body.wp-builder-body {
 .wp-builder-workspace {
 	display: grid;
 	grid-template-columns: 260px minmax(360px, 1fr) 280px;
-	min-height: calc(100vh - 105px);
+	min-height: 100vh;
 }
 
 .wp-builder-panel {
@@ -224,15 +222,11 @@ body.wp-builder-body {
 	padding: 18px;
 }
 
-.wp-builder-canvas-toolbar {
-	align-items: center;
-	display: flex;
-	justify-content: flex-end;
-	min-height: 24px;
-}
+
 
 #wp-builder-save-status {
 	color: var(--wpb-text-muted);
+	flex: 1;
 	font-size: 13px;
 	font-weight: 600;
 }
@@ -508,12 +502,12 @@ body.wp-builder-body {
 /* ── Admin bar ──────────────────────────────────────────────────────────── */
 
 .admin-bar .wp-builder-workspace {
-	min-height: calc(100vh - 105px - 32px);
+	min-height: calc(100vh - 32px);
 }
 
 @media screen and ( max-width: 782px ) {
 	.admin-bar .wp-builder-workspace {
-		min-height: calc(100vh - 105px - 46px);
+		min-height: calc(100vh - 46px);
 	}
 }
 
@@ -536,8 +530,9 @@ body.wp-builder-body {
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 960px) {
-	.wp-builder-header,
-	.wp-builder-actions {
+	.wp-builder-actions,
+	.wp-builder-inspector-header,
+	.wp-builder-inspector-header-actions {
 		align-items: stretch;
 		flex-direction: column;
 	}
