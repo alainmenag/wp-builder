@@ -430,6 +430,8 @@ final class WP_Builder {
 			__( 'Builder: %s', 'wp-builder' ),
 			get_the_title( $post )
 		);
+		// Prevent wp_head() from emitting a duplicate <title> tag.
+		remove_action( 'wp_head', '_wp_render_title_tag', 1 );
 		?>
 		<!doctype html>
 		<html <?php language_attributes(); ?>>
@@ -437,11 +439,12 @@ final class WP_Builder {
 			<meta charset="<?php bloginfo( 'charset' ); ?>">
 			<meta name="viewport" content="width=device-width, initial-scale=1">
 			<title><?php echo esc_html( $title ); ?></title>
-			<?php wp_print_styles( array( 'wp-builder-admin' ) ); ?>
+			<?php wp_head(); ?>
 		</head>
 		<body class="wp-builder-body">
+			<?php wp_body_open(); ?>
 			<?php $this->render_builder_shell( $post ); ?>
-			<?php wp_print_scripts( array( 'wp-builder-admin' ) ); ?>
+			<?php wp_footer(); ?>
 		</body>
 		</html>
 		<?php

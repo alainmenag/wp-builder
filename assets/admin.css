@@ -505,6 +505,18 @@ body.wp-builder-body {
 	background: var(--wpb-bg-control);
 }
 
+/* ── Admin bar ──────────────────────────────────────────────────────────── */
+
+.admin-bar .wp-builder-workspace {
+	min-height: calc(100vh - 105px - 32px);
+}
+
+@media screen and ( max-width: 782px ) {
+	.admin-bar .wp-builder-workspace {
+		min-height: calc(100vh - 105px - 46px);
+	}
+}
+
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 960px) {
