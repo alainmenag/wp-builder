@@ -22,6 +22,7 @@ final class WP_Builder {
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_meta' ) );
 		add_action( 'init', array( $this, 'register_template_post_type' ) );
+		add_action( 'init', array( $this, 'register_shortcodes' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_builder_meta_box' ) );
 		add_action( 'admin_menu', array( $this, 'register_builder_page' ) );
 		add_action( 'admin_menu', array( $this, 'register_template_menu' ) );
@@ -35,6 +36,38 @@ final class WP_Builder {
 		add_filter( 'page_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( self::TEMPLATE_CPT . '_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( 'the_content', array( $this, 'render_builder_content' ), 20 );
+	}
+
+	public function register_shortcodes(): void {
+		add_shortcode( 'wp_builder_template', array( $this, 'render_template_shortcode' ) );
+	}
+
+	public function render_template_shortcode( array $atts ): string {
+		$atts    = shortcode_atts( array( 'id' => 0 ), $atts, 'wp_builder_template' );
+		$post_id = absint( $atts['id'] );
+
+		if ( ! $post_id ) {
+			return '';
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post || self::TEMPLATE_CPT !== $post->post_type || 'publish' !== $post->post_status ) {
+			return '';
+		}
+
+		if ( ! $this->has_builder_layout( $post_id ) ) {
+			return '';
+		}
+
+		wp_enqueue_style(
+			'wp-builder-frontend',
+			plugin_dir_url( __FILE__ ) . 'assets/frontend.css',
+			array(),
+			self::VERSION
+		);
+
+		$layout = $this->get_layout( $post_id );
+		return '<div class="wp-builder-page wp-builder-template">' . $this->render_elements( $layout['elements'] ) . '</div>';
 	}
 
 	public function register_meta(): void {
@@ -74,7 +107,7 @@ final class WP_Builder {
 				),
 				'public'              => false,
 				'show_ui'             => true,
-				'show_in_menu'        => 'wp-builder-templates',
+				'show_in_menu'        => false,
 				'show_in_rest'        => false,
 				'supports'            => array( 'title' ),
 				'capability_type'     => 'post',
@@ -278,7 +311,10 @@ final class WP_Builder {
 	}
 
 	private function enqueue_builder_assets( int $post_id ): void {
-		$asset_url = plugin_dir_url( __FILE__ ) . 'assets/';
+		$asset_url   = plugin_dir_url( __FILE__ ) . 'assets/';
+		$post        = get_post( $post_id );
+		$is_template = $post && self::TEMPLATE_CPT === $post->post_type;
+		$post_status = $post ? $post->post_status : 'draft';
 
 		wp_enqueue_style(
 			'wp-builder-admin',
@@ -302,6 +338,8 @@ final class WP_Builder {
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( self::NONCE_ACTION ),
 				'postId'     => $post_id,
+				'isTemplate' => $is_template,
+				'postStatus' => $post_status,
 				'layout'     => $this->get_layout( $post_id ),
 				'editUrl'    => get_edit_post_link( $post_id, '' ),
 				'previewUrl' => get_permalink( $post_id ),
@@ -313,7 +351,9 @@ final class WP_Builder {
 					'emptyCanvas'    => __( 'Empty canvas', 'wp-builder' ),
 					'emptyContainer' => __( 'Empty container', 'wp-builder' ),
 					'emptyHtml'      => __( 'Empty HTML element', 'wp-builder' ),
+					'published'      => __( 'Published', 'wp-builder' ),
 					'root'           => __( 'Root', 'wp-builder' ),
+					'saveAndPublish' => __( 'Save & Publish', 'wp-builder' ),
 					'saved'          => __( 'Saved', 'wp-builder' ),
 					'saving'         => __( 'Saving...', 'wp-builder' ),
 					'selected'       => __( 'Selected', 'wp-builder' ),
@@ -357,12 +397,14 @@ final class WP_Builder {
 	}
 
 	private function render_builder_shell( WP_Post $post ): void {
-		$post_id     = $post->ID;
-		$is_template = self::TEMPLATE_CPT === $post->post_type;
-		$back_url    = $is_template
+		$post_id        = $post->ID;
+		$is_template    = self::TEMPLATE_CPT === $post->post_type;
+		$is_published   = 'publish' === $post->post_status;
+		$back_url       = $is_template
 			? admin_url( 'edit.php?post_type=' . self::TEMPLATE_CPT )
 			: get_edit_post_link( $post_id, '' );
-		$preview_url = get_permalink( $post_id );
+		$preview_url    = get_permalink( $post_id );
+		$shortcode      = '[wp_builder_template id=\'' . absint( $post_id ) . '\']';
 		?>
 		<div class="wp-builder-shell" id="wp-builder-app">
 			<header class="wp-builder-header">
@@ -378,6 +420,11 @@ final class WP_Builder {
 					<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
 						<?php esc_html_e( 'View', 'wp-builder' ); ?>
 					</a>
+					<?php endif; ?>
+					<?php if ( $is_template ) : ?>
+					<button class="wp-builder-button wp-builder-button-secondary" type="button" id="wp-builder-publish"<?php echo $is_published ? ' hidden' : ''; ?>>
+						<?php esc_html_e( 'Save & Publish', 'wp-builder' ); ?>
+					</button>
 					<?php endif; ?>
 					<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
 						<?php esc_html_e( 'Save', 'wp-builder' ); ?>
@@ -416,6 +463,14 @@ final class WP_Builder {
 							<?php esc_html_e( 'Delete', 'wp-builder' ); ?>
 						</button>
 					</div>
+					<?php if ( $is_template ) : ?>
+					<div id="wp-builder-shortcode-panel" hidden>
+						<hr class="wp-builder-inspector-divider">
+						<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Shortcode', 'wp-builder' ); ?></p>
+						<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Embed this template anywhere with this shortcode.', 'wp-builder' ); ?></p>
+						<input type="text" class="wp-builder-input" readonly value="<?php echo esc_attr( $shortcode ); ?>">
+					</div>
+					<?php endif; ?>
 					<div id="wp-builder-inspector-editor" class="wp-builder-inspector-editor" hidden>
 						<label class="wp-builder-inspector-label" for="wp-builder-html-content">
 							<?php esc_html_e( 'Content', 'wp-builder' ); ?>
@@ -485,10 +540,22 @@ final class WP_Builder {
 		$layout = $this->sanitize_layout( $decoded );
 		update_post_meta( $post_id, self::META_KEY, wp_json_encode( $layout ) );
 
+		$do_publish = ! empty( $_POST['publish'] ) && self::TEMPLATE_CPT === $post->post_type;
+		if ( $do_publish && current_user_can( 'publish_post', $post_id ) ) {
+			wp_update_post(
+				array(
+					'ID'          => $post_id,
+					'post_status' => 'publish',
+				)
+			);
+			$post = get_post( $post_id );
+		}
+
 		wp_send_json_success(
 			array(
-				'layout'  => $layout,
-				'message' => __( 'Layout saved.', 'wp-builder' ),
+				'layout'     => $layout,
+				'postStatus' => $post ? $post->post_status : 'draft',
+				'message'    => __( 'Layout saved.', 'wp-builder' ),
 			)
 		);
 	}

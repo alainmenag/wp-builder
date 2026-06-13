@@ -5,6 +5,8 @@
 	var text = config.i18n || {};
 	var canvas = document.getElementById('wp-builder-canvas');
 	var saveButton = document.getElementById('wp-builder-save');
+	var publishButton = document.getElementById('wp-builder-publish');
+	var shortcodePanel = document.getElementById('wp-builder-shortcode-panel');
 	var addNestedButton = document.getElementById('wp-builder-add-nested');
 	var addNestedHtmlButton = document.getElementById('wp-builder-add-nested-html');
 	var deleteButton = document.getElementById('wp-builder-delete-selected');
@@ -386,6 +388,10 @@
 			containerInspector.hidden = !isContainer;
 		}
 
+		if (shortcodePanel) {
+			shortcodePanel.hidden = !!state.selectedId;
+		}
+
 		if (isContainer && selected) {
 			var props = selected.props || {};
 			if (flexDirectionSelect) { flexDirectionSelect.value = props.flexDirection || ''; }
@@ -488,7 +494,7 @@
 		}
 	}
 
-	function saveLayout() {
+	function saveLayout(publish) {
 		var form;
 		if (state.saving) {
 			return;
@@ -496,6 +502,7 @@
 
 		state.saving = true;
 		saveButton.disabled = true;
+		if (publishButton) { publishButton.disabled = true; }
 		updateStatus(text.saving || 'Saving...');
 
 		form = new window.FormData();
@@ -503,6 +510,9 @@
 		form.append('nonce', config.nonce || '');
 		form.append('post_id', config.postId || '');
 		form.append('layout', JSON.stringify(state.layout));
+		if (publish) {
+			form.append('publish', '1');
+		}
 
 		window.fetch(config.ajaxUrl, {
 			method: 'POST',
@@ -516,13 +526,20 @@
 			}
 			state.layout = normalizeLayout(payload.data.layout);
 			state.dirty = false;
-			updateStatus(text.saved || 'Saved');
+			if (payload.data.postStatus) {
+				config.postStatus = payload.data.postStatus;
+			}
+			if (config.postStatus === 'publish' && publishButton) {
+				publishButton.hidden = true;
+			}
+			updateStatus(publish ? (text.published || 'Published') : (text.saved || 'Saved'));
 			render();
 		}).catch(function (error) {
 			updateStatus(error.message || 'Save failed');
 		}).finally(function () {
 			state.saving = false;
 			saveButton.disabled = false;
+			if (publishButton) { publishButton.disabled = false; }
 		});
 	}
 
@@ -590,7 +607,11 @@
 		});
 	}
 
-	saveButton.addEventListener('click', saveLayout);
+	saveButton.addEventListener('click', function () { saveLayout(false); });
+
+	if (publishButton) {
+		publishButton.addEventListener('click', function () { saveLayout(true); });
+	}
 
 	window.addEventListener('beforeunload', function (event) {
 		if (!state.dirty) {
