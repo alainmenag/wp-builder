@@ -405,6 +405,7 @@ final class WP_Builder {
 					'emptyContainer' => __( 'Empty container', 'wp-builder' ),
 					'emptyHtml'      => __( 'Empty HTML element', 'wp-builder' ),
 					'root'           => __( 'Root', 'wp-builder' ),
+					'renameTitle'    => __( 'Post title', 'wp-builder' ),
 					'saved'          => __( 'Saved', 'wp-builder' ),
 					'saving'         => __( 'Saving...', 'wp-builder' ),
 					'selected'       => __( 'Selected', 'wp-builder' ),
@@ -466,7 +467,7 @@ final class WP_Builder {
 			<header class="wp-builder-header">
 				<div class="wp-builder-title">
 					<span class="wp-builder-kicker"><?php esc_html_e( 'Builder', 'wp-builder' ); ?></span>
-					<input type="text" id="wp-builder-title" class="wp-builder-title-input" value="<?php echo esc_attr( get_the_title( $post_id ) ); ?>" aria-label="<?php esc_attr_e( 'Post title', 'wp-builder' ); ?>">
+					<button type="button" id="wp-builder-title" class="wp-builder-title-button" aria-label="<?php esc_attr_e( 'Edit post title', 'wp-builder' ); ?>"><?php echo esc_html( get_the_title( $post_id ) ); ?></button>
 				</div>
 				<div class="wp-builder-actions">
 					<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $back_url ); ?>">
@@ -516,7 +517,7 @@ final class WP_Builder {
 						<hr class="wp-builder-inspector-divider">
 						<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Shortcode', 'wp-builder' ); ?></p>
 						<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Embed this content anywhere with this shortcode.', 'wp-builder' ); ?></p>
-						<input type="text" class="wp-builder-input" readonly value="<?php echo esc_attr( $shortcode ); ?>">
+						<pre class="wp-builder-shortcode-pre"><?php echo esc_html( $shortcode ); ?></pre>
 					</div>
 					<div id="wp-builder-inspector-root" hidden>
 					<hr class="wp-builder-inspector-divider">

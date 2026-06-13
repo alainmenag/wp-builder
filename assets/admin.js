@@ -530,7 +530,7 @@
 			form.append('post_status', postStatusSelect.value);
 		}
 		if (titleInput) {
-			form.append('title', titleInput.value.trim() || config.postTitle || '');
+			form.append('title', titleInput.textContent.trim() || config.postTitle || '');
 		}
 		if (pageTemplateSelect) {
 			form.append('page_template', state.pageTemplate || 'default');
@@ -554,7 +554,7 @@
 			}
 			if (payload.data.postTitle) {
 				config.postTitle = payload.data.postTitle;
-				if (titleInput) { titleInput.value = payload.data.postTitle; }
+				if (titleInput) { titleInput.textContent = payload.data.postTitle; }
 			}
 			if (payload.data.docTitle) {
 				document.title = payload.data.docTitle;
@@ -649,14 +649,14 @@
 		});
 	}
 
-	// Title rename — deferred to Save
+	// Title rename — click to open prompt
 	if (titleInput) {
-		titleInput.addEventListener('input', function () {
-			markDirty();
-		});
-		titleInput.addEventListener('keydown', function (event) {
-			if (event.key === 'Escape') {
-				titleInput.value = config.postTitle || '';
+		titleInput.addEventListener('click', function () {
+			var current = titleInput.textContent.trim() || config.postTitle || '';
+			var newTitle = window.prompt(text.renameTitle || 'Post title', current);
+			if (newTitle !== null && newTitle.trim()) {
+				titleInput.textContent = newTitle.trim();
+				markDirty();
 			}
 		});
 	}

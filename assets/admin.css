@@ -80,25 +80,25 @@ body.wp-builder-body {
 	margin: 2px 0 0;
 }
 
-.wp-builder-title-input {
+.wp-builder-title-button {
 	background: transparent;
 	border: 1px solid transparent;
 	border-radius: 4px;
-	box-sizing: border-box;
 	color: var(--wpb-text-primary);
+	cursor: pointer;
 	font-size: 20px;
 	font-weight: bold;
 	line-height: 1.25;
 	margin: 2px 0 0;
 	padding: 1px 4px;
-	width: 100%;
+	text-align: left;
 }
 
-.wp-builder-title-input:hover {
+.wp-builder-title-button:hover {
 	border-color: var(--wpb-border-strong);
 }
 
-.wp-builder-title-input:focus {
+.wp-builder-title-button:focus {
 	border-color: var(--wpb-blue);
 	outline: none;
 }
@@ -515,6 +515,22 @@ body.wp-builder-body {
 	.admin-bar .wp-builder-workspace {
 		min-height: calc(100vh - 105px - 46px);
 	}
+}
+
+/* ── Shortcode pre ──────────────────────────────────────────────────────── */
+
+.wp-builder-shortcode-pre {
+	background: var(--wpb-bg-sunken);
+	border: 1px solid var(--wpb-border-default);
+	border-radius: 4px;
+	color: var(--wpb-text-primary);
+	font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	margin: 0;
+	padding: 8px;
+	white-space: pre-wrap;
+	word-break: break-all;
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
