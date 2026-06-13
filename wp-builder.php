@@ -560,9 +560,9 @@ final class WP_Builder {
 						</div>
 					</div>
 
-					<!-- Elements accordion (open by default) -->
-					<div class="wp-builder-accordion is-open" id="wp-builder-accordion-elements">
-						<button type="button" class="wp-builder-accordion-header" aria-expanded="true" aria-controls="wp-builder-accordion-elements-body">
+					<!-- Elements accordion -->
+					<div class="wp-builder-accordion" id="wp-builder-accordion-elements">
+						<button type="button" class="wp-builder-accordion-header" aria-expanded="false" aria-controls="wp-builder-accordion-elements-body">
 							<span><?php esc_html_e( 'Elements', 'wp-builder' ); ?></span>
 							<span class="wp-builder-accordion-chevron" aria-hidden="true"></span>
 						</button>
@@ -576,6 +576,18 @@ final class WP_Builder {
 									<span class="wp-builder-element-icon wp-builder-element-icon-html" aria-hidden="true"></span>
 									<span><?php esc_html_e( 'HTML', 'wp-builder' ); ?></span>
 								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Element accordion (open by default) -->
+					<div class="wp-builder-accordion is-open" id="wp-builder-accordion-element">
+						<button type="button" class="wp-builder-accordion-header" aria-expanded="true" aria-controls="wp-builder-accordion-element-body">
+							<span><?php esc_html_e( 'Element', 'wp-builder' ); ?></span>
+							<span class="wp-builder-accordion-chevron" aria-hidden="true"></span>
+						</button>
+						<div class="wp-builder-accordion-body" id="wp-builder-accordion-element-body" role="region">
+							<div class="wp-builder-accordion-body-inner">
 								<div class="wp-builder-inspector-selection">
 									<span class="wp-builder-inspector-label"><?php esc_html_e( 'Selected', 'wp-builder' ); ?></span>
 									<strong id="wp-builder-selection-name"><?php esc_html_e( 'Root', 'wp-builder' ); ?></strong>
