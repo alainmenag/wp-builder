@@ -392,7 +392,7 @@ final class WP_Builder {
 				'layout'     => $this->get_layout( $post_id ),
 				'editUrl'    => get_edit_post_link( $post_id, '' ),
 				'previewUrl' => $preview_url,
-				'pageTemplate'  => $is_template ? 'default' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
+				'pageTemplate'  => $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
 				'pageTemplates' => $is_template ? array() : $this->get_available_page_templates( $post_id ),
 				'i18n'       => array(
 					'addContainer'   => __( 'Container', 'wp-builder' ),
@@ -455,7 +455,7 @@ final class WP_Builder {
 		$preview_url       = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
 		$shortcode         = '[wp_builder_content id=\'' . absint( $post_id ) . '\']';
 		$page_templates    = $is_template ? array() : $this->get_available_page_templates( $post_id );
-		$current_template  = $is_template ? 'default' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' );
+		$current_template  = $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' );
 		?>
 		<div class="wp-builder-shell" id="wp-builder-app">
 			<header class="wp-builder-header">
@@ -525,7 +525,14 @@ final class WP_Builder {
 							<option value="private"><?php esc_html_e( 'Private', 'wp-builder' ); ?></option>
 						</select>
 					</div>
-					<?php if ( ! $is_template && ! empty( $page_templates ) ) : ?>
+					<?php if ( $is_template ) : ?>
+					<div class="wp-builder-field-group">
+						<label class="wp-builder-inspector-label" for="wp-builder-page-template"><?php esc_html_e( 'Template', 'wp-builder' ); ?></label>
+						<select id="wp-builder-page-template" class="wp-builder-select" disabled>
+							<option value="wp-builder-canvas" selected><?php esc_html_e( 'WP Builder Canvas', 'wp-builder' ); ?></option>
+						</select>
+					</div>
+					<?php elseif ( ! empty( $page_templates ) ) : ?>
 					<div class="wp-builder-field-group">
 						<label class="wp-builder-inspector-label" for="wp-builder-page-template"><?php esc_html_e( 'Template', 'wp-builder' ); ?></label>
 						<select id="wp-builder-page-template" class="wp-builder-select">
@@ -951,7 +958,17 @@ final class WP_Builder {
 	public function maybe_use_builder_template( string $template ): string {
 		if ( is_singular() ) {
 			$post_id       = get_queried_object_id();
+			$post          = get_post( $post_id );
 			$page_template = get_post_meta( $post_id, '_wp_page_template', true );
+
+			// Custom builder templates always use the WP Builder Canvas template.
+			if ( $post && self::TEMPLATE_CPT === $post->post_type ) {
+				$canvas = plugin_dir_path( __FILE__ ) . 'templates/wp-builder-canvas.php';
+				if ( file_exists( $canvas ) ) {
+					return $canvas;
+				}
+			}
+
 			if ( 'wp-builder-canvas' === $page_template ) {
 				$canvas = plugin_dir_path( __FILE__ ) . 'templates/wp-builder-canvas.php';
 				if ( file_exists( $canvas ) ) {
@@ -969,6 +986,10 @@ final class WP_Builder {
 	}
 
 	private function is_builder_page_template( int $post_id ): bool {
+		$post = get_post( $post_id );
+		if ( $post && self::TEMPLATE_CPT === $post->post_type ) {
+			return true;
+		}
 		$template = get_post_meta( $post_id, '_wp_page_template', true );
 		return 'wp-builder-canvas' === $template || 'wp-builder-full-width' === $template;
 	}
