@@ -38,6 +38,9 @@ final class WP_Builder {
 		add_filter( 'page_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( self::TEMPLATE_CPT . '_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( 'the_content', array( $this, 'render_builder_content' ), 20 );
+		add_filter( 'theme_page_templates', array( $this, 'register_page_templates' ), 10, 4 );
+		add_filter( 'theme_post_templates', array( $this, 'register_page_templates' ), 10, 4 );
+		add_filter( 'template_include', array( $this, 'maybe_use_builder_template' ) );
 	}
 
 	public function register_shortcodes(): void {
@@ -115,6 +118,7 @@ final class WP_Builder {
 				'supports'            => array( 'title' ),
 				'capability_type'     => 'post',
 				'map_meta_cap'        => true,
+				'rewrite'             => array( 'slug' => 'wp_builder_template', 'with_front' => false ),
 			)
 		);
 	}
@@ -349,6 +353,8 @@ final class WP_Builder {
 				'layout'     => $this->get_layout( $post_id ),
 				'editUrl'    => get_edit_post_link( $post_id, '' ),
 				'previewUrl' => $preview_url,
+				'pageTemplate'  => $is_template ? 'default' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'default' ),
+				'pageTemplates' => $is_template ? array() : $this->get_available_page_templates( $post_id ),
 				'i18n'       => array(
 					'addContainer'   => __( 'Container', 'wp-builder' ),
 					'addHtml'        => __( 'HTML', 'wp-builder' ),
@@ -401,14 +407,16 @@ final class WP_Builder {
 	}
 
 	private function render_builder_shell( WP_Post $post ): void {
-		$post_id        = $post->ID;
-		$is_template    = self::TEMPLATE_CPT === $post->post_type;
-		$is_published   = 'publish' === $post->post_status;
-		$back_url       = $is_template
+		$post_id           = $post->ID;
+		$is_template       = self::TEMPLATE_CPT === $post->post_type;
+		$is_published      = 'publish' === $post->post_status;
+		$back_url          = $is_template
 			? admin_url( 'edit.php?post_type=' . self::TEMPLATE_CPT )
 			: get_edit_post_link( $post_id, '' );
-		$preview_url    = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
-		$shortcode      = '[wp_builder_template id=\'' . absint( $post_id ) . '\']';
+		$preview_url       = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
+		$shortcode         = '[wp_builder_template id=\'' . absint( $post_id ) . '\']';
+		$page_templates    = $is_template ? array() : $this->get_available_page_templates( $post_id );
+		$current_template  = $is_template ? 'default' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'default' );
 		?>
 		<div class="wp-builder-shell" id="wp-builder-app">
 			<header class="wp-builder-header">
@@ -480,6 +488,16 @@ final class WP_Builder {
 							<option value="private"><?php esc_html_e( 'Private', 'wp-builder' ); ?></option>
 						</select>
 					</div>
+					<?php if ( ! $is_template && ! empty( $page_templates ) ) : ?>
+					<div class="wp-builder-field-group">
+						<label class="wp-builder-inspector-label" for="wp-builder-page-template"><?php esc_html_e( 'Template', 'wp-builder' ); ?></label>
+						<select id="wp-builder-page-template" class="wp-builder-select">
+							<?php foreach ( $page_templates as $slug => $name ) : ?>
+							<option value="<?php echo esc_attr( $slug ); ?>"<?php selected( $current_template, $slug ); ?>><?php echo esc_html( $name ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+					<?php endif; ?>
 				</div>
 				<div id="wp-builder-inspector-editor" class="wp-builder-inspector-editor" hidden>
 						<label class="wp-builder-inspector-label" for="wp-builder-html-content">
@@ -614,11 +632,35 @@ final class WP_Builder {
 			}
 		}
 
+		// Deferred title update — applied when the user clicks Save.
+		$new_title = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+		if ( $new_title !== '' ) {
+			wp_update_post( array( 'ID' => $post_id, 'post_title' => $new_title ) );
+			$post = get_post( $post_id );
+		}
+
+		// Page template update (not applicable to builder templates themselves).
+		$is_template = $post && self::TEMPLATE_CPT === $post->post_type;
+		if ( ! $is_template && isset( $_POST['page_template'] ) ) {
+			$page_template_value = sanitize_text_field( wp_unslash( $_POST['page_template'] ) );
+			update_post_meta( $post_id, '_wp_page_template', $page_template_value );
+		}
+
+		$preview_url = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
+
 		wp_send_json_success(
 			array(
-				'layout'     => $layout,
-				'postStatus' => $post ? $post->post_status : 'draft',
-				'message'    => __( 'Layout saved.', 'wp-builder' ),
+				'layout'       => $layout,
+				'postStatus'   => $post ? $post->post_status : 'draft',
+				'postTitle'    => get_the_title( $post_id ),
+				'docTitle'     => sprintf(
+					/* translators: %s: post title. */
+					__( 'WP Builder: %s', 'wp-builder' ),
+					get_the_title( $post_id )
+				),
+				'previewUrl'   => $preview_url,
+				'pageTemplate' => get_post_meta( $post_id, '_wp_page_template', true ) ?: 'default',
+				'message'      => __( 'Layout saved.', 'wp-builder' ),
 			)
 		);
 	}
@@ -854,6 +896,37 @@ final class WP_Builder {
 
 		return $count;
 	}
+
+	public function register_page_templates( array $templates, $theme, $post, string $post_type ): array {
+		$templates['wp-builder-canvas'] = __( 'WP Builder Canvas', 'wp-builder' );
+		return $templates;
+	}
+
+	public function maybe_use_builder_template( string $template ): string {
+		if ( is_singular() ) {
+			$post_id       = get_queried_object_id();
+			$page_template = get_post_meta( $post_id, '_wp_page_template', true );
+			if ( 'wp-builder-canvas' === $page_template ) {
+				$canvas = plugin_dir_path( __FILE__ ) . 'templates/wp-builder-canvas.php';
+				if ( file_exists( $canvas ) ) {
+					return $canvas;
+				}
+			}
+		}
+		return $template;
+	}
+
+	private function get_available_page_templates( int $post_id ): array {
+		$post = get_post( $post_id );
+		if ( ! $post || self::TEMPLATE_CPT === $post->post_type ) {
+			return array();
+		}
+		$templates = wp_get_theme()->get_page_templates( $post, $post->post_type );
+		return array_merge( array( 'default' => __( 'Default template', 'wp-builder' ) ), $templates );
+	}
 }
 
 new WP_Builder();
+
+register_activation_hook( __FILE__, 'flush_rewrite_rules' );
+register_deactivation_hook( __FILE__, 'flush_rewrite_rules' );
