@@ -45,6 +45,7 @@ final class WP_Builder {
 		add_filter( 'theme_post_templates', array( $this, 'register_page_templates' ), 10, 4 );
 		add_filter( 'template_include', array( $this, 'maybe_use_builder_template' ) );
 		add_action( 'elementor/widgets/register', array( $this, 'register_elementor_widget' ) );
+		add_action( 'elementor/editor/after_enqueue_styles', array( $this, 'enqueue_elementor_editor_styles' ) );
 	}
 
 	public function register_shortcodes(): void {
@@ -1011,6 +1012,15 @@ final class WP_Builder {
 
 		require_once __DIR__ . '/widgets/widget-builder-template.php';
 		$widgets_manager->register( new \WP_Builder_Template_Widget() );
+	}
+
+	public function enqueue_elementor_editor_styles(): void {
+		wp_enqueue_style(
+			'wp-builder-elementor-editor',
+			plugin_dir_url( __FILE__ ) . 'assets/elementor-editor.css',
+			array(),
+			self::VERSION
+		);
 	}
 }
 

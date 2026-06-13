@@ -36,20 +36,6 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		// Compact single-row toggle: label on the left, toggle button on the right.
-		$this->add_control(
-			'use_custom_id',
-			array(
-				'label'       => __( 'Template', 'wp-builder' ),
-				'type'        => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'    => __( 'ID', 'wp-builder' ),
-				'label_off'   => __( 'Select', 'wp-builder' ),
-				'description' => __( 'Toggle to enter a post/page ID instead of picking from the list.', 'wp-builder' ),
-				'label_block' => false,
-				'default'     => '',
-			)
-		);
-
 		$templates = array( '' => __( '— Select a template —', 'wp-builder' ) );
 
 		$query = new WP_Query(
@@ -69,14 +55,16 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 
 		wp_reset_postdata();
 
+		// SELECT and TEXT use label_block: false so label + input share one row.
+		// The SWITCHER below is pulled up via editor CSS to sit on the same row.
 		$this->add_control(
 			'template_id',
 			array(
-				'label'       => __( 'Select', 'wp-builder' ),
+				'label'       => __( 'Template', 'wp-builder' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $templates,
 				'default'     => '',
-				'label_block' => true,
+				'label_block' => false,
 				'condition'   => array( 'use_custom_id' => '' ),
 			)
 		);
@@ -84,11 +72,27 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'custom_id',
 			array(
-				'label'       => __( 'Post / Page ID', 'wp-builder' ),
+				'label'       => __( 'Template ID', 'wp-builder' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
 				'placeholder' => __( 'e.g. 42', 'wp-builder' ),
-				'label_block' => true,
+				'label_block' => false,
+				'separator'   => 'none',
 				'condition'   => array( 'use_custom_id' => 'yes' ),
+			)
+		);
+
+		// Toggle sits last in DOM; editor CSS overlays it on the right edge of the
+		// SELECT / TEXT input above via negative margin-top.
+		$this->add_control(
+			'use_custom_id',
+			array(
+				'label'       => '',
+				'type'        => \Elementor\Controls_Manager::SWITCHER,
+				'label_on'    => '',
+				'label_off'   => '',
+				'label_block' => false,
+				'separator'   => 'none',
+				'default'     => '',
 			)
 		);
 

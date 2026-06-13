@@ -1,0 +1,44 @@
+/**
+ * Builder Template widget — editor-only styles
+ *
+ * Positions the use_custom_id SWITCHER so it sits on the right
+ * edge of the SELECT / TEXT input directly above it in the panel,
+ * matching the style of Elementor's own "link values" icon buttons.
+ */
+
+/* Pull the SWITCHER row up to visually share the row with the input above. */
+.elementor-control-use_custom_id {
+	margin-top: -34px;
+	position: relative;
+	z-index: 2;
+	padding-top: 0 !important;
+	padding-bottom: 0 !important;
+}
+
+/* Remove any separator line that would otherwise appear above the SWITCHER. */
+.elementor-control-use_custom_id::before {
+	display: none !important;
+}
+
+/* Hide the (empty) label column so only the switch button is visible. */
+.elementor-control-use_custom_id .elementor-control-title {
+	display: none;
+}
+
+/* Push the switch pill to the far-right edge of the row. */
+.elementor-control-use_custom_id .elementor-control-field {
+	justify-content: flex-end;
+	min-height: 0;
+}
+
+.elementor-control-use_custom_id .elementor-control-input-wrapper {
+	width: auto;
+	flex-shrink: 0;
+}
+
+/* Add right-side breathing room on the select / text input so the
+   selected value / typed text does not slide under the toggle button. */
+.elementor-control-template_id .elementor-select-wrapper select,
+.elementor-control-custom_id input.elementor-input {
+	padding-right: 48px;
+}
