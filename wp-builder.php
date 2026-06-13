@@ -44,6 +44,8 @@ final class WP_Builder {
 		add_filter( 'theme_page_templates', array( $this, 'register_page_templates' ), 10, 4 );
 		add_filter( 'theme_post_templates', array( $this, 'register_page_templates' ), 10, 4 );
 		add_filter( 'template_include', array( $this, 'maybe_use_builder_template' ) );
+		add_action( 'elementor/widgets/register', array( $this, 'register_elementor_widget' ) );
+		add_action( 'elementor/editor/after_enqueue_styles', array( $this, 'enqueue_elementor_editor_styles' ) );
 	}
 
 	public function register_shortcodes(): void {
@@ -1001,6 +1003,24 @@ final class WP_Builder {
 		}
 		$templates = wp_get_theme()->get_page_templates( $post, $post->post_type );
 		return array_merge( array( 'default' => __( 'Default template', 'wp-builder' ) ), $templates );
+	}
+
+	public function register_elementor_widget( $widgets_manager ): void {
+		if ( ! did_action( 'elementor/loaded' ) ) {
+			return;
+		}
+
+		require_once __DIR__ . '/widgets/widget-builder-template.php';
+		$widgets_manager->register( new \WP_Builder_Template_Widget() );
+	}
+
+	public function enqueue_elementor_editor_styles(): void {
+		wp_enqueue_style(
+			'wp-builder-elementor-editor',
+			plugin_dir_url( __FILE__ ) . 'assets/elementor-editor.css',
+			array(),
+			self::VERSION
+		);
 	}
 }
 
