@@ -284,6 +284,21 @@
     colHead.appendChild(removeColBtn);
     col.appendChild(colHead);
 
+    /* Column styles toggle */
+    var colStyleToggle = document.createElement('button');
+    colStyleToggle.type = 'button';
+    colStyleToggle.className = 'button wpb-style-toggle';
+    colStyleToggle.textContent = '⚙ Column styles';
+
+    var colStylePanel = document.createElement('div');
+    colStylePanel.className = 'wpb-style-panel wpb-collapsed';
+    colStyleToggle.addEventListener('click', function () {
+      colStylePanel.classList.toggle('wpb-collapsed');
+    });
+    colStylePanel.appendChild(buildStylePanel(column.styles, sync));
+    col.appendChild(colStyleToggle);
+    col.appendChild(colStylePanel);
+
     /* Elements within column */
     var elementsWrap = document.createElement('div');
     elementsWrap.className = 'wpb-elements-wrap';
