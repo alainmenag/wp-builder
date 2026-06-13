@@ -12,22 +12,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class WP_Builder {
-	private const VERSION         = '0.1.0';
-	private const META_KEY        = '_wp_builder_layout';
-	private const MENU_SLUG       = 'wp-builder';
-	private const ACTION          = 'builder';
-	private const NONCE_ACTION    = 'wp_builder_save_layout';
+	private const VERSION           = '0.1.0';
+	private const META_KEY          = '_wp_builder_layout';
+	private const MENU_SLUG         = 'wp-builder';
+	private const ACTION            = 'builder';
+	private const NONCE_ACTION      = 'wp_builder_save_layout';
+	private const TEMPLATE_CPT      = 'wp_builder_template';
 
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_meta' ) );
+		add_action( 'init', array( $this, 'register_template_post_type' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_builder_meta_box' ) );
 		add_action( 'admin_menu', array( $this, 'register_builder_page' ) );
+		add_action( 'admin_menu', array( $this, 'register_template_menu' ) );
+		add_action( 'load-post-new.php', array( $this, 'maybe_redirect_new_template' ) );
+		add_action( 'load-post.php', array( $this, 'maybe_redirect_template_edit' ) );
 		add_action( 'load-post.php', array( $this, 'maybe_render_builder_request' ) );
 		add_action( 'wp_ajax_wp_builder_save_layout', array( $this, 'ajax_save_layout' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_link' ), 80 );
 		add_filter( 'post_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( 'page_row_actions', array( $this, 'add_row_action' ), 10, 2 );
+		add_filter( self::TEMPLATE_CPT . '_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( 'the_content', array( $this, 'render_builder_content' ), 20 );
 	}
 
@@ -49,8 +55,123 @@ final class WP_Builder {
 		}
 	}
 
+	public function register_template_post_type(): void {
+		register_post_type(
+			self::TEMPLATE_CPT,
+			array(
+				'label'               => __( 'Builder Templates', 'wp-builder' ),
+				'labels'              => array(
+					'name'               => __( 'Builder Templates', 'wp-builder' ),
+					'singular_name'      => __( 'Builder Template', 'wp-builder' ),
+					'add_new'            => __( 'Add New', 'wp-builder' ),
+					'add_new_item'       => __( 'Add New Template', 'wp-builder' ),
+					'edit_item'          => __( 'Edit Template', 'wp-builder' ),
+					'new_item'           => __( 'New Template', 'wp-builder' ),
+					'view_item'          => __( 'View Template', 'wp-builder' ),
+					'search_items'       => __( 'Search Templates', 'wp-builder' ),
+					'not_found'          => __( 'No templates found.', 'wp-builder' ),
+					'not_found_in_trash' => __( 'No templates found in Trash.', 'wp-builder' ),
+				),
+				'public'              => false,
+				'show_ui'             => true,
+				'show_in_menu'        => 'wp-builder-templates',
+				'show_in_rest'        => false,
+				'supports'            => array( 'title' ),
+				'capability_type'     => 'post',
+				'map_meta_cap'        => true,
+			)
+		);
+	}
+
+	public function register_template_menu(): void {
+		add_menu_page(
+			__( 'WP Builder', 'wp-builder' ),
+			__( 'WP Builder', 'wp-builder' ),
+			'edit_posts',
+			'wp-builder-templates',
+			'__return_null',
+			'dashicons-layout',
+			59
+		);
+
+		add_submenu_page(
+			'wp-builder-templates',
+			__( 'Builder Templates', 'wp-builder' ),
+			__( 'Templates', 'wp-builder' ),
+			'edit_posts',
+			'edit.php?post_type=' . self::TEMPLATE_CPT
+		);
+
+		add_submenu_page(
+			'wp-builder-templates',
+			__( 'Add New Template', 'wp-builder' ),
+			__( 'Add New', 'wp-builder' ),
+			'edit_posts',
+			'post-new.php?post_type=' . self::TEMPLATE_CPT
+		);
+
+		// Remove the auto-generated duplicate top-level submenu entry.
+		remove_submenu_page( 'wp-builder-templates', 'wp-builder-templates' );
+	}
+
+	public function maybe_redirect_new_template(): void {
+		$post_type = isset( $_GET['post_type'] ) ? sanitize_key( wp_unslash( $_GET['post_type'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		if ( self::TEMPLATE_CPT !== $post_type ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( esc_html__( 'You do not have permission to create templates.', 'wp-builder' ) );
+		}
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => self::TEMPLATE_CPT,
+				'post_title'  => __( 'New Template', 'wp-builder' ),
+				'post_status' => 'draft',
+			)
+		);
+
+		if ( is_wp_error( $post_id ) || ! $post_id ) {
+			wp_die( esc_html__( 'Could not create template.', 'wp-builder' ) );
+		}
+
+		wp_safe_redirect( $this->get_builder_url( $post_id ) );
+		exit;
+	}
+
+	public function maybe_redirect_template_edit(): void {
+		if ( $this->is_builder_request() ) {
+			return;
+		}
+
+		$action  = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		if ( 'edit' !== $action || ! $post_id ) {
+			return;
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post || self::TEMPLATE_CPT !== $post->post_type ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		wp_safe_redirect( $this->get_builder_url( $post_id ) );
+		exit;
+	}
+
 	public function add_builder_meta_box(): void {
 		foreach ( $this->supported_post_types() as $post_type ) {
+			if ( self::TEMPLATE_CPT === $post_type ) {
+				continue;
+			}
+
 			add_meta_box(
 				'wp-builder-launcher',
 				__( 'WP Builder', 'wp-builder' ),
@@ -237,7 +358,10 @@ final class WP_Builder {
 
 	private function render_builder_shell( WP_Post $post ): void {
 		$post_id     = $post->ID;
-		$edit_url    = get_edit_post_link( $post_id, '' );
+		$is_template = self::TEMPLATE_CPT === $post->post_type;
+		$back_url    = $is_template
+			? admin_url( 'edit.php?post_type=' . self::TEMPLATE_CPT )
+			: get_edit_post_link( $post_id, '' );
 		$preview_url = get_permalink( $post_id );
 		?>
 		<div class="wp-builder-shell" id="wp-builder-app">
@@ -247,12 +371,14 @@ final class WP_Builder {
 					<h1><?php echo esc_html( get_the_title( $post_id ) ); ?></h1>
 				</div>
 				<div class="wp-builder-actions">
-					<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $edit_url ); ?>">
-						<?php esc_html_e( 'Back to Admin', 'wp-builder' ); ?>
+					<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $back_url ); ?>">
+						<?php echo $is_template ? esc_html__( 'Back to Templates', 'wp-builder' ) : esc_html__( 'Back to Admin', 'wp-builder' ); ?>
 					</a>
+					<?php if ( ! $is_template ) : ?>
 					<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
 						<?php esc_html_e( 'View', 'wp-builder' ); ?>
 					</a>
+					<?php endif; ?>
 					<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
 						<?php esc_html_e( 'Save', 'wp-builder' ); ?>
 					</button>
@@ -417,7 +543,7 @@ final class WP_Builder {
 	}
 
 	private function supported_post_types(): array {
-		return array( 'post', 'page' );
+		return array( 'post', 'page', self::TEMPLATE_CPT );
 	}
 
 	private function is_supported_post_type( string $post_type ): bool {
