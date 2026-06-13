@@ -13,6 +13,11 @@
 	var addButtons = document.querySelectorAll('[data-wp-builder-add]');
 	var htmlTextarea = document.getElementById('wp-builder-html-content');
 	var inspectorEditor = document.getElementById('wp-builder-inspector-editor');
+	var containerInspector = document.getElementById('wp-builder-inspector-container');
+	var flexDirectionSelect = document.getElementById('wp-builder-flex-direction');
+	var flexGrowInput = document.getElementById('wp-builder-flex-grow');
+	var gapInput = document.getElementById('wp-builder-gap');
+	var customCssTextarea = document.getElementById('wp-builder-custom-css');
 
 	if (!canvas || !saveButton) {
 		return;
@@ -32,6 +37,16 @@
 		return { version: 1, elements: normalizeElements(layout.elements) };
 	}
 
+	function normalizeContainerProps(props) {
+		var allowed = { '': true, 'row': true, 'column': true };
+		var p = (props && typeof props === 'object') ? props : {};
+		return {
+			flexDirection: (typeof p.flexDirection === 'string' && allowed[p.flexDirection]) ? p.flexDirection : '',
+			flexGrow: (typeof p.flexGrow === 'string') ? p.flexGrow : '',
+			gap: (typeof p.gap === 'string') ? p.gap : ''
+		};
+	}
+
 	function normalizeElements(elements) {
 		return elements.reduce(function (clean, element) {
 			if (!element || typeof element.type !== 'string') {
@@ -42,6 +57,8 @@
 				clean.push({
 					id: element.id || createId('container-'),
 					type: 'container',
+					props: normalizeContainerProps(element.props),
+					customCss: typeof element.customCss === 'string' ? element.customCss : '',
 					children: Array.isArray(element.children) ? normalizeElements(element.children) : []
 				});
 			} else if (element.type === 'html') {
@@ -62,7 +79,7 @@
 	}
 
 	function createContainer() {
-		return { id: createId('container-'), type: 'container', children: [] };
+		return { id: createId('container-'), type: 'container', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', children: [] };
 	}
 
 	function createHtml() {
@@ -198,6 +215,8 @@
 		}
 
 		canvas.appendChild(root);
+		cleanupAllContainerStyles();
+		syncAllContainerStyles(state.layout.elements);
 	}
 
 	function renderElement(element, depth) {
@@ -250,6 +269,7 @@
 		});
 
 		body.className = 'wp-builder-node-body';
+		applyContainerFlexStyles(element.props || {}, node, body);
 		if (element.children && element.children.length) {
 			element.children.forEach(function (child) {
 				body.appendChild(renderElement(child, depth + 1));
@@ -336,6 +356,7 @@
 	function renderInspector() {
 		var selected = state.selectedId ? findElement(state.layout.elements, state.selectedId) : null;
 		var isHtml = !!(selected && selected.type === 'html');
+		var isContainer = !!(selected && selected.type === 'container');
 
 		if (selectionName) {
 			selectionName.textContent = getElementName(state.selectedId);
@@ -360,6 +381,94 @@
 		if (isHtml && htmlTextarea) {
 			htmlTextarea.value = selected.content || '';
 		}
+
+		if (containerInspector) {
+			containerInspector.hidden = !isContainer;
+		}
+
+		if (isContainer && selected) {
+			var props = selected.props || {};
+			if (flexDirectionSelect) { flexDirectionSelect.value = props.flexDirection || ''; }
+			if (flexGrowInput) { flexGrowInput.value = props.flexGrow || ''; }
+			if (gapInput) { gapInput.value = props.gap || ''; }
+			if (customCssTextarea) { customCssTextarea.value = selected.customCss || ''; }
+		}
+	}
+
+	function applyContainerFlexStyles(props, node, body) {
+		body.style.display = '';
+		body.style.flexDirection = '';
+		body.style.gap = '';
+		node.style.flexGrow = '';
+
+		if (props.flexDirection) {
+			body.style.display = 'flex';
+			body.style.flexDirection = props.flexDirection;
+		}
+		if (props.flexGrow !== undefined && props.flexGrow !== '') {
+			node.style.flexGrow = props.flexGrow;
+		}
+		if (props.gap) {
+			body.style.gap = props.gap;
+		}
+	}
+
+	function updateContainerStyle(id, customCss) {
+		var styleId = 'wpb-style-' + id;
+		var styleEl = document.getElementById(styleId);
+		var selector = '[data-wp-builder-id="' + id + '"]';
+		var scoped = customCss ? customCss.replace(/\bself\b/g, selector) : '';
+
+		if (!scoped) {
+			if (styleEl) { styleEl.parentNode.removeChild(styleEl); }
+			return;
+		}
+		if (!styleEl) {
+			styleEl = document.createElement('style');
+			styleEl.id = styleId;
+			document.head.appendChild(styleEl);
+		}
+		styleEl.textContent = scoped;
+	}
+
+	function cleanupAllContainerStyles() {
+		var styles = document.head.querySelectorAll('style[id^="wpb-style-"]');
+		var i;
+		for (i = 0; i < styles.length; i += 1) {
+			document.head.removeChild(styles[i]);
+		}
+	}
+
+	function syncAllContainerStyles(elements) {
+		elements.forEach(function (element) {
+			if (element.type === 'container') {
+				updateContainerStyle(element.id, element.customCss || '');
+				syncAllContainerStyles(element.children || []);
+			}
+		});
+	}
+
+	function updateSelectedContainerProp(prop, value) {
+		if (!state.selectedId) { return; }
+		var element = findElement(state.layout.elements, state.selectedId);
+		if (!element || element.type !== 'container') { return; }
+		element.props = element.props || {};
+		element.props[prop] = value;
+		markDirty();
+		var node = canvas.querySelector('[data-wp-builder-id="' + state.selectedId + '"]');
+		if (node) {
+			var body = node.querySelector('.wp-builder-node-body');
+			if (body) { applyContainerFlexStyles(element.props, node, body); }
+		}
+	}
+
+	function updateSelectedContainerCss(css) {
+		if (!state.selectedId) { return; }
+		var element = findElement(state.layout.elements, state.selectedId);
+		if (!element || element.type !== 'container') { return; }
+		element.customCss = css;
+		markDirty();
+		updateContainerStyle(state.selectedId, css);
 	}
 
 	function updateHtmlPreview(id, content) {
@@ -453,6 +562,31 @@
 				markDirty();
 				updateHtmlPreview(state.selectedId, htmlTextarea.value);
 			}
+		});
+	}
+
+	// Container inspector inputs
+	if (flexDirectionSelect) {
+		flexDirectionSelect.addEventListener('change', function () {
+			updateSelectedContainerProp('flexDirection', flexDirectionSelect.value);
+		});
+	}
+
+	if (flexGrowInput) {
+		flexGrowInput.addEventListener('input', function () {
+			updateSelectedContainerProp('flexGrow', flexGrowInput.value);
+		});
+	}
+
+	if (gapInput) {
+		gapInput.addEventListener('input', function () {
+			updateSelectedContainerProp('gap', gapInput.value);
+		});
+	}
+
+	if (customCssTextarea) {
+		customCssTextarea.addEventListener('input', function () {
+			updateSelectedContainerCss(customCssTextarea.value);
 		});
 	}
 

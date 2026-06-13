@@ -302,6 +302,30 @@ final class WP_Builder {
 						</label>
 						<textarea id="wp-builder-html-content" class="wp-builder-html-editor" rows="12" spellcheck="false" placeholder="<?php esc_attr_e( 'Enter your HTML here…', 'wp-builder' ); ?>"></textarea>
 					</div>
+					<div id="wp-builder-inspector-container" class="wp-builder-inspector-container-editor" hidden>
+						<hr class="wp-builder-inspector-divider">
+						<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Layout', 'wp-builder' ); ?></p>
+						<div class="wp-builder-field-group">
+							<label class="wp-builder-inspector-label" for="wp-builder-flex-direction"><?php esc_html_e( 'Direction', 'wp-builder' ); ?></label>
+							<select id="wp-builder-flex-direction" class="wp-builder-select">
+								<option value=""><?php esc_html_e( '— None —', 'wp-builder' ); ?></option>
+								<option value="row"><?php esc_html_e( 'Row', 'wp-builder' ); ?></option>
+								<option value="column"><?php esc_html_e( 'Column', 'wp-builder' ); ?></option>
+							</select>
+						</div>
+						<div class="wp-builder-field-group">
+							<label class="wp-builder-inspector-label" for="wp-builder-flex-grow"><?php esc_html_e( 'Flex Grow', 'wp-builder' ); ?></label>
+							<input type="number" id="wp-builder-flex-grow" class="wp-builder-input" min="0" step="1" placeholder="0">
+						</div>
+						<div class="wp-builder-field-group">
+							<label class="wp-builder-inspector-label" for="wp-builder-gap"><?php esc_html_e( 'Gap', 'wp-builder' ); ?></label>
+							<input type="text" id="wp-builder-gap" class="wp-builder-input" placeholder="<?php esc_attr_e( 'e.g. 16px', 'wp-builder' ); ?>">
+						</div>
+						<hr class="wp-builder-inspector-divider">
+						<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Custom CSS', 'wp-builder' ); ?></p>
+						<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Use', 'wp-builder' ); ?> <code>self</code> <?php esc_html_e( 'to target this element.', 'wp-builder' ); ?></p>
+						<textarea id="wp-builder-custom-css" class="wp-builder-html-editor" rows="8" spellcheck="false" placeholder="self {&#10;  background-color: red;&#10;}"></textarea>
+					</div>
 				</aside>
 			</div>
 		</div>
@@ -452,11 +476,15 @@ final class WP_Builder {
 			$id = isset( $element['id'] ) ? sanitize_key( (string) $element['id'] ) : '';
 
 			if ( 'container' === $element['type'] ) {
-				$children = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
-				$clean[]  = array(
-					'id'       => $id ? $id : wp_unique_id( 'container-' ),
-					'type'     => 'container',
-					'children' => $this->sanitize_elements( $children ),
+				$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
+				$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
+				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
+				$clean[]    = array(
+					'id'        => $id ? $id : wp_unique_id( 'container-' ),
+					'type'      => 'container',
+					'props'     => $this->sanitize_container_props( $props ),
+					'customCss' => $this->sanitize_custom_css( $custom_css ),
+					'children'  => $this->sanitize_elements( $children ),
 				);
 			} elseif ( 'html' === $element['type'] ) {
 				$content = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
@@ -482,10 +510,24 @@ final class WP_Builder {
 			$id = isset( $element['id'] ) ? sanitize_key( (string) $element['id'] ) : '';
 
 			if ( 'container' === $element['type'] ) {
-				$children = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
-				$output  .= sprintf(
-					'<div class="wp-builder-container" data-wp-builder-id="%1$s">%2$s</div>',
+				$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
+				$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
+				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
+
+				$inline_style = $this->build_container_inline_style( $props );
+				$style_attr   = $inline_style ? ' style="' . esc_attr( $inline_style ) . '"' : '';
+
+				$css_block = '';
+				if ( $custom_css !== '' && $id ) {
+					$selector   = '.wp-builder-container[data-wp-builder-id="' . esc_attr( $id ) . '"]';
+					$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_css );
+					$css_block  = '<style>' . $scoped_css . '</style>';
+				}
+
+				$output .= $css_block . sprintf(
+					'<div class="wp-builder-container" data-wp-builder-id="%1$s"%2$s>%3$s</div>',
 					esc_attr( $id ),
+					$style_attr,
 					$this->render_elements( $children )
 				);
 			} elseif ( 'html' === $element['type'] ) {
@@ -499,6 +541,49 @@ final class WP_Builder {
 		}
 
 		return $output;
+	}
+
+	private function sanitize_container_props( array $props ): array {
+		$allowed_directions = array( '', 'row', 'column' );
+
+		$flex_direction = isset( $props['flexDirection'] ) ? (string) $props['flexDirection'] : '';
+		$flex_grow      = isset( $props['flexGrow'] ) ? (string) $props['flexGrow'] : '';
+		$gap            = isset( $props['gap'] ) ? trim( (string) $props['gap'] ) : '';
+
+		return array(
+			'flexDirection' => in_array( $flex_direction, $allowed_directions, true ) ? $flex_direction : '',
+			'flexGrow'      => ( $flex_grow === '' || is_numeric( $flex_grow ) ) ? $flex_grow : '',
+			'gap'           => preg_match( '/^[\d\s.%a-z]+$/i', $gap ) ? $gap : '',
+		);
+	}
+
+	private function sanitize_custom_css( string $css ): string {
+		// Prevent breaking out of the <style> tag.
+		$css = preg_replace( '/<\/style\s*>/i', '', $css );
+		return wp_strip_all_tags( $css );
+	}
+
+	private function build_container_inline_style( array $props ): string {
+		$styles = array();
+
+		$flex_direction = isset( $props['flexDirection'] ) ? (string) $props['flexDirection'] : '';
+		$flex_grow      = isset( $props['flexGrow'] ) ? (string) $props['flexGrow'] : '';
+		$gap            = isset( $props['gap'] ) ? (string) $props['gap'] : '';
+
+		if ( in_array( $flex_direction, array( 'row', 'column' ), true ) ) {
+			$styles[] = 'display:flex';
+			$styles[] = 'flex-direction:' . $flex_direction;
+		}
+
+		if ( $flex_grow !== '' && is_numeric( $flex_grow ) ) {
+			$styles[] = 'flex-grow:' . (float) $flex_grow;
+		}
+
+		if ( $gap !== '' ) {
+			$styles[] = 'gap:' . $gap;
+		}
+
+		return implode( ';', $styles );
 	}
 
 	private function count_elements( array $elements ): int {
