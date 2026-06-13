@@ -69,6 +69,17 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 		);
 
 		$this->add_control(
+			'edit_template_link',
+			array(
+				'type'            => \Elementor\Controls_Manager::RAW_HTML,
+				'raw'             => '<a class="wp-builder-edit-template-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:none">' . __( 'Edit Template', 'wp-builder' ) . ' &#8599;</a>',
+				'content_classes' => 'wp-builder-edit-template-control',
+				'condition'       => array( 'use_custom_id' => '' ),
+				'separator'       => 'none',
+			)
+		);
+
+		$this->add_control(
 			'custom_id',
 			array(
 				'label'       => __( 'Template ID', 'wp-builder' ),
