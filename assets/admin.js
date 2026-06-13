@@ -5,6 +5,7 @@
 	var text = config.i18n || {};
 	var canvas = document.getElementById('wp-builder-canvas');
 	var saveButton = document.getElementById('wp-builder-save');
+	var shortcodePanel = document.getElementById('wp-builder-shortcode-panel');
 	var addNestedButton = document.getElementById('wp-builder-add-nested');
 	var addNestedHtmlButton = document.getElementById('wp-builder-add-nested-html');
 	var deleteButton = document.getElementById('wp-builder-delete-selected');
@@ -18,6 +19,11 @@
 	var flexGrowInput = document.getElementById('wp-builder-flex-grow');
 	var gapInput = document.getElementById('wp-builder-gap');
 	var customCssTextarea = document.getElementById('wp-builder-custom-css');
+	var rootInspector = document.getElementById('wp-builder-inspector-root');
+	var postStatusSelect = document.getElementById('wp-builder-post-status');
+	var titleInput = document.getElementById('wp-builder-title');
+	var viewLink = document.getElementById('wp-builder-view-link');
+	var pageTemplateSelect = document.getElementById('wp-builder-page-template');
 
 	if (!canvas || !saveButton) {
 		return;
@@ -27,7 +33,8 @@
 		layout: normalizeLayout(config.layout),
 		selectedId: null,
 		dirty: false,
-		saving: false
+		saving: false,
+		pageTemplate: config.pageTemplate || 'default'
 	};
 
 	function normalizeLayout(layout) {
@@ -386,6 +393,22 @@
 			containerInspector.hidden = !isContainer;
 		}
 
+		if (shortcodePanel) {
+			shortcodePanel.hidden = !!state.selectedId;
+		}
+
+		if (rootInspector) {
+			rootInspector.hidden = !!state.selectedId;
+		}
+
+		if (!state.selectedId && postStatusSelect) {
+			postStatusSelect.value = config.postStatus || 'draft';
+		}
+
+		if (!state.selectedId && pageTemplateSelect) {
+			pageTemplateSelect.value = state.pageTemplate || 'default';
+		}
+
 		if (isContainer && selected) {
 			var props = selected.props || {};
 			if (flexDirectionSelect) { flexDirectionSelect.value = props.flexDirection || ''; }
@@ -503,6 +526,15 @@
 		form.append('nonce', config.nonce || '');
 		form.append('post_id', config.postId || '');
 		form.append('layout', JSON.stringify(state.layout));
+		if (postStatusSelect) {
+			form.append('post_status', postStatusSelect.value);
+		}
+		if (titleInput) {
+			form.append('title', titleInput.value.trim() || config.postTitle || '');
+		}
+		if (pageTemplateSelect) {
+			form.append('page_template', state.pageTemplate || 'default');
+		}
 
 		window.fetch(config.ajaxUrl, {
 			method: 'POST',
@@ -516,6 +548,24 @@
 			}
 			state.layout = normalizeLayout(payload.data.layout);
 			state.dirty = false;
+			if (payload.data.postStatus) {
+				config.postStatus = payload.data.postStatus;
+				if (postStatusSelect) { postStatusSelect.value = config.postStatus; }
+			}
+			if (payload.data.postTitle) {
+				config.postTitle = payload.data.postTitle;
+				if (titleInput) { titleInput.value = payload.data.postTitle; }
+			}
+			if (payload.data.docTitle) {
+				document.title = payload.data.docTitle;
+			}
+			if (payload.data.previewUrl && viewLink) {
+				viewLink.href = payload.data.previewUrl;
+			}
+			if (payload.data.pageTemplate !== undefined && pageTemplateSelect) {
+				state.pageTemplate = payload.data.pageTemplate;
+				pageTemplateSelect.value = payload.data.pageTemplate;
+			}
 			updateStatus(text.saved || 'Saved');
 			render();
 		}).catch(function (error) {
@@ -590,7 +640,26 @@
 		});
 	}
 
-	saveButton.addEventListener('click', saveLayout);
+	saveButton.addEventListener('click', function () { saveLayout(); });
+
+	if (pageTemplateSelect) {
+		pageTemplateSelect.addEventListener('change', function () {
+			state.pageTemplate = pageTemplateSelect.value;
+			markDirty();
+		});
+	}
+
+	// Title rename — deferred to Save
+	if (titleInput) {
+		titleInput.addEventListener('input', function () {
+			markDirty();
+		});
+		titleInput.addEventListener('keydown', function (event) {
+			if (event.key === 'Escape') {
+				titleInput.value = config.postTitle || '';
+			}
+		});
+	}
 
 	window.addEventListener('beforeunload', function (event) {
 		if (!state.dirty) {

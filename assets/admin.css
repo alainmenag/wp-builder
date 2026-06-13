@@ -80,6 +80,29 @@ body.wp-builder-body {
 	margin: 2px 0 0;
 }
 
+.wp-builder-title-input {
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	box-sizing: border-box;
+	color: var(--wpb-text-primary);
+	font-size: 20px;
+	font-weight: bold;
+	line-height: 1.25;
+	margin: 2px 0 0;
+	padding: 1px 4px;
+	width: 100%;
+}
+
+.wp-builder-title-input:hover {
+	border-color: var(--wpb-border-strong);
+}
+
+.wp-builder-title-input:focus {
+	border-color: var(--wpb-blue);
+	outline: none;
+}
+
 .wp-builder-actions,
 .wp-builder-inspector-actions {
 	align-items: center;
