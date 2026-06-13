@@ -36,6 +36,7 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$admin_url = admin_url();
 		$templates = array( '' => __( '— Select a template —', 'wp-builder' ) );
 
 		$query = new WP_Query(
@@ -54,6 +55,20 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 		}
 
 		wp_reset_postdata();
+
+		// Toggle sits below the SELECT / TEXT input in natural DOM order.
+		$this->add_control(
+			'use_custom_id',
+			array(
+				'label'       => '',
+				'type'        => \Elementor\Controls_Manager::SWITCHER,
+				'label_on'    => __( '', 'wp-builder' ),
+				'label_off'   => __( 'ID', 'wp-builder' ),
+				'label_block' => false,
+				'separator'   => 'none',
+				'default'     => '',
+			)
+		);
 
 		// SELECT and TEXT use label_block: false so label + input share one row.
 		$this->add_control(
@@ -80,17 +95,25 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		// Toggle sits below the SELECT / TEXT input in natural DOM order.
 		$this->add_control(
-			'use_custom_id',
+			'edit_template_link',
 			array(
-				'label'       => '',
-				'type'        => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'    => __( '', 'wp-builder' ),
-				'label_off'   => __( 'ID', 'wp-builder' ),
-				'label_block' => false,
-				'separator'   => 'none',
-				'default'     => '',
+				'type'      => \Elementor\Controls_Manager::RAW_HTML,
+				/* translators: link to open the selected template in the builder */
+				'raw'       => '<a href="#" style="font-size:11px" onclick="var p=document.querySelector(\'#elementor-panel\'),s=p&&p.querySelector(\'select[data-setting=template_id]\'),t=p&&p.querySelector(\'input[data-setting=custom_id]\'),id=(s&&s.value)||(t&&t.value);if(id)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+encodeURIComponent(id)+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Template', 'wp-builder' ) . '</a>',
+				'separator' => 'none',
+				'condition'   => array( 'use_custom_id' => '', 'template_id!' => '' ),
+			)
+		);
+
+		$this->add_control(
+			'edit_template_link_2',
+			array(
+				'type'      => \Elementor\Controls_Manager::RAW_HTML,
+				/* translators: link to open the selected template in the builder */
+				'raw'       => '<a href="#" style="font-size:11px" onclick="var p=document.querySelector(\'#elementor-panel\'),s=p&&p.querySelector(\'select[data-setting=custom_id]\'),t=p&&p.querySelector(\'input[data-setting=custom_id]\'),id=(s&&s.value)||(t&&t.value);if(id)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+encodeURIComponent(id)+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Template', 'wp-builder' ) . '</a>',
+				'separator' => 'none',
+				'condition'   => array( 'use_custom_id' => 'yes', 'custom_id!' => '' ),
 			)
 		);
 
