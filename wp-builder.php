@@ -387,6 +387,17 @@ final class WP_Builder {
 			wp_die( esc_html__( 'You do not have permission to edit this content.', 'wp-builder' ) );
 		}
 
+		$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		if ( 'json' === $view ) {
+			status_header( 200 );
+			nocache_headers();
+			header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo wp_json_encode( $this->get_layout( $post_id ), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+			exit;
+		}
+
 		$this->enqueue_builder_assets( $post_id );
 
 		status_header( 200 );
@@ -515,6 +526,9 @@ final class WP_Builder {
 									<span id="wp-builder-save-status" role="status" aria-live="polite"></span>
 									<a id="wp-builder-view-link" class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
 										<?php esc_html_e( 'View', 'wp-builder' ); ?>
+									</a>
+									<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( add_query_arg( 'view', 'json', $this->get_builder_url( $post_id ) ) ); ?>" target="_blank" rel="noreferrer">
+										<?php esc_html_e( 'Export', 'wp-builder' ); ?>
 									</a>
 									<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
 										<?php esc_html_e( 'Save', 'wp-builder' ); ?>
