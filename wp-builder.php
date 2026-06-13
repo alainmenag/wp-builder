@@ -351,9 +351,7 @@ final class WP_Builder {
 					'emptyCanvas'    => __( 'Empty canvas', 'wp-builder' ),
 					'emptyContainer' => __( 'Empty container', 'wp-builder' ),
 					'emptyHtml'      => __( 'Empty HTML element', 'wp-builder' ),
-					'published'      => __( 'Published', 'wp-builder' ),
 					'root'           => __( 'Root', 'wp-builder' ),
-					'saveAndPublish' => __( 'Save & Publish', 'wp-builder' ),
 					'saved'          => __( 'Saved', 'wp-builder' ),
 					'saving'         => __( 'Saving...', 'wp-builder' ),
 					'selected'       => __( 'Selected', 'wp-builder' ),
@@ -421,11 +419,6 @@ final class WP_Builder {
 						<?php esc_html_e( 'View', 'wp-builder' ); ?>
 					</a>
 					<?php endif; ?>
-					<?php if ( $is_template ) : ?>
-					<button class="wp-builder-button wp-builder-button-secondary" type="button" id="wp-builder-publish"<?php echo $is_published ? ' hidden' : ''; ?>>
-						<?php esc_html_e( 'Save & Publish', 'wp-builder' ); ?>
-					</button>
-					<?php endif; ?>
 					<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
 						<?php esc_html_e( 'Save', 'wp-builder' ); ?>
 					</button>
@@ -471,7 +464,20 @@ final class WP_Builder {
 						<input type="text" class="wp-builder-input" readonly value="<?php echo esc_attr( $shortcode ); ?>">
 					</div>
 					<?php endif; ?>
-					<div id="wp-builder-inspector-editor" class="wp-builder-inspector-editor" hidden>
+					<div id="wp-builder-inspector-root" hidden>
+					<hr class="wp-builder-inspector-divider">
+					<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Post Status', 'wp-builder' ); ?></p>
+					<div class="wp-builder-field-group">
+						<label class="wp-builder-inspector-label" for="wp-builder-post-status"><?php esc_html_e( 'Status', 'wp-builder' ); ?></label>
+						<select id="wp-builder-post-status" class="wp-builder-select">
+							<option value="publish"><?php esc_html_e( 'Published', 'wp-builder' ); ?></option>
+							<option value="draft"><?php esc_html_e( 'Draft', 'wp-builder' ); ?></option>
+							<option value="pending"><?php esc_html_e( 'Pending Review', 'wp-builder' ); ?></option>
+							<option value="private"><?php esc_html_e( 'Private', 'wp-builder' ); ?></option>
+						</select>
+					</div>
+				</div>
+				<div id="wp-builder-inspector-editor" class="wp-builder-inspector-editor" hidden>
 						<label class="wp-builder-inspector-label" for="wp-builder-html-content">
 							<?php esc_html_e( 'Content', 'wp-builder' ); ?>
 						</label>
@@ -540,15 +546,23 @@ final class WP_Builder {
 		$layout = $this->sanitize_layout( $decoded );
 		update_post_meta( $post_id, self::META_KEY, wp_json_encode( $layout ) );
 
-		$do_publish = ! empty( $_POST['publish'] ) && self::TEMPLATE_CPT === $post->post_type;
-		if ( $do_publish && current_user_can( 'publish_post', $post_id ) ) {
-			wp_update_post(
-				array(
-					'ID'          => $post_id,
-					'post_status' => 'publish',
-				)
-			);
-			$post = get_post( $post_id );
+		$allowed_statuses = array( 'publish', 'draft', 'pending', 'private' );
+		$new_status       = isset( $_POST['post_status'] ) ? sanitize_key( wp_unslash( $_POST['post_status'] ) ) : '';
+
+		if ( $new_status && in_array( $new_status, $allowed_statuses, true ) && $new_status !== $post->post_status ) {
+			$can_change = true;
+			if ( in_array( $new_status, array( 'publish', 'private' ), true ) ) {
+				$can_change = current_user_can( 'publish_post', $post_id );
+			}
+			if ( $can_change ) {
+				wp_update_post(
+					array(
+						'ID'          => $post_id,
+						'post_status' => $new_status,
+					)
+				);
+				$post = get_post( $post_id );
+			}
 		}
 
 		wp_send_json_success(

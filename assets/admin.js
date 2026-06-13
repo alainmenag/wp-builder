@@ -5,7 +5,6 @@
 	var text = config.i18n || {};
 	var canvas = document.getElementById('wp-builder-canvas');
 	var saveButton = document.getElementById('wp-builder-save');
-	var publishButton = document.getElementById('wp-builder-publish');
 	var shortcodePanel = document.getElementById('wp-builder-shortcode-panel');
 	var addNestedButton = document.getElementById('wp-builder-add-nested');
 	var addNestedHtmlButton = document.getElementById('wp-builder-add-nested-html');
@@ -20,6 +19,8 @@
 	var flexGrowInput = document.getElementById('wp-builder-flex-grow');
 	var gapInput = document.getElementById('wp-builder-gap');
 	var customCssTextarea = document.getElementById('wp-builder-custom-css');
+	var rootInspector = document.getElementById('wp-builder-inspector-root');
+	var postStatusSelect = document.getElementById('wp-builder-post-status');
 
 	if (!canvas || !saveButton) {
 		return;
@@ -392,6 +393,14 @@
 			shortcodePanel.hidden = !!state.selectedId;
 		}
 
+		if (rootInspector) {
+			rootInspector.hidden = !!state.selectedId;
+		}
+
+		if (!state.selectedId && postStatusSelect) {
+			postStatusSelect.value = config.postStatus || 'draft';
+		}
+
 		if (isContainer && selected) {
 			var props = selected.props || {};
 			if (flexDirectionSelect) { flexDirectionSelect.value = props.flexDirection || ''; }
@@ -494,7 +503,7 @@
 		}
 	}
 
-	function saveLayout(publish) {
+	function saveLayout() {
 		var form;
 		if (state.saving) {
 			return;
@@ -502,7 +511,6 @@
 
 		state.saving = true;
 		saveButton.disabled = true;
-		if (publishButton) { publishButton.disabled = true; }
 		updateStatus(text.saving || 'Saving...');
 
 		form = new window.FormData();
@@ -510,8 +518,8 @@
 		form.append('nonce', config.nonce || '');
 		form.append('post_id', config.postId || '');
 		form.append('layout', JSON.stringify(state.layout));
-		if (publish) {
-			form.append('publish', '1');
+		if (postStatusSelect) {
+			form.append('post_status', postStatusSelect.value);
 		}
 
 		window.fetch(config.ajaxUrl, {
@@ -528,18 +536,15 @@
 			state.dirty = false;
 			if (payload.data.postStatus) {
 				config.postStatus = payload.data.postStatus;
+				if (postStatusSelect) { postStatusSelect.value = config.postStatus; }
 			}
-			if (config.postStatus === 'publish' && publishButton) {
-				publishButton.hidden = true;
-			}
-			updateStatus(publish ? (text.published || 'Published') : (text.saved || 'Saved'));
+			updateStatus(text.saved || 'Saved');
 			render();
 		}).catch(function (error) {
 			updateStatus(error.message || 'Save failed');
 		}).finally(function () {
 			state.saving = false;
 			saveButton.disabled = false;
-			if (publishButton) { publishButton.disabled = false; }
 		});
 	}
 
@@ -607,11 +612,7 @@
 		});
 	}
 
-	saveButton.addEventListener('click', function () { saveLayout(false); });
-
-	if (publishButton) {
-		publishButton.addEventListener('click', function () { saveLayout(true); });
-	}
+	saveButton.addEventListener('click', function () { saveLayout(); });
 
 	window.addEventListener('beforeunload', function (event) {
 		if (!state.dirty) {
