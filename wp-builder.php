@@ -46,7 +46,6 @@ final class WP_Builder {
 		add_filter( 'template_include', array( $this, 'maybe_use_builder_template' ) );
 		add_action( 'elementor/widgets/register', array( $this, 'register_elementor_widget' ) );
 		add_action( 'elementor/editor/after_enqueue_styles', array( $this, 'enqueue_elementor_editor_styles' ) );
-		add_action( 'elementor/editor/after_enqueue_scripts', array( $this, 'enqueue_elementor_editor_scripts' ) );
 	}
 
 	public function register_shortcodes(): void {
@@ -1021,21 +1020,6 @@ final class WP_Builder {
 			plugin_dir_url( __FILE__ ) . 'assets/elementor-editor.css',
 			array(),
 			self::VERSION
-		);
-	}
-
-	public function enqueue_elementor_editor_scripts(): void {
-		wp_enqueue_script(
-			'wp-builder-elementor-editor',
-			plugin_dir_url( __FILE__ ) . 'assets/elementor-editor.js',
-			array( 'jquery' ),
-			self::VERSION,
-			true
-		);
-		wp_localize_script(
-			'wp-builder-elementor-editor',
-			'wpBuilderEditorVars',
-			array( 'adminUrl' => admin_url() )
 		);
 	}
 }

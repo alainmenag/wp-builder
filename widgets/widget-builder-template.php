@@ -68,14 +68,15 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$admin_url = admin_url();
 		$this->add_control(
 			'edit_template_link',
 			array(
-				'type'            => \Elementor\Controls_Manager::RAW_HTML,
-				'raw'             => '<a class="wp-builder-edit-template-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:none">' . __( 'Edit Template', 'wp-builder' ) . ' &#8599;</a>',
-				'content_classes' => 'wp-builder-edit-template-control',
-				'condition'       => array( 'use_custom_id' => '' ),
-				'separator'       => 'none',
+				'type'      => \Elementor\Controls_Manager::RAW_HTML,
+				/* translators: link to open the selected template in the builder */
+				'raw'       => '<a href="#" style="font-size:11px" onclick="var s=document.querySelector(\'#elementor-panel select[data-setting=template_id]\');if(s&&s.value)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+s.value+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Template', 'wp-builder' ) . '</a>',
+				'condition' => array( 'use_custom_id' => '' ),
+				'separator' => 'none',
 			)
 		);
 
