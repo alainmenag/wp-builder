@@ -48,6 +48,7 @@ final class WP_Builder {
 
 	public function register_shortcodes(): void {
 		add_shortcode( 'wp_builder_template', array( $this, 'render_template_shortcode' ) );
+		add_shortcode( 'wp_builder_content', array( $this, 'render_content_shortcode' ) );
 	}
 
 	public function render_template_shortcode( array $atts ): string {
@@ -76,6 +77,34 @@ final class WP_Builder {
 
 		$layout = $this->get_layout( $post_id );
 		return '<div class="wp-builder-page wp-builder-template">' . $this->render_elements( $layout['elements'] ) . '</div>';
+	}
+
+	public function render_content_shortcode( array $atts ): string {
+		$atts    = shortcode_atts( array( 'id' => 0 ), $atts, 'wp_builder_content' );
+		$post_id = absint( $atts['id'] );
+
+		if ( ! $post_id ) {
+			return '';
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post || ! $this->is_supported_post_type( $post->post_type ) || 'publish' !== $post->post_status ) {
+			return '';
+		}
+
+		if ( ! $this->has_builder_layout( $post_id ) ) {
+			return '';
+		}
+
+		wp_enqueue_style(
+			'wp-builder-frontend',
+			plugin_dir_url( __FILE__ ) . 'assets/frontend.css',
+			array(),
+			self::VERSION
+		);
+
+		$layout = $this->get_layout( $post_id );
+		return '<div class="wp-builder-page wp-builder-shortcode">' . $this->render_elements( $layout['elements'] ) . '</div>';
 	}
 
 	public function register_meta(): void {
@@ -424,7 +453,7 @@ final class WP_Builder {
 			? admin_url( 'edit.php?post_type=' . self::TEMPLATE_CPT )
 			: get_edit_post_link( $post_id, '' );
 		$preview_url       = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
-		$shortcode         = '[wp_builder_template id=\'' . absint( $post_id ) . '\']';
+		$shortcode         = '[wp_builder_content id=\'' . absint( $post_id ) . '\']';
 		$page_templates    = $is_template ? array() : $this->get_available_page_templates( $post_id );
 		$current_template  = $is_template ? 'default' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' );
 		?>
@@ -478,14 +507,12 @@ final class WP_Builder {
 							<?php esc_html_e( 'Delete', 'wp-builder' ); ?>
 						</button>
 					</div>
-					<?php if ( $is_template ) : ?>
 					<div id="wp-builder-shortcode-panel" hidden>
 						<hr class="wp-builder-inspector-divider">
 						<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Shortcode', 'wp-builder' ); ?></p>
-						<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Embed this template anywhere with this shortcode.', 'wp-builder' ); ?></p>
+						<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Embed this content anywhere with this shortcode.', 'wp-builder' ); ?></p>
 						<input type="text" class="wp-builder-input" readonly value="<?php echo esc_attr( $shortcode ); ?>">
 					</div>
-					<?php endif; ?>
 					<div id="wp-builder-inspector-root" hidden>
 					<hr class="wp-builder-inspector-divider">
 					<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Post Status', 'wp-builder' ); ?></p>
@@ -685,7 +712,7 @@ final class WP_Builder {
 			return;
 		}
 
-		if ( 'wp-builder-canvas' !== get_post_meta( $post_id, '_wp_page_template', true ) ) {
+		if ( ! $this->is_builder_page_template( $post_id ) ) {
 			return;
 		}
 
@@ -707,7 +734,7 @@ final class WP_Builder {
 			return $content;
 		}
 
-		if ( 'wp-builder-canvas' !== get_post_meta( $post_id, '_wp_page_template', true ) ) {
+		if ( ! $this->is_builder_page_template( $post_id ) ) {
 			return $content;
 		}
 
@@ -916,7 +943,8 @@ final class WP_Builder {
 	}
 
 	public function register_page_templates( array $templates, $theme, $post, string $post_type ): array {
-		$templates['wp-builder-canvas'] = __( 'WP Builder Canvas', 'wp-builder' );
+		$templates['wp-builder-canvas']     = __( 'WP Builder Canvas', 'wp-builder' );
+		$templates['wp-builder-full-width'] = __( 'WP Builder Full Width', 'wp-builder' );
 		return $templates;
 	}
 
@@ -930,8 +958,19 @@ final class WP_Builder {
 					return $canvas;
 				}
 			}
+			if ( 'wp-builder-full-width' === $page_template ) {
+				$full_width = plugin_dir_path( __FILE__ ) . 'templates/wp-builder-full-width.php';
+				if ( file_exists( $full_width ) ) {
+					return $full_width;
+				}
+			}
 		}
 		return $template;
+	}
+
+	private function is_builder_page_template( int $post_id ): bool {
+		$template = get_post_meta( $post_id, '_wp_page_template', true );
+		return 'wp-builder-canvas' === $template || 'wp-builder-full-width' === $template;
 	}
 
 	private function get_available_page_templates( int $post_id ): array {
