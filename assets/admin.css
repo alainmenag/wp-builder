@@ -279,10 +279,15 @@ body.wp-builder-body {
 .wp-builder-canvas-root {
 	background: var(--wpb-bg-surface);
 	border: 1px solid var(--wpb-border-default);
-	padding: 10px;
+	display: flex;
+	flex-direction: column;
+}
+
+.wp-builder-canvas-root-body {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
+	padding: 10px;
 }
 
 .wp-builder-canvas-root.is-selected {

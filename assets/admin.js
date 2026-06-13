@@ -201,25 +201,57 @@
 
 	function renderCanvas() {
 		var root = document.createElement('div');
+		var bar = document.createElement('div');
+		var title = document.createElement('button');
+		var addButton = document.createElement('button');
+		var body = document.createElement('div');
 		canvas.innerHTML = '';
 		root.className = 'wp-builder-canvas-root' + (!state.selectedId ? ' is-selected' : '');
 		root.tabIndex = 0;
 		root.setAttribute('role', 'button');
 		root.setAttribute('aria-label', text.canvas || 'Canvas');
 
+		bar.className = 'wp-builder-node-bar';
+
+		title.type = 'button';
+		title.className = 'wp-builder-node-title';
+		title.textContent = text.root || 'Root';
+		title.addEventListener('click', function (event) {
+			event.stopPropagation();
+			selectElement(null);
+		});
+
+		addButton.type = 'button';
+		addButton.className = 'wp-builder-node-action';
+		addButton.textContent = '+';
+		addButton.setAttribute('aria-label', text.addContainer || 'Add container');
+		addButton.addEventListener('click', function (event) {
+			event.stopPropagation();
+			state.selectedId = null;
+			addContainerToSelection();
+		});
+
+		bar.appendChild(title);
+		bar.appendChild(addButton);
+
+		body.className = 'wp-builder-canvas-root-body';
+
 		root.addEventListener('click', function (event) {
-			if (event.target === root) {
+			if (event.target === root || event.target === body) {
 				selectElement(null);
 			}
 		});
 
 		if (!state.layout.elements.length) {
-			root.appendChild(renderEmpty(text.emptyCanvas || 'Empty canvas'));
+			body.appendChild(renderEmpty(text.emptyCanvas || 'Empty canvas'));
 		} else {
 			state.layout.elements.forEach(function (element) {
-				root.appendChild(renderElement(element, 0));
+				body.appendChild(renderElement(element, 0));
 			});
 		}
+
+		root.appendChild(bar);
+		root.appendChild(body);
 
 		canvas.appendChild(root);
 		cleanupAllContainerStyles();
