@@ -363,7 +363,7 @@ final class WP_Builder {
 				'layout'     => $this->get_layout( $post_id ),
 				'editUrl'    => get_edit_post_link( $post_id, '' ),
 				'previewUrl' => $preview_url,
-				'pageTemplate'  => $is_template ? 'default' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'default' ),
+				'pageTemplate'  => $is_template ? 'default' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
 				'pageTemplates' => $is_template ? array() : $this->get_available_page_templates( $post_id ),
 				'i18n'       => array(
 					'addContainer'   => __( 'Container', 'wp-builder' ),
@@ -426,7 +426,7 @@ final class WP_Builder {
 		$preview_url       = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
 		$shortcode         = '[wp_builder_template id=\'' . absint( $post_id ) . '\']';
 		$page_templates    = $is_template ? array() : $this->get_available_page_templates( $post_id );
-		$current_template  = $is_template ? 'default' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'default' );
+		$current_template  = $is_template ? 'default' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' );
 		?>
 		<div class="wp-builder-shell" id="wp-builder-app">
 			<header class="wp-builder-header">
@@ -685,6 +685,10 @@ final class WP_Builder {
 			return;
 		}
 
+		if ( 'wp-builder-canvas' !== get_post_meta( $post_id, '_wp_page_template', true ) ) {
+			return;
+		}
+
 		wp_enqueue_style(
 			'wp-builder-frontend',
 			plugin_dir_url( __FILE__ ) . 'assets/frontend.css',
@@ -700,6 +704,10 @@ final class WP_Builder {
 
 		$post_id = get_the_ID();
 		if ( ! $post_id || ! $this->has_builder_layout( $post_id ) ) {
+			return $content;
+		}
+
+		if ( 'wp-builder-canvas' !== get_post_meta( $post_id, '_wp_page_template', true ) ) {
 			return $content;
 		}
 
