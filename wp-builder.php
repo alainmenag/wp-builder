@@ -520,13 +520,13 @@ final class WP_Builder {
 										<?php esc_html_e( 'Save', 'wp-builder' ); ?>
 									</button>
 								</div>
-								<div id="wp-builder-shortcode-panel" hidden>
+								<div id="wp-builder-shortcode-panel">
 									<hr class="wp-builder-inspector-divider">
 									<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Shortcode', 'wp-builder' ); ?></p>
 									<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Embed this content anywhere with this shortcode.', 'wp-builder' ); ?></p>
 									<pre class="wp-builder-shortcode-pre"><?php echo esc_html( $shortcode ); ?></pre>
 								</div>
-								<div id="wp-builder-inspector-root" hidden>
+								<div id="wp-builder-inspector-root">
 									<hr class="wp-builder-inspector-divider">
 									<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Post Status', 'wp-builder' ); ?></p>
 									<div class="wp-builder-field-group">

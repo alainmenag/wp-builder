@@ -394,18 +394,18 @@
 		}
 
 		if (shortcodePanel) {
-			shortcodePanel.hidden = !!state.selectedId;
+			shortcodePanel.hidden = false;
 		}
 
 		if (rootInspector) {
-			rootInspector.hidden = !!state.selectedId;
+			rootInspector.hidden = false;
 		}
 
-		if (!state.selectedId && postStatusSelect) {
+		if (postStatusSelect) {
 			postStatusSelect.value = config.postStatus || 'draft';
 		}
 
-		if (!state.selectedId && pageTemplateSelect) {
+		if (pageTemplateSelect) {
 			pageTemplateSelect.value = state.pageTemplate || 'default';
 		}
 
