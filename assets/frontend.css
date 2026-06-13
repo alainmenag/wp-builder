@@ -1,0 +1,35 @@
+.wp-builder-page {
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.wp-builder-page *,
+.wp-builder-page *::before,
+.wp-builder-page *::after {
+	box-sizing: inherit;
+}
+
+.wp-builder-container {
+	border: 1px solid rgba(31, 111, 92, 0.32);
+	min-height: 64px;
+	padding: clamp(16px, 3vw, 32px);
+	width: 100%;
+}
+
+.wp-builder-container + .wp-builder-container {
+	margin-top: 16px;
+}
+
+.wp-builder-container .wp-builder-container {
+	margin-top: 16px;
+}
+
+.wp-builder-html {
+	width: 100%;
+}
+
+.wp-builder-container + .wp-builder-html,
+.wp-builder-html + .wp-builder-container,
+.wp-builder-html + .wp-builder-html {
+	margin-top: 16px;
+}
