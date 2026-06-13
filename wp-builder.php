@@ -18,12 +18,15 @@ final class WP_Builder {
 	private const ACTION            = 'builder';
 	private const NONCE_ACTION      = 'wp_builder_save_layout';
 	private const TITLE_NONCE_ACTION = 'wp_builder_update_title';
-	private const TEMPLATE_CPT      = 'wp_builder_template';
+	private const TEMPLATE_CPT           = 'wp_builder_template';
+	private const REWRITE_VERSION        = '2';
+	private const REWRITE_VERSION_OPTION = 'wp_builder_rewrite_version';
 
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_meta' ) );
 		add_action( 'init', array( $this, 'register_template_post_type' ) );
 		add_action( 'init', array( $this, 'register_shortcodes' ) );
+		add_action( 'init', array( $this, 'maybe_flush_rewrite_rules' ), 20 );
 		add_action( 'add_meta_boxes', array( $this, 'add_builder_meta_box' ) );
 		add_action( 'admin_menu', array( $this, 'register_builder_page' ) );
 		add_action( 'admin_menu', array( $this, 'register_template_menu' ) );
@@ -121,6 +124,13 @@ final class WP_Builder {
 				'rewrite'             => array( 'slug' => 'wp_builder_template', 'with_front' => false ),
 			)
 		);
+	}
+
+	public function maybe_flush_rewrite_rules(): void {
+		if ( get_option( self::REWRITE_VERSION_OPTION ) !== self::REWRITE_VERSION ) {
+			flush_rewrite_rules( false );
+			update_option( self::REWRITE_VERSION_OPTION, self::REWRITE_VERSION );
+		}
 	}
 
 	public function register_template_menu(): void {
