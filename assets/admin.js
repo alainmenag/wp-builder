@@ -669,5 +669,23 @@
 		event.returnValue = '';
 	});
 
+	// Accordion — exclusive open/close
+	var accordions = document.querySelectorAll('.wp-builder-accordion');
+	accordions.forEach(function (accordion) {
+		var header = accordion.querySelector('.wp-builder-accordion-header');
+		if (!header) { return; }
+		header.addEventListener('click', function () {
+			var isOpen = accordion.classList.contains('is-open');
+			if (isOpen) { return; }
+			accordions.forEach(function (a) {
+				a.classList.remove('is-open');
+				var h = a.querySelector('.wp-builder-accordion-header');
+				if (h) { h.setAttribute('aria-expanded', 'false'); }
+			});
+			accordion.classList.add('is-open');
+			header.setAttribute('aria-expanded', 'true');
+		});
+	});
+
 	render();
 }());
