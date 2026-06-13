@@ -56,7 +56,6 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 		wp_reset_postdata();
 
 		// SELECT and TEXT use label_block: false so label + input share one row.
-		// The SWITCHER below is pulled up via editor CSS to sit on the same row.
 		$this->add_control(
 			'template_id',
 			array(
@@ -81,8 +80,7 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		// Toggle sits last in DOM; editor CSS overlays it on the right edge of the
-		// SELECT / TEXT input above via negative margin-top.
+		// Toggle sits below the SELECT / TEXT input in natural DOM order.
 		$this->add_control(
 			'use_custom_id',
 			array(
