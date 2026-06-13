@@ -286,12 +286,6 @@ final class WP_Builder {
 						<strong id="wp-builder-selection-name"><?php esc_html_e( 'Root', 'wp-builder' ); ?></strong>
 					</div>
 					<div class="wp-builder-inspector-actions">
-						<button class="wp-builder-button wp-builder-button-secondary" type="button" id="wp-builder-add-nested">
-							<?php esc_html_e( 'Add Container', 'wp-builder' ); ?>
-						</button>
-						<button class="wp-builder-button wp-builder-button-secondary" type="button" id="wp-builder-add-nested-html">
-							<?php esc_html_e( 'Add HTML', 'wp-builder' ); ?>
-						</button>
 						<button class="wp-builder-button wp-builder-button-danger" type="button" id="wp-builder-delete-selected">
 							<?php esc_html_e( 'Delete', 'wp-builder' ); ?>
 						</button>
