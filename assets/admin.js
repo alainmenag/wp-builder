@@ -394,18 +394,18 @@
 		}
 
 		if (shortcodePanel) {
-			shortcodePanel.hidden = !!state.selectedId;
+			shortcodePanel.hidden = false;
 		}
 
 		if (rootInspector) {
-			rootInspector.hidden = !!state.selectedId;
+			rootInspector.hidden = false;
 		}
 
-		if (!state.selectedId && postStatusSelect) {
+		if (postStatusSelect) {
 			postStatusSelect.value = config.postStatus || 'draft';
 		}
 
-		if (!state.selectedId && pageTemplateSelect) {
+		if (pageTemplateSelect) {
 			pageTemplateSelect.value = state.pageTemplate || 'default';
 		}
 
@@ -667,6 +667,25 @@
 		}
 		event.preventDefault();
 		event.returnValue = '';
+	});
+
+	// Accordion — toggle open/close; only one open at a time
+	var accordions = document.querySelectorAll('.wp-builder-accordion');
+	accordions.forEach(function (accordion) {
+		var header = accordion.querySelector('.wp-builder-accordion-header');
+		if (!header) { return; }
+		header.addEventListener('click', function () {
+			var isOpen = accordion.classList.contains('is-open');
+			accordions.forEach(function (a) {
+				a.classList.remove('is-open');
+				var h = a.querySelector('.wp-builder-accordion-header');
+				if (h) { h.setAttribute('aria-expanded', 'false'); }
+			});
+			if (!isOpen) {
+				accordion.classList.add('is-open');
+				header.setAttribute('aria-expanded', 'true');
+			}
+		});
 	});
 
 	render();
