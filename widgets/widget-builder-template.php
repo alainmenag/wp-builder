@@ -55,6 +55,20 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 
 		wp_reset_postdata();
 
+		// Toggle sits below the SELECT / TEXT input in natural DOM order.
+		$this->add_control(
+			'use_custom_id',
+			array(
+				'label'       => '',
+				'type'        => \Elementor\Controls_Manager::SWITCHER,
+				'label_on'    => __( '', 'wp-builder' ),
+				'label_off'   => __( 'ID', 'wp-builder' ),
+				'label_block' => false,
+				'separator'   => 'none',
+				'default'     => '',
+			)
+		);
+
 		// SELECT and TEXT use label_block: false so label + input share one row.
 		$this->add_control(
 			'template_id',
@@ -89,20 +103,6 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 				'label_block' => false,
 				'separator'   => 'none',
 				'condition'   => array( 'use_custom_id' => 'yes' ),
-			)
-		);
-
-		// Toggle sits below the SELECT / TEXT input in natural DOM order.
-		$this->add_control(
-			'use_custom_id',
-			array(
-				'label'       => '',
-				'type'        => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'    => __( '', 'wp-builder' ),
-				'label_off'   => __( 'ID', 'wp-builder' ),
-				'label_block' => false,
-				'separator'   => 'none',
-				'default'     => '',
 			)
 		);
 
