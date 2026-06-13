@@ -86,8 +86,8 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			array(
 				'label'       => '',
 				'type'        => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'    => '',
-				'label_off'   => '',
+				'label_on'    => __( '', 'wp-builder' ),
+				'label_off'   => __( 'ID', 'wp-builder' ),
 				'label_block' => false,
 				'separator'   => 'none',
 				'default'     => '',
