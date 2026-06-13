@@ -36,7 +36,7 @@ final class WP_Builder {
 		add_action( 'wp_ajax_wp_builder_save_layout', array( $this, 'ajax_save_layout' ) );
 		add_action( 'wp_ajax_wp_builder_update_title', array( $this, 'ajax_update_title' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
-		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_link' ), 80 );
+		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_nodes' ), 80 );
 		add_filter( 'post_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( 'page_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( self::TEMPLATE_CPT . '_row_actions', array( $this, 'add_row_action' ), 10, 2 );
@@ -315,23 +315,60 @@ final class WP_Builder {
 		return $actions;
 	}
 
-	public function add_admin_bar_link( WP_Admin_Bar $admin_bar ): void {
-		if ( is_admin() || ! is_singular( $this->supported_post_types() ) ) {
+	public function add_admin_bar_nodes( WP_Admin_Bar $admin_bar ): void {
+		if ( ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
 
-		$post_id = get_queried_object_id();
-		if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) ) {
-			return;
-		}
-
+		// Parent "Builder" dropdown — links to the templates list.
 		$admin_bar->add_node(
 			array(
 				'id'    => 'wp-builder',
 				'title' => __( 'Builder', 'wp-builder' ),
-				'href'  => $this->get_builder_url( $post_id ),
+				'href'  => admin_url( 'edit.php?post_type=' . self::TEMPLATE_CPT ),
 			)
 		);
+
+		// "Edit" child — shown when viewing a page or post on the frontend.
+		if ( ! is_admin() && is_singular( array( 'post', 'page' ) ) ) {
+			$post_id = get_queried_object_id();
+			if ( $post_id && current_user_can( 'edit_post', $post_id ) ) {
+				$admin_bar->add_node(
+					array(
+						'id'     => 'wp-builder-edit',
+						'parent' => 'wp-builder',
+						'title'  => __( 'Edit', 'wp-builder' ),
+						'href'   => $this->get_builder_url( $post_id ),
+					)
+				);
+			}
+		}
+
+		// List templates as children.
+		$template_ids = get_posts(
+			array(
+				'post_type'      => self::TEMPLATE_CPT,
+				'post_status'    => array( 'publish', 'draft' ),
+				'posts_per_page' => 20,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'fields'         => 'ids',
+			)
+		);
+
+		foreach ( $template_ids as $template_id ) {
+			if ( ! current_user_can( 'edit_post', $template_id ) ) {
+				continue;
+			}
+			$admin_bar->add_node(
+				array(
+					'id'     => 'wp-builder-template-' . $template_id,
+					'parent' => 'wp-builder',
+					'title'  => get_the_title( $template_id ),
+					'href'   => $this->get_builder_url( $template_id ),
+				)
+			);
+		}
 	}
 
 	public function maybe_render_builder_request(): void {
@@ -405,6 +442,7 @@ final class WP_Builder {
 					'emptyContainer' => __( 'Empty container', 'wp-builder' ),
 					'emptyHtml'      => __( 'Empty HTML element', 'wp-builder' ),
 					'root'           => __( 'Root', 'wp-builder' ),
+					'renameTitle'    => __( 'Post title', 'wp-builder' ),
 					'saved'          => __( 'Saved', 'wp-builder' ),
 					'saving'         => __( 'Saving...', 'wp-builder' ),
 					'selected'       => __( 'Selected', 'wp-builder' ),
@@ -430,6 +468,8 @@ final class WP_Builder {
 			__( 'Builder: %s', 'wp-builder' ),
 			get_the_title( $post )
 		);
+		// Prevent wp_head() from emitting a duplicate <title> tag.
+		remove_action( 'wp_head', '_wp_render_title_tag', 1 );
 		?>
 		<!doctype html>
 		<html <?php language_attributes(); ?>>
@@ -437,11 +477,12 @@ final class WP_Builder {
 			<meta charset="<?php bloginfo( 'charset' ); ?>">
 			<meta name="viewport" content="width=device-width, initial-scale=1">
 			<title><?php echo esc_html( $title ); ?></title>
-			<?php wp_print_styles( array( 'wp-builder-admin' ) ); ?>
+			<?php wp_head(); ?>
 		</head>
 		<body class="wp-builder-body">
+			<?php wp_body_open(); ?>
 			<?php $this->render_builder_shell( $post ); ?>
-			<?php wp_print_scripts( array( 'wp-builder-admin' ) ); ?>
+			<?php wp_footer(); ?>
 		</body>
 		</html>
 		<?php
@@ -451,32 +492,12 @@ final class WP_Builder {
 		$post_id           = $post->ID;
 		$is_template       = self::TEMPLATE_CPT === $post->post_type;
 		$is_published      = 'publish' === $post->post_status;
-		$back_url          = $is_template
-			? admin_url( 'edit.php?post_type=' . self::TEMPLATE_CPT )
-			: get_edit_post_link( $post_id, '' );
 		$preview_url       = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
 		$shortcode         = '[wp_builder_content id=\'' . absint( $post_id ) . '\']';
 		$page_templates    = $is_template ? array() : $this->get_available_page_templates( $post_id );
 		$current_template  = $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' );
 		?>
 		<div class="wp-builder-shell" id="wp-builder-app">
-			<header class="wp-builder-header">
-				<div class="wp-builder-title">
-					<span class="wp-builder-kicker"><?php esc_html_e( 'Builder', 'wp-builder' ); ?></span>
-					<input type="text" id="wp-builder-title" class="wp-builder-title-input" value="<?php echo esc_attr( get_the_title( $post_id ) ); ?>" aria-label="<?php esc_attr_e( 'Post title', 'wp-builder' ); ?>">
-				</div>
-				<div class="wp-builder-actions">
-					<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $back_url ); ?>">
-						<?php echo $is_template ? esc_html__( 'Back to Templates', 'wp-builder' ) : esc_html__( 'Back to Admin', 'wp-builder' ); ?>
-					</a>
-					<a id="wp-builder-view-link" class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
-						<?php esc_html_e( 'View', 'wp-builder' ); ?>
-					</a>
-					<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
-						<?php esc_html_e( 'Save', 'wp-builder' ); ?>
-					</button>
-				</div>
-			</header>
 
 			<div class="wp-builder-workspace">
 				<aside class="wp-builder-panel wp-builder-element-panel" aria-label="<?php esc_attr_e( 'Elements', 'wp-builder' ); ?>">
@@ -492,13 +513,22 @@ final class WP_Builder {
 				</aside>
 
 				<main class="wp-builder-canvas-panel" aria-label="<?php esc_attr_e( 'Builder canvas', 'wp-builder' ); ?>">
-					<div class="wp-builder-canvas-toolbar">
-						<span id="wp-builder-save-status" role="status" aria-live="polite"></span>
-					</div>
 					<div id="wp-builder-canvas" class="wp-builder-canvas"></div>
 				</main>
 
 				<aside class="wp-builder-panel wp-builder-inspector-panel" aria-label="<?php esc_attr_e( 'Inspector', 'wp-builder' ); ?>">
+					<div class="wp-builder-inspector-header">
+						<button type="button" id="wp-builder-title" class="wp-builder-title-button" aria-label="<?php esc_attr_e( 'Edit post title', 'wp-builder' ); ?>"><?php echo esc_html( get_the_title( $post_id ) ); ?></button>
+						<div class="wp-builder-inspector-header-actions">
+							<span id="wp-builder-save-status" role="status" aria-live="polite"></span>
+							<a id="wp-builder-view-link" class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
+								<?php esc_html_e( 'View', 'wp-builder' ); ?>
+							</a>
+							<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
+								<?php esc_html_e( 'Save', 'wp-builder' ); ?>
+							</button>
+						</div>
+					</div>
 					<h2><?php esc_html_e( 'Inspector', 'wp-builder' ); ?></h2>
 					<div class="wp-builder-inspector-selection">
 						<span class="wp-builder-inspector-label"><?php esc_html_e( 'Selected', 'wp-builder' ); ?></span>
@@ -513,7 +543,7 @@ final class WP_Builder {
 						<hr class="wp-builder-inspector-divider">
 						<p class="wp-builder-inspector-section-title"><?php esc_html_e( 'Shortcode', 'wp-builder' ); ?></p>
 						<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Embed this content anywhere with this shortcode.', 'wp-builder' ); ?></p>
-						<input type="text" class="wp-builder-input" readonly value="<?php echo esc_attr( $shortcode ); ?>">
+						<pre class="wp-builder-shortcode-pre"><?php echo esc_html( $shortcode ); ?></pre>
 					</div>
 					<div id="wp-builder-inspector-root" hidden>
 					<hr class="wp-builder-inspector-divider">
