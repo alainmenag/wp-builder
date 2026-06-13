@@ -17,6 +17,7 @@ final class WP_Builder {
 	private const MENU_SLUG         = 'wp-builder';
 	private const ACTION            = 'builder';
 	private const NONCE_ACTION      = 'wp_builder_save_layout';
+	private const TITLE_NONCE_ACTION = 'wp_builder_update_title';
 	private const TEMPLATE_CPT      = 'wp_builder_template';
 
 	public function __construct() {
@@ -30,6 +31,7 @@ final class WP_Builder {
 		add_action( 'load-post.php', array( $this, 'maybe_redirect_template_edit' ) );
 		add_action( 'load-post.php', array( $this, 'maybe_render_builder_request' ) );
 		add_action( 'wp_ajax_wp_builder_save_layout', array( $this, 'ajax_save_layout' ) );
+		add_action( 'wp_ajax_wp_builder_update_title', array( $this, 'ajax_update_title' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_link' ), 80 );
 		add_filter( 'post_row_actions', array( $this, 'add_row_action' ), 10, 2 );
@@ -106,6 +108,7 @@ final class WP_Builder {
 					'not_found_in_trash' => __( 'No templates found in Trash.', 'wp-builder' ),
 				),
 				'public'              => false,
+				'publicly_queryable'  => true,
 				'show_ui'             => true,
 				'show_in_menu'        => false,
 				'show_in_rest'        => false,
@@ -315,6 +318,7 @@ final class WP_Builder {
 		$post        = get_post( $post_id );
 		$is_template = $post && self::TEMPLATE_CPT === $post->post_type;
 		$post_status = $post ? $post->post_status : 'draft';
+		$preview_url = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
 
 		wp_enqueue_style(
 			'wp-builder-admin',
@@ -337,12 +341,14 @@ final class WP_Builder {
 			array(
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( self::NONCE_ACTION ),
+				'titleNonce' => wp_create_nonce( self::TITLE_NONCE_ACTION ),
 				'postId'     => $post_id,
+				'postTitle'  => get_the_title( $post_id ),
 				'isTemplate' => $is_template,
 				'postStatus' => $post_status,
 				'layout'     => $this->get_layout( $post_id ),
 				'editUrl'    => get_edit_post_link( $post_id, '' ),
-				'previewUrl' => get_permalink( $post_id ),
+				'previewUrl' => $preview_url,
 				'i18n'       => array(
 					'addContainer'   => __( 'Container', 'wp-builder' ),
 					'addHtml'        => __( 'HTML', 'wp-builder' ),
@@ -401,24 +407,22 @@ final class WP_Builder {
 		$back_url       = $is_template
 			? admin_url( 'edit.php?post_type=' . self::TEMPLATE_CPT )
 			: get_edit_post_link( $post_id, '' );
-		$preview_url    = get_permalink( $post_id );
+		$preview_url    = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
 		$shortcode      = '[wp_builder_template id=\'' . absint( $post_id ) . '\']';
 		?>
 		<div class="wp-builder-shell" id="wp-builder-app">
 			<header class="wp-builder-header">
 				<div class="wp-builder-title">
 					<span class="wp-builder-kicker"><?php esc_html_e( 'WP Builder', 'wp-builder' ); ?></span>
-					<h1><?php echo esc_html( get_the_title( $post_id ) ); ?></h1>
+					<input type="text" id="wp-builder-title" class="wp-builder-title-input" value="<?php echo esc_attr( get_the_title( $post_id ) ); ?>" aria-label="<?php esc_attr_e( 'Post title', 'wp-builder' ); ?>">
 				</div>
 				<div class="wp-builder-actions">
 					<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $back_url ); ?>">
 						<?php echo $is_template ? esc_html__( 'Back to Templates', 'wp-builder' ) : esc_html__( 'Back to Admin', 'wp-builder' ); ?>
 					</a>
-					<?php if ( ! $is_template ) : ?>
-					<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
+					<a id="wp-builder-view-link" class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
 						<?php esc_html_e( 'View', 'wp-builder' ); ?>
 					</a>
-					<?php endif; ?>
 					<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
 						<?php esc_html_e( 'Save', 'wp-builder' ); ?>
 					</button>
@@ -511,6 +515,51 @@ final class WP_Builder {
 			</div>
 		</div>
 		<?php
+	}
+
+	public function ajax_update_title(): void {
+		check_ajax_referer( self::TITLE_NONCE_ACTION, 'nonce' );
+
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$post    = $post_id ? get_post( $post_id ) : null;
+
+		if ( ! $post || ! $this->is_supported_post_type( $post->post_type ) ) {
+			wp_send_json_error(
+				array( 'message' => __( 'Unsupported post type.', 'wp-builder' ) ),
+				400
+			);
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_send_json_error(
+				array( 'message' => __( 'You do not have permission to edit this post.', 'wp-builder' ) ),
+				403
+			);
+		}
+
+		$title = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+
+		wp_update_post(
+			array(
+				'ID'         => $post_id,
+				'post_title' => $title,
+			)
+		);
+
+		$is_template = self::TEMPLATE_CPT === $post->post_type;
+		$preview_url = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
+
+		wp_send_json_success(
+			array(
+				'title'      => get_the_title( $post_id ),
+				'docTitle'   => sprintf(
+					/* translators: %s: post title. */
+					__( 'WP Builder: %s', 'wp-builder' ),
+					get_the_title( $post_id )
+				),
+				'previewUrl' => $preview_url,
+			)
+		);
 	}
 
 	public function ajax_save_layout(): void {

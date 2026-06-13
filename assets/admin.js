@@ -21,6 +21,8 @@
 	var customCssTextarea = document.getElementById('wp-builder-custom-css');
 	var rootInspector = document.getElementById('wp-builder-inspector-root');
 	var postStatusSelect = document.getElementById('wp-builder-post-status');
+	var titleInput = document.getElementById('wp-builder-title');
+	var viewLink = document.getElementById('wp-builder-view-link');
 
 	if (!canvas || !saveButton) {
 		return;
@@ -503,6 +505,35 @@
 		}
 	}
 
+	function updatePostTitle(newTitle) {
+		var form = new window.FormData();
+		form.append('action', 'wp_builder_update_title');
+		form.append('nonce', config.titleNonce || '');
+		form.append('post_id', config.postId || '');
+		form.append('title', newTitle);
+
+		window.fetch(config.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: form
+		}).then(function (response) {
+			return response.json();
+		}).then(function (payload) {
+			if (!payload || !payload.success) {
+				return;
+			}
+			if (payload.data.title && titleInput) {
+				titleInput.value = payload.data.title;
+			}
+			if (payload.data.docTitle) {
+				document.title = payload.data.docTitle;
+			}
+			if (payload.data.previewUrl && viewLink) {
+				viewLink.href = payload.data.previewUrl;
+			}
+		});
+	}
+
 	function saveLayout() {
 		var form;
 		if (state.saving) {
@@ -613,6 +644,30 @@
 	}
 
 	saveButton.addEventListener('click', function () { saveLayout(); });
+
+	// Title rename
+	if (titleInput) {
+		titleInput.addEventListener('blur', function () {
+			var newTitle = titleInput.value.trim();
+			if (!newTitle) {
+				titleInput.value = config.postTitle || '';
+				return;
+			}
+			if (newTitle !== config.postTitle) {
+				config.postTitle = newTitle;
+				updatePostTitle(newTitle);
+			}
+		});
+		titleInput.addEventListener('keydown', function (event) {
+			if (event.key === 'Enter') {
+				titleInput.blur();
+			}
+			if (event.key === 'Escape') {
+				titleInput.value = config.postTitle || '';
+				titleInput.blur();
+			}
+		});
+	}
 
 	window.addEventListener('beforeunload', function (event) {
 		if (!state.dirty) {
