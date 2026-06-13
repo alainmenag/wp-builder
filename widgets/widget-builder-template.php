@@ -36,23 +36,17 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		// Compact single-row toggle: label on the left, toggle button on the right.
 		$this->add_control(
-			'source',
+			'use_custom_id',
 			array(
-				'label'   => __( 'Source', 'wp-builder' ),
-				'type'    => \Elementor\Controls_Manager::CHOOSE,
-				'options' => array(
-					'select' => array(
-						'title' => __( 'Select template', 'wp-builder' ),
-						'icon'  => 'eicon-select',
-					),
-					'custom' => array(
-						'title' => __( 'Custom ID', 'wp-builder' ),
-						'icon'  => 'eicon-edit',
-					),
-				),
-				'default' => 'select',
-				'toggle'  => false,
+				'label'       => __( 'Template', 'wp-builder' ),
+				'type'        => \Elementor\Controls_Manager::SWITCHER,
+				'label_on'    => __( 'ID', 'wp-builder' ),
+				'label_off'   => __( 'Select', 'wp-builder' ),
+				'description' => __( 'Toggle to enter a post/page ID instead of picking from the list.', 'wp-builder' ),
+				'label_block' => false,
+				'default'     => '',
 			)
 		);
 
@@ -78,11 +72,12 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'template_id',
 			array(
-				'label'     => __( 'Template', 'wp-builder' ),
-				'type'      => \Elementor\Controls_Manager::SELECT,
-				'options'   => $templates,
-				'default'   => '',
-				'condition' => array( 'source' => 'select' ),
+				'label'       => __( 'Select', 'wp-builder' ),
+				'type'        => \Elementor\Controls_Manager::SELECT,
+				'options'     => $templates,
+				'default'     => '',
+				'label_block' => true,
+				'condition'   => array( 'use_custom_id' => '' ),
 			)
 		);
 
@@ -90,11 +85,10 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			'custom_id',
 			array(
 				'label'       => __( 'Post / Page ID', 'wp-builder' ),
-				'type'        => \Elementor\Controls_Manager::NUMBER,
-				'min'         => 1,
-				'step'        => 1,
+				'type'        => \Elementor\Controls_Manager::TEXT,
 				'placeholder' => __( 'e.g. 42', 'wp-builder' ),
-				'condition'   => array( 'source' => 'custom' ),
+				'label_block' => true,
+				'condition'   => array( 'use_custom_id' => 'yes' ),
 			)
 		);
 
@@ -102,10 +96,10 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 	}
 
 	protected function render(): void {
-		$settings = $this->get_settings_for_display();
-		$source   = isset( $settings['source'] ) ? $settings['source'] : 'select';
+		$settings      = $this->get_settings_for_display();
+		$use_custom_id = ! empty( $settings['use_custom_id'] ) && 'yes' === $settings['use_custom_id'];
 
-		if ( 'custom' === $source ) {
+		if ( $use_custom_id ) {
 			$template_id = absint( isset( $settings['custom_id'] ) ? $settings['custom_id'] : 0 );
 		} else {
 			$template_id = absint( isset( $settings['template_id'] ) ? $settings['template_id'] : 0 );
