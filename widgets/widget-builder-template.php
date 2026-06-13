@@ -100,9 +100,7 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			array(
 				'type'      => \Elementor\Controls_Manager::RAW_HTML,
 				/* translators: link to open the selected template in the builder */
-				'raw'       => '<a href="#" style="font-size:11px" onclick="var s=document.querySelector(\'#elementor-panel select[data-setting=template_id]\');if(s&&s.value)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+s.value+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Template', 'wp-builder' ) . '</a>',
-				// 'condition' => array( 'use_custom_id' => '' ),
-				// 'condition' => array( 'use_custom_id' => '' ),
+				'raw'       => '<a href="#" style="font-size:11px" onclick="var p=document.querySelector(\'#elementor-panel\'),s=p&&p.querySelector(\'select[data-setting=template_id]\'),t=p&&p.querySelector(\'input[data-setting=custom_id]\'),id=(s&&s.value)||(t&&t.value);if(id)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+encodeURIComponent(id)+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Template', 'wp-builder' ) . '</a>',
 				'separator' => 'none',
 			)
 		);
