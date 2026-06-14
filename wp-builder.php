@@ -78,7 +78,9 @@ final class WP_Builder {
 		);
 
 		$layout = $this->get_layout( $post_id );
-		return '<div class="wp-builder-page wp-builder-template">' . $this->render_elements( $layout['elements'] ) . '</div>';
+		$root_tag     = $this->sanitize_node_tag( isset( $layout['node'] ) ? (string) $layout['node'] : 'div' );
+		$root_content = isset( $layout['content'] ) ? $layout['content'] : '';
+		return sprintf( '<%1$s class="wp-builder-page wp-builder-template">%2$s%3$s</%1$s>', $root_tag, $root_content, $this->render_elements( $layout['elements'] ) );
 	}
 
 	public function render_content_shortcode( array $atts ): string {
@@ -106,7 +108,9 @@ final class WP_Builder {
 		);
 
 		$layout = $this->get_layout( $post_id );
-		return '<div class="wp-builder-page wp-builder-shortcode">' . $this->render_elements( $layout['elements'] ) . '</div>';
+		$root_tag     = $this->sanitize_node_tag( isset( $layout['node'] ) ? (string) $layout['node'] : 'div' );
+		$root_content = isset( $layout['content'] ) ? $layout['content'] : '';
+		return sprintf( '<%1$s class="wp-builder-page wp-builder-shortcode">%2$s%3$s</%1$s>', $root_tag, $root_content, $this->render_elements( $layout['elements'] ) );
 	}
 
 	public function register_meta(): void {
@@ -589,7 +593,28 @@ final class WP_Builder {
 									<span class="wp-builder-inspector-label"><?php esc_html_e( 'Selected', 'wp-builder' ); ?></span>
 									<strong id="wp-builder-selection-name"><?php esc_html_e( 'Root', 'wp-builder' ); ?></strong>
 								</div>
-								<div id="wp-builder-inspector-editor" class="wp-builder-inspector-editor" hidden>
+								<div id="wp-builder-inspector-node" class="wp-builder-field-group" hidden>
+								<label class="wp-builder-inspector-label" for="wp-builder-node"><?php esc_html_e( 'Node', 'wp-builder' ); ?></label>
+								<select id="wp-builder-node" class="wp-builder-select">
+									<option value="div">div</option>
+									<option value="section">section</option>
+									<option value="article">article</option>
+									<option value="main">main</option>
+									<option value="aside">aside</option>
+									<option value="header">header</option>
+									<option value="footer">footer</option>
+									<option value="nav">nav</option>
+									<option value="p">p</option>
+									<option value="span">span</option>
+									<option value="h1">h1</option>
+									<option value="h2">h2</option>
+									<option value="h3">h3</option>
+									<option value="h4">h4</option>
+									<option value="h5">h5</option>
+									<option value="h6">h6</option>
+								</select>
+							</div>
+							<div id="wp-builder-inspector-editor" class="wp-builder-inspector-editor" hidden>
 									<label class="wp-builder-inspector-label" for="wp-builder-html-content">
 										<?php esc_html_e( 'Content', 'wp-builder' ); ?>
 									</label>
@@ -796,7 +821,9 @@ final class WP_Builder {
 		}
 
 		$layout = $this->get_layout( $post_id );
-		return '<div class="wp-builder-page">' . $this->render_elements( $layout['elements'] ) . '</div>';
+		$root_tag     = $this->sanitize_node_tag( isset( $layout['node'] ) ? (string) $layout['node'] : 'div' );
+		$root_content = isset( $layout['content'] ) ? $layout['content'] : '';
+		return sprintf( '<%1$s class="wp-builder-page">%2$s%3$s</%1$s>', $root_tag, $root_content, $this->render_elements( $layout['elements'] ) );
 	}
 
 	private function is_builder_request(): bool {
@@ -846,17 +873,28 @@ final class WP_Builder {
 	private function empty_layout(): array {
 		return array(
 			'version'  => 1,
+			'node'     => 'div',
+			'content'  => '',
 			'elements' => array(),
 		);
 	}
 
 	private function sanitize_layout( array $layout ): array {
 		$elements = isset( $layout['elements'] ) && is_array( $layout['elements'] ) ? $layout['elements'] : array();
+		$node     = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
+		$content  = isset( $layout['content'] ) ? wp_kses_post( (string) $layout['content'] ) : '';
 
 		return array(
 			'version'  => 1,
+			'node'     => $node,
+			'content'  => $content,
 			'elements' => $this->sanitize_elements( $elements ),
 		);
+	}
+
+	private function sanitize_node_tag( string $tag ): string {
+		$allowed = array( 'div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav', 'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' );
+		return in_array( $tag, $allowed, true ) ? $tag : 'div';
 	}
 
 	private function sanitize_elements( array $elements ): array {
@@ -874,9 +912,11 @@ final class WP_Builder {
 				$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
 				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
 				$content    = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
+				$node       = isset( $element['node'] ) ? $this->sanitize_node_tag( (string) $element['node'] ) : 'div';
 				$clean[]    = array(
 					'id'        => $id ? $id : wp_unique_id( 'container-' ),
 					'type'      => 'container',
+					'node'      => $node,
 					'props'     => $this->sanitize_container_props( $props ),
 					'customCss' => $this->sanitize_custom_css( $custom_css ),
 					'content'   => $content,
@@ -888,6 +928,7 @@ final class WP_Builder {
 				$clean[] = array(
 					'id'        => $id ? $id : wp_unique_id( 'container-' ),
 					'type'      => 'container',
+					'node'      => 'div',
 					'props'     => $this->sanitize_container_props( array() ),
 					'customCss' => '',
 					'content'   => $content,
@@ -914,6 +955,7 @@ final class WP_Builder {
 				$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
 				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
 				$content    = isset( $element['content'] ) ? $element['content'] : '';
+				$tag        = isset( $element['node'] ) ? $this->sanitize_node_tag( (string) $element['node'] ) : 'div';
 
 				$inline_style = $this->build_container_inline_style( $props );
 				$style_attr   = $inline_style ? ' style="' . esc_attr( $inline_style ) . '"' : '';
@@ -926,7 +968,8 @@ final class WP_Builder {
 				}
 
 				$output .= $css_block . sprintf(
-					'<div class="wp-builder-container" data-wp-builder-id="%1$s"%2$s>%3$s%4$s</div>',
+					'<%1$s class="wp-builder-container" data-wp-builder-id="%2$s"%3$s>%4$s%5$s</%1$s>',
+					$tag,
 					esc_attr( $id ),
 					$style_attr,
 					$content,

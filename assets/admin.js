@@ -17,6 +17,8 @@
 	var flexGrowInput = document.getElementById('wp-builder-flex-grow');
 	var gapInput = document.getElementById('wp-builder-gap');
 	var customCssTextarea = document.getElementById('wp-builder-custom-css');
+	var nodeSelect = document.getElementById('wp-builder-node');
+	var nodeSelectGroup = document.getElementById('wp-builder-inspector-node');
 	var postStatusSelect = document.getElementById('wp-builder-post-status');
 	var titleInput = document.getElementById('wp-builder-title');
 	var viewLink = document.getElementById('wp-builder-view-link');
@@ -34,11 +36,21 @@
 		pageTemplate: config.pageTemplate || 'default'
 	};
 
+	function normalizeNodeTag(tag) {
+		var allowed = { div: true, section: true, article: true, main: true, aside: true, header: true, footer: true, nav: true, p: true, span: true, h1: true, h2: true, h3: true, h4: true, h5: true, h6: true };
+		return (typeof tag === 'string' && allowed[tag]) ? tag : 'div';
+	}
+
 	function normalizeLayout(layout) {
 		if (!layout || !Array.isArray(layout.elements)) {
-			return { version: 1, elements: [] };
+			return { version: 1, node: 'div', content: '', elements: [] };
 		}
-		return { version: 1, elements: normalizeElements(layout.elements) };
+		return {
+			version: 1,
+			node: normalizeNodeTag(layout.node),
+			content: typeof layout.content === 'string' ? layout.content : '',
+			elements: normalizeElements(layout.elements)
+		};
 	}
 
 	function normalizeContainerProps(props) {
@@ -61,6 +73,7 @@
 				clean.push({
 					id: element.id || createId('container-'),
 					type: 'container',
+					node: normalizeNodeTag(element.node),
 					props: normalizeContainerProps(element.props),
 					customCss: typeof element.customCss === 'string' ? element.customCss : '',
 					content: typeof element.content === 'string' ? element.content : '',
@@ -71,6 +84,7 @@
 				clean.push({
 					id: element.id || createId('container-'),
 					type: 'container',
+					node: 'div',
 					props: { flexDirection: '', flexGrow: '', gap: '' },
 					customCss: '',
 					content: typeof element.content === 'string' ? element.content : '',
@@ -88,7 +102,7 @@
 	}
 
 	function createContainer() {
-		return { id: createId('container-'), type: 'container', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', children: [] };
+		return { id: createId('container-'), type: 'container', node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', children: [] };
 	}
 
 	function getElementName(id) {
@@ -204,7 +218,7 @@
 
 		title.type = 'button';
 		title.className = 'wp-builder-node-title';
-		title.textContent = text.root || 'Root';
+		title.textContent = (text.root || 'Root') + ' \u00b7 ' + (state.layout.node || 'div');
 		title.addEventListener('click', function (event) {
 			event.stopPropagation();
 			selectElement(null);
@@ -231,7 +245,14 @@
 			}
 		});
 
-		if (!state.layout.elements.length) {
+		if (state.layout.content) {
+			var rootPreview = document.createElement('div');
+			rootPreview.className = 'wp-builder-node-html-preview';
+			rootPreview.innerHTML = state.layout.content;
+			body.appendChild(rootPreview);
+		}
+
+		if (!state.layout.elements.length && !state.layout.content) {
 			body.appendChild(renderEmpty(text.emptyCanvas || 'Empty canvas'));
 		} else {
 			state.layout.elements.forEach(function (element) {
@@ -267,7 +288,7 @@
 
 		title.type = 'button';
 		title.className = 'wp-builder-node-title';
-		title.textContent = text.addContainer || 'Container';
+		title.textContent = (text.addContainer || 'Container') + ' \u00b7 ' + (element.node || 'div');
 		title.addEventListener('click', function (event) {
 			event.stopPropagation();
 			selectElement(element.id);
@@ -335,6 +356,8 @@
 	function renderInspector() {
 		var selected = state.selectedId ? findElement(state.layout.elements, state.selectedId) : null;
 		var isContainer = !!(selected && selected.type === 'container');
+		var isRoot = !state.selectedId;
+		var showCommon = isRoot || isContainer;
 
 		if (selectionName) {
 			selectionName.textContent = getElementName(state.selectedId);
@@ -344,12 +367,24 @@
 			addNestedButton.hidden = !isContainer;
 		}
 
-		if (inspectorEditor) {
-			inspectorEditor.hidden = !isContainer;
+		if (nodeSelectGroup) {
+			nodeSelectGroup.hidden = !showCommon;
 		}
 
-		if (isContainer && htmlTextarea) {
-			htmlTextarea.value = selected.content || '';
+		if (nodeSelect) {
+			if (isContainer) {
+				nodeSelect.value = selected.node || 'div';
+			} else if (isRoot) {
+				nodeSelect.value = state.layout.node || 'div';
+			}
+		}
+
+		if (inspectorEditor) {
+			inspectorEditor.hidden = !showCommon;
+		}
+
+		if (showCommon && htmlTextarea) {
+			htmlTextarea.value = isContainer ? (selected.content || '') : (state.layout.content || '');
 		}
 
 		if (containerInspector) {
@@ -549,17 +584,43 @@
 		});
 	}
 
+	function updateRootHtmlPreview(content) {
+		var rootEl = canvas.querySelector('.wp-builder-canvas-root');
+		if (!rootEl) { return; }
+		var body = rootEl.querySelector('.wp-builder-canvas-root-body');
+		if (!body) { return; }
+		var preview = body.querySelector('.wp-builder-node-html-preview');
+		if (content) {
+			if (!preview) {
+				preview = document.createElement('div');
+				preview.className = 'wp-builder-node-html-preview';
+				body.insertBefore(preview, body.firstChild);
+			}
+			preview.innerHTML = content;
+			var empty = body.querySelector('.wp-builder-empty-state');
+			if (empty) { body.removeChild(empty); }
+		} else {
+			if (preview) { body.removeChild(preview); }
+			if (!state.layout.elements.length && !body.querySelector('.wp-builder-empty-state')) {
+				body.appendChild(renderEmpty(text.emptyCanvas || 'Empty canvas'));
+			}
+		}
+	}
+
 	// Content editor
 	if (htmlTextarea) {
 		htmlTextarea.addEventListener('input', function () {
-			if (!state.selectedId) {
-				return;
-			}
-			var element = findElement(state.layout.elements, state.selectedId);
-			if (element && element.type === 'container') {
-				element.content = htmlTextarea.value;
+			if (state.selectedId) {
+				var element = findElement(state.layout.elements, state.selectedId);
+				if (element && element.type === 'container') {
+					element.content = htmlTextarea.value;
+					markDirty();
+					updateHtmlPreview(state.selectedId, htmlTextarea.value);
+				}
+			} else {
+				state.layout.content = htmlTextarea.value;
 				markDirty();
-				updateHtmlPreview(state.selectedId, htmlTextarea.value);
+				updateRootHtmlPreview(htmlTextarea.value);
 			}
 		});
 	}
@@ -586,6 +647,23 @@
 	if (customCssTextarea) {
 		customCssTextarea.addEventListener('input', function () {
 			updateSelectedContainerCss(customCssTextarea.value);
+		});
+	}
+
+	if (nodeSelect) {
+		nodeSelect.addEventListener('change', function () {
+			if (state.selectedId) {
+				var element = findElement(state.layout.elements, state.selectedId);
+				if (element && element.type === 'container') {
+					element.node = nodeSelect.value;
+					markDirty();
+					render();
+				}
+			} else {
+				state.layout.node = nodeSelect.value;
+				markDirty();
+				renderCanvas();
+			}
 		});
 	}
 
