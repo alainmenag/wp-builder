@@ -64,6 +64,7 @@
 					type: 'container',
 					props: normalizeContainerProps(element.props),
 					customCss: typeof element.customCss === 'string' ? element.customCss : '',
+					content: typeof element.content === 'string' ? element.content : '',
 					children: Array.isArray(element.children) ? normalizeElements(element.children) : []
 				});
 			} else if (element.type === 'html') {
@@ -84,7 +85,7 @@
 	}
 
 	function createContainer() {
-		return { id: createId('container-'), type: 'container', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', children: [] };
+		return { id: createId('container-'), type: 'container', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', children: [] };
 	}
 
 	function createHtml() {
@@ -307,11 +308,19 @@
 
 		body.className = 'wp-builder-node-body';
 		applyContainerFlexStyles(element.props || {}, node, body);
+
+		var preview = document.createElement('div');
+		preview.className = 'wp-builder-node-html-preview';
+		if (element.content) {
+			preview.innerHTML = element.content;
+			body.appendChild(preview);
+		}
+
 		if (element.children && element.children.length) {
 			element.children.forEach(function (child) {
 				body.appendChild(renderElement(child, depth + 1));
 			});
-		} else {
+		} else if (!element.content) {
 			body.appendChild(renderEmpty(text.emptyContainer || 'Empty container'));
 		}
 
@@ -408,10 +417,10 @@
 		}
 
 		if (inspectorEditor) {
-			inspectorEditor.hidden = !isHtml;
+			inspectorEditor.hidden = !(isHtml || isContainer);
 		}
 
-		if (isHtml && htmlTextarea) {
+		if ((isHtml || isContainer) && htmlTextarea) {
 			htmlTextarea.value = selected.content || '';
 		}
 
@@ -625,7 +634,7 @@
 				return;
 			}
 			var element = findElement(state.layout.elements, state.selectedId);
-			if (element && element.type === 'html') {
+			if (element && (element.type === 'html' || element.type === 'container')) {
 				element.content = htmlTextarea.value;
 				markDirty();
 				updateHtmlPreview(state.selectedId, htmlTextarea.value);

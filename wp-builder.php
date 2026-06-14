@@ -895,11 +895,13 @@ final class WP_Builder {
 				$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
 				$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
 				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
+				$content    = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
 				$clean[]    = array(
 					'id'        => $id ? $id : wp_unique_id( 'container-' ),
 					'type'      => 'container',
 					'props'     => $this->sanitize_container_props( $props ),
 					'customCss' => $this->sanitize_custom_css( $custom_css ),
+					'content'   => $content,
 					'children'  => $this->sanitize_elements( $children ),
 				);
 			} elseif ( 'html' === $element['type'] ) {
@@ -929,6 +931,7 @@ final class WP_Builder {
 				$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
 				$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
 				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
+				$content    = isset( $element['content'] ) ? $element['content'] : '';
 
 				$inline_style = $this->build_container_inline_style( $props );
 				$style_attr   = $inline_style ? ' style="' . esc_attr( $inline_style ) . '"' : '';
@@ -941,9 +944,10 @@ final class WP_Builder {
 				}
 
 				$output .= $css_block . sprintf(
-					'<div class="wp-builder-container" data-wp-builder-id="%1$s"%2$s>%3$s</div>',
+					'<div class="wp-builder-container" data-wp-builder-id="%1$s"%2$s>%3$s%4$s</div>',
 					esc_attr( $id ),
 					$style_attr,
+					$content,
 					$this->render_elements( $children )
 				);
 			} elseif ( 'html' === $element['type'] ) {
