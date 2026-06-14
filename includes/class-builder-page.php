@@ -63,17 +63,21 @@ trait WP_Builder_Builder_Page {
 		$post_status = $post ? $post->post_status : 'draft';
 		$preview_url = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
 
+		// Load WordPress's bundled CodeMirror for the CSS editor (available since WP 4.9).
+		wp_enqueue_style( 'code-editor' );
+		wp_enqueue_script( 'code-editor' );
+
 		wp_enqueue_style(
 			'wp-builder-admin',
 			$asset_url . 'admin.css',
-			array(),
+			array( 'code-editor' ),
 			self::VERSION
 		);
 
 		wp_enqueue_script(
 			'wp-builder-admin',
 			$asset_url . 'admin.js',
-			array(),
+			array( 'code-editor' ),
 			self::VERSION,
 			true
 		);

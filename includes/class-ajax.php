@@ -75,8 +75,13 @@ trait WP_Builder_Ajax {
 			);
 		}
 
-		$layout_json = isset( $_POST['layout'] ) ? wp_unslash( $_POST['layout'] ) : '';
-		$decoded     = json_decode( $layout_json, true );
+		$layout_raw = isset( $_POST['layout'] ) ? (string) $_POST['layout'] : '';
+		// Try raw first (no magic-quotes): JSON \n stays intact as a real newline.
+		// Fall back to wp_unslash() only when magic-quotes are active (json_decode fails on escaped quotes).
+		$decoded = json_decode( $layout_raw, true );
+		if ( ! is_array( $decoded ) ) {
+			$decoded = json_decode( wp_unslash( $layout_raw ), true );
+		}
 
 		if ( ! is_array( $decoded ) ) {
 			wp_send_json_error(
