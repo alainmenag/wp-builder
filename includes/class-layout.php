@@ -52,7 +52,7 @@ trait WP_Builder_Layout {
 
 		return array(
 			'version'   => 1,
-			'id'        => 'wp-builder-root',
+			'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : 'wp-builder-root',
 			'node'      => $node,
 			'props'     => $this->sanitize_container_props( $props ),
 			'customCss' => $this->sanitize_custom_css( $custom_css ),
@@ -64,7 +64,7 @@ trait WP_Builder_Layout {
 
 	private function render_layout_root( array $layout, string $extra_class = '' ): string {
 		$tag        = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
-		$id         = 'wp-builder-root';
+		$id         = isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : 'wp-builder-root';
 		$content    = isset( $layout['content'] ) ? $layout['content'] : '';
 		$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
 		$custom_css = isset( $layout['customCss'] ) ? (string) $layout['customCss'] : '';

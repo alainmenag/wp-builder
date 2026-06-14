@@ -87,12 +87,12 @@
 
 	function normalizeLayout(layout) {
 		if (!layout || !Array.isArray(layout.elements)) {
-			return { version: 1, id: 'wp-builder-root', node: 'div', props: normalizeContainerProps({}), customCss: '', content: '', attrs: {}, elements: [] };
+			return { version: 1, id: createId('root-'), node: 'div', props: normalizeContainerProps({}), customCss: '', content: '', attrs: {}, elements: [] };
 		}
 		var node = normalizeNodeTag(layout.node);
 		return {
 			version: 1,
-			id: 'wp-builder-root',
+			id: (layout.id && layout.id !== 'wp-builder-root') ? layout.id : createId('root-'),
 			node: node,
 			props: normalizeContainerProps(layout.props),
 			customCss: typeof layout.customCss === 'string' ? layout.customCss : '',
@@ -299,7 +299,7 @@
 		root.tabIndex = 0;
 		root.setAttribute('role', 'button');
 		root.setAttribute('aria-label', text.canvas || 'Canvas');
-		root.dataset.wpBuilderId = 'wp-builder-root';
+		root.dataset.wpBuilderId = state.layout.id;
 
 		bar.className = 'wp-builder-node-bar';
 
@@ -354,7 +354,7 @@
 		canvas.appendChild(root);
 		cleanupAllContainerStyles();
 		syncAllContainerStyles(state.layout.elements);
-		updateContainerStyle('wp-builder-root', state.layout.customCss || '');
+		updateContainerStyle(state.layout.id, state.layout.customCss || '');
 	}
 
 	function renderElement(element, depth) {
@@ -593,7 +593,7 @@
 		if (!state.selectedId) {
 			state.layout.customCss = css;
 			markDirty();
-			updateContainerStyle('wp-builder-root', css);
+			updateContainerStyle(state.layout.id, css);
 			return;
 		}
 		var element = findElement(state.layout.elements, state.selectedId);
