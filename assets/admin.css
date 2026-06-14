@@ -151,7 +151,6 @@ body.wp-builder-body {
 .wp-builder-workspace {
 	display: grid;
 	grid-template-columns: 300px minmax(360px, 1fr);
-	min-height: 100vh;
 	padding: 10px;
 	gap: 10px;
 }
@@ -249,6 +248,12 @@ body.wp-builder-body {
 	padding: 10px 5px;
 }
 
+.wp-builder-inspector-container-editor {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
 .wp-builder-template-actions {
 	align-items: center;
 	display: flex;
@@ -256,8 +261,8 @@ body.wp-builder-body {
 	gap: 5px;
 }
 
-.wp-builder-template-actions #wp-builder-save-status {
-	flex: 1 1 100%;
+.wp-builder-template-actions .wp-builder-button {
+	flex: 1;
 }
 
 .wp-builder-canvas-panel {
@@ -273,8 +278,13 @@ body.wp-builder-body {
 	font-weight: 600;
 }
 
+#wp-builder-save-status,
 #wp-builder-save-status:not(:empty) + span {
 	display: none;
+}
+
+#wp-builder-save-status:not(:empty) {
+	display: block;
 }
 
 .wp-builder-canvas {
@@ -441,10 +451,6 @@ body.wp-builder-body {
 
 /* ── Inspector HTML editor ──────────────────────────────────────────────── */
 
-.wp-builder-inspector-editor {
-	margin-top: 14px;
-}
-
 .wp-builder-inspector-editor .wp-builder-inspector-label {
 	display: block;
 	margin-bottom: 6px;
@@ -475,13 +481,8 @@ body.wp-builder-body {
 
 /* ── Inspector container editor ─────────────────────────────────────────── */
 
-.wp-builder-inspector-container-editor {
-	margin-top: 14px;
-}
-
 .wp-builder-inspector-divider {
 	border: 0;
-	border-top: 1px solid var(--wpb-border-subtle);
 	margin: 14px 0;
 }
 

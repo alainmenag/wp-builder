@@ -517,6 +517,19 @@ final class WP_Builder {
 						<button type="button" id="wp-builder-title" class="wp-builder-title-button" aria-label="<?php esc_attr_e( 'Edit post title', 'wp-builder' ); ?>"><?php echo esc_html( get_the_title( $post_id ) ); ?></button>
 					</div>
 
+					<div class="wp-builder-template-actions">
+						<a id="wp-builder-view-link" class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
+							<?php esc_html_e( 'View', 'wp-builder' ); ?>
+						</a>
+						<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( add_query_arg( 'view', 'json', $this->get_builder_url( $post_id ) ) ); ?>" target="_blank" rel="noreferrer">
+							<?php esc_html_e( 'Export', 'wp-builder' ); ?>
+						</a>
+						<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
+							<span id="wp-builder-save-status" role="status" aria-live="polite"></span>
+							<span><?php esc_html_e( 'Save', 'wp-builder' ); ?></span>
+						</button>
+					</div>
+
 					<!-- Template accordion -->
 					<div class="wp-builder-accordion" id="wp-builder-accordion-template">
 						<button type="button" class="wp-builder-accordion-header" aria-expanded="false" aria-controls="wp-builder-accordion-template-body">
@@ -600,7 +613,6 @@ final class WP_Builder {
 									<textarea id="wp-builder-html-content" class="wp-builder-html-editor" rows="12" spellcheck="false" placeholder="<?php esc_attr_e( 'Enter your here…', 'wp-builder' ); ?>"></textarea>
 								</div>
 								<div id="wp-builder-inspector-container" class="wp-builder-inspector-container-editor" hidden>
-									<p class="wp-builder-inspector-label"><?php esc_html_e( 'Layout', 'wp-builder' ); ?></p>
 									<div class="wp-builder-field-group">
 										<label class="wp-builder-inspector-label" for="wp-builder-flex-direction"><?php esc_html_e( 'Direction', 'wp-builder' ); ?></label>
 										<select id="wp-builder-flex-direction" class="wp-builder-select">
@@ -617,25 +629,14 @@ final class WP_Builder {
 										<label class="wp-builder-inspector-label" for="wp-builder-gap"><?php esc_html_e( 'Gap', 'wp-builder' ); ?></label>
 										<input type="text" id="wp-builder-gap" class="wp-builder-input" placeholder="<?php esc_attr_e( 'e.g. 16px', 'wp-builder' ); ?>">
 									</div>
-									<p class="wp-builder-inspector-label"><?php esc_html_e( 'Custom CSS', 'wp-builder' ); ?></p>
-									<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Use', 'wp-builder' ); ?> <code>self</code> <?php esc_html_e( 'to target this element.', 'wp-builder' ); ?></p>
-									<textarea id="wp-builder-custom-css" class="wp-builder-html-editor" rows="8" spellcheck="false" placeholder="self {&#10;  background-color: red;&#10;}"></textarea>
+									<div class="wp-builder-field-group">
+										<p class="wp-builder-inspector-label"><?php esc_html_e( 'Custom CSS', 'wp-builder' ); ?></p>
+										<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Use', 'wp-builder' ); ?> <code>self</code> <?php esc_html_e( 'to target this element.', 'wp-builder' ); ?></p>
+										<textarea id="wp-builder-custom-css" class="wp-builder-html-editor" rows="8" spellcheck="false" placeholder="self {&#10;  background-color: red;&#10;}"></textarea>
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-
-					<div class="wp-builder-template-actions">
-						<a id="wp-builder-view-link" class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
-							<?php esc_html_e( 'View', 'wp-builder' ); ?>
-						</a>
-						<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( add_query_arg( 'view', 'json', $this->get_builder_url( $post_id ) ) ); ?>" target="_blank" rel="noreferrer">
-							<?php esc_html_e( 'Export', 'wp-builder' ); ?>
-						</a>
-						<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
-							<span id="wp-builder-save-status" role="status" aria-live="polite"></span>
-							<span><?php esc_html_e( 'Save', 'wp-builder' ); ?></span>
-						</button>
 					</div>
 
 				</aside>
