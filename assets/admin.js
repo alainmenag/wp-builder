@@ -245,17 +245,6 @@
 		if (elementTabPanel) {
 			elementTabPanel.hidden = false;
 		}
-
-		if (identityAccordion && elementTabPanel) {
-			elementTabPanel.querySelectorAll('.wp-builder-accordion').forEach(function (a) {
-				a.classList.remove('is-open');
-				var h = a.querySelector('.wp-builder-accordion-header');
-				if (h) { h.setAttribute('aria-expanded', 'false'); }
-			});
-			identityAccordion.classList.add('is-open');
-			var identityHeader = identityAccordion.querySelector('.wp-builder-accordion-header');
-			if (identityHeader) { identityHeader.setAttribute('aria-expanded', 'true'); }
-		}
 	}
 
 	function selectElement(id) {
