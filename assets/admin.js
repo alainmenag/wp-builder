@@ -88,12 +88,17 @@
 
 	function normalizeLayout(layout) {
 		if (!layout || !Array.isArray(layout.elements)) {
-			return { version: 1, node: 'div', content: '', elements: [] };
+			return { version: 1, id: 'wp-builder-root', node: 'div', props: normalizeContainerProps({}), customCss: '', content: '', attrs: {}, elements: [] };
 		}
+		var node = normalizeNodeTag(layout.node);
 		return {
 			version: 1,
-			node: normalizeNodeTag(layout.node),
+			id: 'wp-builder-root',
+			node: node,
+			props: normalizeContainerProps(layout.props),
+			customCss: typeof layout.customCss === 'string' ? layout.customCss : '',
 			content: typeof layout.content === 'string' ? layout.content : '',
+			attrs: normalizeNodeAttrs(node, layout.attrs),
 			elements: normalizeElements(layout.elements)
 		};
 	}
@@ -295,6 +300,7 @@
 		root.tabIndex = 0;
 		root.setAttribute('role', 'button');
 		root.setAttribute('aria-label', text.canvas || 'Canvas');
+		root.dataset.wpBuilderId = 'wp-builder-root';
 
 		bar.className = 'wp-builder-node-bar';
 
@@ -320,6 +326,7 @@
 		bar.appendChild(addButton);
 
 		body.className = 'wp-builder-canvas-root-body';
+		applyContainerFlexStyles(state.layout.props || {}, root, body);
 
 		root.addEventListener('click', function (event) {
 			if (event.target === root || event.target === body) {
@@ -348,6 +355,7 @@
 		canvas.appendChild(root);
 		cleanupAllContainerStyles();
 		syncAllContainerStyles(state.layout.elements);
+		updateContainerStyle('wp-builder-root', state.layout.customCss || '');
 	}
 
 	function renderElement(element, depth) {
@@ -475,7 +483,7 @@
 		}
 
 		if (containerInspector) {
-			containerInspector.hidden = !isContainer;
+			containerInspector.hidden = !isContainer && !isRoot;
 		}
 
 		if (shortcodePanel) {
@@ -497,6 +505,13 @@
 			if (gapInput) { gapInput.value = props.gap || ''; }
 			if (customCssTextarea) { customCssTextarea.value = selected.customCss || ''; }
 			renderNodeAttrsPanel(selected);
+		} else if (isRoot) {
+			var rootProps = state.layout.props || {};
+			if (flexDirectionSelect) { flexDirectionSelect.value = rootProps.flexDirection || ''; }
+			if (flexGrowInput) { flexGrowInput.value = rootProps.flexGrow || ''; }
+			if (gapInput) { gapInput.value = rootProps.gap || ''; }
+			if (customCssTextarea) { customCssTextarea.value = state.layout.customCss || ''; }
+			renderNodeAttrsPanel({ node: state.layout.node, attrs: state.layout.attrs || {} });
 		} else {
 			renderNodeAttrsPanel(null);
 		}
@@ -556,7 +571,17 @@
 	}
 
 	function updateSelectedContainerProp(prop, value) {
-		if (!state.selectedId) { return; }
+		if (!state.selectedId) {
+			state.layout.props = state.layout.props || {};
+			state.layout.props[prop] = value;
+			markDirty();
+			var rootNode = canvas.querySelector('.wp-builder-canvas-root');
+			if (rootNode) {
+				var rootBody = rootNode.querySelector('.wp-builder-canvas-root-body');
+				if (rootBody) { applyContainerFlexStyles(state.layout.props, rootNode, rootBody); }
+			}
+			return;
+		}
 		var element = findElement(state.layout.elements, state.selectedId);
 		if (!element || element.type !== 'container') { return; }
 		element.props = element.props || {};
@@ -570,7 +595,12 @@
 	}
 
 	function updateSelectedContainerCss(css) {
-		if (!state.selectedId) { return; }
+		if (!state.selectedId) {
+			state.layout.customCss = css;
+			markDirty();
+			updateContainerStyle('wp-builder-root', css);
+			return;
+		}
 		var element = findElement(state.layout.elements, state.selectedId);
 		if (!element || element.type !== 'container') { return; }
 		element.customCss = css;
@@ -579,7 +609,12 @@
 	}
 
 	function updateSelectedNodeAttr(name, value) {
-		if (!state.selectedId) { return; }
+		if (!state.selectedId) {
+			state.layout.attrs = state.layout.attrs || {};
+			state.layout.attrs[name] = value;
+			markDirty();
+			return;
+		}
 		var element = findElement(state.layout.elements, state.selectedId);
 		if (!element || element.type !== 'container') { return; }
 		element.attrs = element.attrs || {};
@@ -811,6 +846,7 @@
 				}
 			} else {
 				state.layout.node = nodeSelect.value;
+				state.layout.attrs = normalizeNodeAttrs(nodeSelect.value, state.layout.attrs);
 				markDirty();
 				renderCanvas();
 			}
