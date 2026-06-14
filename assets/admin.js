@@ -773,7 +773,13 @@
 		if (!rootEl) { return; }
 		var body = rootEl.querySelector('.wp-builder-canvas-root-body');
 		if (!body) { return; }
-		var preview = body.querySelector('.wp-builder-node-html-preview');
+		var preview = null;
+		for (var i = 0; i < body.children.length; i++) {
+			if (body.children[i].classList.contains('wp-builder-node-html-preview')) {
+				preview = body.children[i];
+				break;
+			}
+		}
 		if (content) {
 			if (!preview) {
 				preview = document.createElement('div');
