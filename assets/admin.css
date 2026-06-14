@@ -24,6 +24,7 @@
 	/* accent – green */
 	--wpb-accent:         #1f6f5c;
 	--wpb-accent-hover:   #28937b;
+	--wpb-accent-dim:     #164e40;
 	--wpb-accent-rgb:     40, 147, 123;
 
 	/* accent – blue (focus / link) */
@@ -239,9 +240,9 @@ body.wp-builder-body {
 
 .wp-builder-accordion-header {
 	align-items: center;
-	background: var(--wpb-bg-raised);
+	background: var(--wpb-accent-dim);
 	border: 0;
-	color: var(--wpb-text-muted);
+	color: var(--wpb-text-secondary);
 	cursor: pointer;
 	display: flex;
 	font: inherit;
@@ -258,9 +259,14 @@ body.wp-builder-body {
 
 .wp-builder-accordion-header:hover,
 .wp-builder-accordion-header:focus {
-	background: var(--wpb-bg-control-hover);
-	color: var(--wpb-text-secondary);
+	background: var(--wpb-accent);
+	color: var(--wpb-text-inverse);
 	outline: none;
+}
+
+.wp-builder-accordion.is-open .wp-builder-accordion-header {
+	background: var(--wpb-accent);
+	color: var(--wpb-text-inverse);
 }
 
 .wp-builder-accordion-chevron {
@@ -270,7 +276,6 @@ body.wp-builder-body {
 	flex: 0 0 8px;
 	height: 8px;
 	transform: rotate(135deg);
-	transition: transform 200ms ease;
 	width: 8px;
 }
 
@@ -279,13 +284,11 @@ body.wp-builder-body {
 }
 
 .wp-builder-accordion-body {
-	max-height: 0;
-	overflow: hidden;
-	transition: max-height 250ms ease;
+	display: none;
 }
 
 .wp-builder-accordion.is-open .wp-builder-accordion-body {
-	max-height: 2000px;
+	display: block;
 }
 
 .wp-builder-accordion-body-inner {
@@ -293,12 +296,6 @@ body.wp-builder-body {
 	flex-direction: column;
 	gap: 10px;
 	padding: 10px 5px;
-}
-
-.wp-builder-inspector-container-editor {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
 }
 
 .wp-builder-template-actions {
