@@ -313,8 +313,8 @@
 		preview.className = 'wp-builder-node-html-preview';
 		if (element.content) {
 			preview.innerHTML = element.content;
-			body.appendChild(preview);
 		}
+		body.appendChild(preview);
 
 		if (element.children && element.children.length) {
 			element.children.forEach(function (child) {
