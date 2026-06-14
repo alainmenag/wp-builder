@@ -31,23 +31,73 @@ trait WP_Builder_Layout {
 
 	private function empty_layout(): array {
 		return array(
-			'version'  => 1,
-			'node'     => 'div',
-			'content'  => '',
-			'elements' => array(),
+			'version'   => 1,
+			'id'        => 'wp-builder-root',
+			'node'      => 'div',
+			'props'     => array( 'flexDirection' => '', 'flexGrow' => '', 'gap' => '' ),
+			'customCss' => '',
+			'content'   => '',
+			'attrs'     => array(),
+			'elements'  => array(),
 		);
 	}
 
 	private function sanitize_layout( array $layout ): array {
-		$elements = isset( $layout['elements'] ) && is_array( $layout['elements'] ) ? $layout['elements'] : array();
-		$node     = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
-		$content  = isset( $layout['content'] ) ? wp_kses_post( (string) $layout['content'] ) : '';
+		$elements   = isset( $layout['elements'] ) && is_array( $layout['elements'] ) ? $layout['elements'] : array();
+		$node       = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
+		$content    = isset( $layout['content'] ) ? wp_kses_post( (string) $layout['content'] ) : '';
+		$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
+		$custom_css = isset( $layout['customCss'] ) ? (string) $layout['customCss'] : '';
+		$raw_attrs  = isset( $layout['attrs'] ) && is_array( $layout['attrs'] ) ? $layout['attrs'] : array();
 
 		return array(
-			'version'  => 1,
-			'node'     => $node,
-			'content'  => $content,
-			'elements' => $this->sanitize_elements( $elements ),
+			'version'   => 1,
+			'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : 'wp-builder-root',
+			'node'      => $node,
+			'props'     => $this->sanitize_container_props( $props ),
+			'customCss' => $this->sanitize_custom_css( $custom_css ),
+			'content'   => $content,
+			'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
+			'elements'  => $this->sanitize_elements( $elements ),
+		);
+	}
+
+	private function render_layout_root( array $layout, string $extra_class = '' ): string {
+		$tag        = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
+		$id         = isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : 'wp-builder-root';
+		$content    = isset( $layout['content'] ) ? $layout['content'] : '';
+		$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
+		$custom_css = isset( $layout['customCss'] ) ? (string) $layout['customCss'] : '';
+		$raw_attrs  = isset( $layout['attrs'] ) && is_array( $layout['attrs'] ) ? $layout['attrs'] : array();
+
+		$class        = 'wp-builder-page' . ( $extra_class ? ' ' . $extra_class : '' );
+		$inline_style = $this->build_container_inline_style( $props );
+		$style_attr   = $inline_style ? ' style="' . esc_attr( $inline_style ) . '"' : '';
+
+		$extra_attrs = '';
+		foreach ( $raw_attrs as $attr_name => $attr_value ) {
+			$attr_name = sanitize_key( (string) $attr_name );
+			if ( $attr_name && '' !== (string) $attr_value ) {
+				$extra_attrs .= ' ' . esc_attr( $attr_name ) . '="' . esc_attr( (string) $attr_value ) . '"';
+			}
+		}
+
+		$css_block = '';
+		if ( $custom_css !== '' ) {
+			$selector   = '[data-wp-builder-id="' . esc_attr( $id ) . '"]';
+			$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_css );
+			$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_css(); no WP escape function exists for raw CSS.
+		}
+
+		return $css_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_layout(); render_elements() output is pre-escaped.
+			'<%1$s class="%2$s" data-wp-builder-id="%3$s"%4$s%5$s>%6$s%7$s</%1$s>',
+			$tag,
+			esc_attr( $class ),
+			esc_attr( $id ),
+			$style_attr,
+			$extra_attrs,
+			$content,
+			$this->render_elements( $layout['elements'] )
 		);
 	}
 

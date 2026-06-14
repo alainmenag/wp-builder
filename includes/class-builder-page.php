@@ -176,7 +176,7 @@ trait WP_Builder_Builder_Page {
 					<!-- Tab bar -->
 					<div class="wp-builder-tabs" role="tablist">
 						<button type="button" class="wp-builder-tab-btn is-active" role="tab" aria-selected="true" aria-controls="wp-builder-tab-page" id="wp-builder-tab-btn-page">
-							<?php esc_html_e( 'Page', 'wp-builder' ); ?>
+							<?php esc_html_e( 'Main', 'wp-builder' ); ?>
 						</button>
 						<button type="button" class="wp-builder-tab-btn" role="tab" aria-selected="false" aria-controls="wp-builder-tab-element" id="wp-builder-tab-btn-element">
 							<?php esc_html_e( 'Element', 'wp-builder' ); ?>
@@ -307,59 +307,54 @@ trait WP_Builder_Builder_Page {
 										</label>
 										<textarea id="wp-builder-html-content" class="wp-builder-html-editor" rows="12" spellcheck="false" placeholder="<?php esc_attr_e( 'Enter your here…', 'wp-builder' ); ?>"></textarea>
 									</div>
-									<div id="wp-builder-inspector-node-attrs" hidden></div>
+									<div id="wp-builder-inspector-node-attrs" class="wp-builder-inspector-body-list" hidden></div>
 								</div>
 							</div>
 						</div>
 
-						<!-- Layout + Style: shown only when a container is selected -->
-						<div id="wp-builder-inspector-container" class="wp-builder-inspector-container-editor" hidden>
-
-							<!-- Accordion: Layout -->
-							<div class="wp-builder-accordion" id="wp-builder-accordion-layout">
-								<button type="button" class="wp-builder-accordion-header" aria-expanded="false" aria-controls="wp-builder-accordion-layout-body">
-									<span><?php esc_html_e( 'Layout', 'wp-builder' ); ?></span>
-									<span class="wp-builder-accordion-chevron" aria-hidden="true"></span>
-								</button>
-								<div class="wp-builder-accordion-body" id="wp-builder-accordion-layout-body" role="region">
-									<div class="wp-builder-accordion-body-inner">
-										<div class="wp-builder-field-group">
-											<label class="wp-builder-inspector-label" for="wp-builder-flex-direction"><?php esc_html_e( 'Direction', 'wp-builder' ); ?></label>
-											<select id="wp-builder-flex-direction" class="wp-builder-select">
-												<option value=""><?php esc_html_e( '— None —', 'wp-builder' ); ?></option>
-												<option value="row"><?php esc_html_e( 'Row', 'wp-builder' ); ?></option>
-												<option value="column"><?php esc_html_e( 'Column', 'wp-builder' ); ?></option>
-											</select>
-										</div>
-										<div class="wp-builder-field-group">
-											<label class="wp-builder-inspector-label" for="wp-builder-flex-grow"><?php esc_html_e( 'Flex Grow', 'wp-builder' ); ?></label>
-											<input type="number" id="wp-builder-flex-grow" class="wp-builder-input" min="0" step="1" placeholder="0">
-										</div>
-										<div class="wp-builder-field-group">
-											<label class="wp-builder-inspector-label" for="wp-builder-gap"><?php esc_html_e( 'Gap', 'wp-builder' ); ?></label>
-											<input type="text" id="wp-builder-gap" class="wp-builder-input" placeholder="<?php esc_attr_e( 'e.g. 16px', 'wp-builder' ); ?>">
-										</div>
+						<!-- Accordion: Layout -->
+						<div class="wp-builder-accordion" id="wp-builder-accordion-layout">
+							<button type="button" class="wp-builder-accordion-header" aria-expanded="false" aria-controls="wp-builder-accordion-layout-body">
+								<span><?php esc_html_e( 'Layout', 'wp-builder' ); ?></span>
+								<span class="wp-builder-accordion-chevron" aria-hidden="true"></span>
+							</button>
+							<div class="wp-builder-accordion-body" id="wp-builder-accordion-layout-body" role="region">
+								<div class="wp-builder-accordion-body-inner">
+									<div class="wp-builder-field-group">
+										<label class="wp-builder-inspector-label" for="wp-builder-flex-direction"><?php esc_html_e( 'Direction', 'wp-builder' ); ?></label>
+										<select id="wp-builder-flex-direction" class="wp-builder-select">
+											<option value=""><?php esc_html_e( '— None —', 'wp-builder' ); ?></option>
+											<option value="row"><?php esc_html_e( 'Row', 'wp-builder' ); ?></option>
+											<option value="column"><?php esc_html_e( 'Column', 'wp-builder' ); ?></option>
+										</select>
+									</div>
+									<div class="wp-builder-field-group">
+										<label class="wp-builder-inspector-label" for="wp-builder-flex-grow"><?php esc_html_e( 'Flex Grow', 'wp-builder' ); ?></label>
+										<input type="number" id="wp-builder-flex-grow" class="wp-builder-input" min="0" step="1" placeholder="0">
+									</div>
+									<div class="wp-builder-field-group">
+										<label class="wp-builder-inspector-label" for="wp-builder-gap"><?php esc_html_e( 'Gap', 'wp-builder' ); ?></label>
+										<input type="text" id="wp-builder-gap" class="wp-builder-input" placeholder="<?php esc_attr_e( 'e.g. 16px', 'wp-builder' ); ?>">
 									</div>
 								</div>
 							</div>
+						</div>
 
-							<!-- Accordion: Style -->
-							<div class="wp-builder-accordion" id="wp-builder-accordion-style">
-								<button type="button" class="wp-builder-accordion-header" aria-expanded="false" aria-controls="wp-builder-accordion-style-body">
-									<span><?php esc_html_e( 'Style', 'wp-builder' ); ?></span>
-									<span class="wp-builder-accordion-chevron" aria-hidden="true"></span>
-								</button>
-								<div class="wp-builder-accordion-body" id="wp-builder-accordion-style-body" role="region">
-									<div class="wp-builder-accordion-body-inner">
-										<div class="wp-builder-field-group">
-											<p class="wp-builder-inspector-label"><?php esc_html_e( 'Custom CSS', 'wp-builder' ); ?></p>
-											<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Use', 'wp-builder' ); ?> <code>self</code> <?php esc_html_e( 'to target this element.', 'wp-builder' ); ?></p>
-											<textarea id="wp-builder-custom-css" class="wp-builder-html-editor" rows="8" spellcheck="false" placeholder="self {&#10;  background-color: red;&#10;}"></textarea>
-										</div>
+						<!-- Accordion: Style -->
+						<div class="wp-builder-accordion" id="wp-builder-accordion-style">
+							<button type="button" class="wp-builder-accordion-header" aria-expanded="false" aria-controls="wp-builder-accordion-style-body">
+								<span><?php esc_html_e( 'Style', 'wp-builder' ); ?></span>
+								<span class="wp-builder-accordion-chevron" aria-hidden="true"></span>
+							</button>
+							<div class="wp-builder-accordion-body" id="wp-builder-accordion-style-body" role="region">
+								<div class="wp-builder-accordion-body-inner">
+									<div class="wp-builder-field-group">
+										<p class="wp-builder-inspector-label"><?php esc_html_e( 'Custom CSS', 'wp-builder' ); ?></p>
+										<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Use', 'wp-builder' ); ?> <code>self</code> <?php esc_html_e( 'to target this element.', 'wp-builder' ); ?></p>
+										<textarea id="wp-builder-custom-css" class="wp-builder-html-editor" rows="8" spellcheck="false" placeholder="self {&#10;  background-color: red;&#10;}"></textarea>
 									</div>
 								</div>
 							</div>
-
 						</div>
 
 					</div>
