@@ -1,6 +1,51 @@
 (function () {
 	'use strict';
 
+	var NODE_GLOSSARY = {
+		img: [
+			{ name: 'src',    label: 'Source URL', type: 'url',    required: true },
+			{ name: 'alt',    label: 'Alt text',   type: 'text' },
+			{ name: 'width',  label: 'Width',      type: 'number' },
+			{ name: 'height', label: 'Height',     type: 'number' }
+		],
+		a: [
+			{ name: 'href',   label: 'URL',    type: 'url',    required: true },
+			{ name: 'target', label: 'Target', type: 'select', options: ['', '_blank', '_self'] },
+			{ name: 'rel',    label: 'Rel',    type: 'text' }
+		],
+		input: [
+			{ name: 'type',        label: 'Type',        type: 'select', options: ['text', 'email', 'number', 'password', 'checkbox', 'radio'] },
+			{ name: 'name',        label: 'Name',        type: 'text' },
+			{ name: 'placeholder', label: 'Placeholder', type: 'text' }
+		],
+		button: [
+			{ name: 'type', label: 'Type', type: 'select', options: ['button', 'submit', 'reset'] }
+		],
+		video: [
+			{ name: 'src',      label: 'Source URL', type: 'url' },
+			{ name: 'width',    label: 'Width',      type: 'number' },
+			{ name: 'height',   label: 'Height',     type: 'number' },
+			{ name: 'controls', label: 'Controls',   type: 'text', placeholder: 'controls' },
+			{ name: 'autoplay', label: 'Autoplay',   type: 'text', placeholder: 'autoplay' }
+		],
+		audio: [
+			{ name: 'src',      label: 'Source URL', type: 'url' },
+			{ name: 'controls', label: 'Controls',   type: 'text', placeholder: 'controls' }
+		],
+		iframe: [
+			{ name: 'src',    label: 'Source URL', type: 'url',    required: true },
+			{ name: 'width',  label: 'Width',      type: 'number' },
+			{ name: 'height', label: 'Height',     type: 'number' },
+			{ name: 'title',  label: 'Title',      type: 'text' }
+		],
+		source: [
+			{ name: 'src',  label: 'Source URL', type: 'url',  required: true },
+			{ name: 'type', label: 'MIME type',  type: 'text' }
+		]
+	};
+
+	var VOID_NODES = { img: true, input: true, br: true, hr: true, source: true };
+
 	var config = window.wpBuilder || {};
 	var text = config.i18n || {};
 	var canvas = document.getElementById('wp-builder-canvas');
@@ -37,7 +82,7 @@
 	};
 
 	function normalizeNodeTag(tag) {
-		var allowed = { div: true, section: true, article: true, main: true, aside: true, header: true, footer: true, nav: true, p: true, span: true, h1: true, h2: true, h3: true, h4: true, h5: true, h6: true };
+		var allowed = { div: true, section: true, article: true, main: true, aside: true, header: true, footer: true, nav: true, p: true, span: true, h1: true, h2: true, h3: true, h4: true, h5: true, h6: true, img: true, a: true, button: true, input: true, label: true, figure: true, figcaption: true, video: true, audio: true, source: true, iframe: true };
 		return (typeof tag === 'string' && allowed[tag]) ? tag : 'div';
 	}
 
@@ -63,6 +108,16 @@
 		};
 	}
 
+	function normalizeNodeAttrs(node, attrs) {
+		var descriptors = NODE_GLOSSARY[node] || [];
+		var raw = (attrs && typeof attrs === 'object') ? attrs : {};
+		var clean = {};
+		descriptors.forEach(function (desc) {
+			clean[desc.name] = (typeof raw[desc.name] === 'string') ? raw[desc.name] : '';
+		});
+		return clean;
+	}
+
 	function normalizeElements(elements) {
 		return elements.reduce(function (clean, element) {
 			if (!element || typeof element.type !== 'string') {
@@ -70,13 +125,15 @@
 			}
 
 			if (element.type === 'container') {
+				var node = normalizeNodeTag(element.node);
 				clean.push({
 					id: element.id || createId('container-'),
 					type: 'container',
-					node: normalizeNodeTag(element.node),
+					node: node,
 					props: normalizeContainerProps(element.props),
 					customCss: typeof element.customCss === 'string' ? element.customCss : '',
 					content: typeof element.content === 'string' ? element.content : '',
+					attrs: normalizeNodeAttrs(node, element.attrs),
 					children: Array.isArray(element.children) ? normalizeElements(element.children) : []
 				});
 			} else if (element.type === 'html') {
@@ -88,6 +145,7 @@
 					props: { flexDirection: '', flexGrow: '', gap: '' },
 					customCss: '',
 					content: typeof element.content === 'string' ? element.content : '',
+					attrs: {},
 					children: []
 				});
 			}
@@ -102,7 +160,7 @@
 	}
 
 	function createContainer() {
-		return { id: createId('container-'), type: 'container', node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', children: [] };
+		return { id: createId('container-'), type: 'container', node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', attrs: {}, children: [] };
 	}
 
 	function getElementName(id) {
@@ -317,19 +375,23 @@
 		body.className = 'wp-builder-node-body';
 		applyContainerFlexStyles(element.props || {}, node, body);
 
-		var preview = document.createElement('div');
-		preview.className = 'wp-builder-node-html-preview';
-		if (element.content) {
-			preview.innerHTML = element.content;
-		}
-		body.appendChild(preview);
+		if (VOID_NODES[element.node]) {
+			body.appendChild(renderEmpty((element.node || 'void') + ' \u00b7 ' + (text.voidElement || 'void element')));
+		} else {
+			var preview = document.createElement('div');
+			preview.className = 'wp-builder-node-html-preview';
+			if (element.content) {
+				preview.innerHTML = element.content;
+			}
+			body.appendChild(preview);
 
-		if (element.children && element.children.length) {
-			element.children.forEach(function (child) {
-				body.appendChild(renderElement(child, depth + 1));
-			});
-		} else if (!element.content) {
-			body.appendChild(renderEmpty(text.emptyContainer || 'Empty container'));
+			if (element.children && element.children.length) {
+				element.children.forEach(function (child) {
+					body.appendChild(renderElement(child, depth + 1));
+				});
+			} else if (!element.content) {
+				body.appendChild(renderEmpty(text.emptyContainer || 'Empty container'));
+			}
 		}
 
 		bar.appendChild(title);
@@ -358,13 +420,14 @@
 		var isContainer = !!(selected && selected.type === 'container');
 		var isRoot = !state.selectedId;
 		var showCommon = isRoot || isContainer;
+		var isVoid = isContainer && VOID_NODES[selected.node];
 
 		if (selectionName) {
 			selectionName.textContent = getElementName(state.selectedId);
 		}
 
 		if (addNestedButton) {
-			addNestedButton.hidden = !isContainer;
+			addNestedButton.hidden = !isContainer || isVoid;
 		}
 
 		if (nodeSelectGroup) {
@@ -380,10 +443,10 @@
 		}
 
 		if (inspectorEditor) {
-			inspectorEditor.hidden = !showCommon;
+			inspectorEditor.hidden = !showCommon || isVoid;
 		}
 
-		if (showCommon && htmlTextarea) {
+		if (showCommon && !isVoid && htmlTextarea) {
 			htmlTextarea.value = isContainer ? (selected.content || '') : (state.layout.content || '');
 		}
 
@@ -409,6 +472,9 @@
 			if (flexGrowInput) { flexGrowInput.value = props.flexGrow || ''; }
 			if (gapInput) { gapInput.value = props.gap || ''; }
 			if (customCssTextarea) { customCssTextarea.value = selected.customCss || ''; }
+			renderNodeAttrsPanel(selected);
+		} else {
+			renderNodeAttrsPanel(null);
 		}
 	}
 
@@ -486,6 +552,65 @@
 		element.customCss = css;
 		markDirty();
 		updateContainerStyle(state.selectedId, css);
+	}
+
+	function updateSelectedNodeAttr(name, value) {
+		if (!state.selectedId) { return; }
+		var element = findElement(state.layout.elements, state.selectedId);
+		if (!element || element.type !== 'container') { return; }
+		element.attrs = element.attrs || {};
+		element.attrs[name] = value;
+		markDirty();
+	}
+
+	function renderNodeAttrsPanel(selected) {
+		var panel = document.getElementById('wp-builder-inspector-node-attrs');
+		if (!panel) { return; }
+		panel.innerHTML = '';
+		var descriptors = selected ? (NODE_GLOSSARY[selected.node] || []) : [];
+		if (!descriptors.length) {
+			panel.hidden = true;
+			return;
+		}
+		panel.hidden = false;
+		var attrs = selected.attrs || {};
+		descriptors.forEach(function (desc) {
+			var group = document.createElement('div');
+			group.className = 'wp-builder-field-group';
+			var labelEl = document.createElement('label');
+			labelEl.className = 'wp-builder-inspector-label';
+			var inputId = 'wp-builder-node-attr-' + desc.name;
+			labelEl.htmlFor = inputId;
+			labelEl.textContent = desc.label + (desc.required ? ' *' : '');
+			group.appendChild(labelEl);
+			var control;
+			if (desc.type === 'select') {
+				control = document.createElement('select');
+				control.className = 'wp-builder-select';
+				(desc.options || []).forEach(function (opt) {
+					var option = document.createElement('option');
+					option.value = opt;
+					option.textContent = opt || '\u2014 None \u2014';
+					control.appendChild(option);
+				});
+				control.value = attrs[desc.name] || '';
+				control.addEventListener('change', (function (n) {
+					return function () { updateSelectedNodeAttr(n, control.value); };
+				}(desc.name)));
+			} else {
+				control = document.createElement('input');
+				control.className = 'wp-builder-input';
+				control.type = desc.type === 'number' ? 'number' : (desc.type === 'url' ? 'url' : 'text');
+				control.value = attrs[desc.name] || '';
+				if (desc.placeholder) { control.placeholder = desc.placeholder; }
+				control.addEventListener('input', (function (n) {
+					return function () { updateSelectedNodeAttr(n, control.value); };
+				}(desc.name)));
+			}
+			control.id = inputId;
+			group.appendChild(control);
+			panel.appendChild(group);
+		});
 	}
 
 	function updateHtmlPreview(id, content) {
@@ -656,6 +781,7 @@
 				var element = findElement(state.layout.elements, state.selectedId);
 				if (element && element.type === 'container') {
 					element.node = nodeSelect.value;
+					element.attrs = normalizeNodeAttrs(nodeSelect.value, element.attrs);
 					markDirty();
 					render();
 				}
