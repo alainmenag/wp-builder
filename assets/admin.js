@@ -224,9 +224,44 @@
 		}
 	}
 
+	function focusElementIdentity() {
+		var elementTabBtn = document.getElementById('wp-builder-tab-btn-element');
+		var pageTabBtn = document.getElementById('wp-builder-tab-btn-page');
+		var elementTabPanel = document.getElementById('wp-builder-tab-element');
+		var pageTabPanel = document.getElementById('wp-builder-tab-page');
+		var identityAccordion = document.getElementById('wp-builder-accordion-identity');
+
+		if (pageTabBtn) {
+			pageTabBtn.classList.remove('is-active');
+			pageTabBtn.setAttribute('aria-selected', 'false');
+		}
+		if (elementTabBtn) {
+			elementTabBtn.classList.add('is-active');
+			elementTabBtn.setAttribute('aria-selected', 'true');
+		}
+		if (pageTabPanel) {
+			pageTabPanel.hidden = true;
+		}
+		if (elementTabPanel) {
+			elementTabPanel.hidden = false;
+		}
+
+		if (identityAccordion && elementTabPanel) {
+			elementTabPanel.querySelectorAll('.wp-builder-accordion').forEach(function (a) {
+				a.classList.remove('is-open');
+				var h = a.querySelector('.wp-builder-accordion-header');
+				if (h) { h.setAttribute('aria-expanded', 'false'); }
+			});
+			identityAccordion.classList.add('is-open');
+			var identityHeader = identityAccordion.querySelector('.wp-builder-accordion-header');
+			if (identityHeader) { identityHeader.setAttribute('aria-expanded', 'true'); }
+		}
+	}
+
 	function selectElement(id) {
 		state.selectedId = id || null;
 		render();
+		focusElementIdentity();
 	}
 
 	function addElementToSelection(type) {
@@ -865,4 +900,5 @@
 	});
 
 	render();
+	focusElementIdentity();
 }());
