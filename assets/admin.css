@@ -34,6 +34,11 @@
 	--wpb-danger-text:    #f87171;
 }
 
+/* Ensure the HTML hidden attribute is never overridden by author display rules */
+[hidden] {
+	display: none !important;
+}
+
 html,
 body {
 	background: var(--wpb-bg-page);
@@ -186,6 +191,48 @@ body.wp-builder-body {
 	display: block;
 	height: 18px;
 	width: 24px;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+
+.wp-builder-tabs {
+	border-bottom: 1px solid var(--wpb-border-default);
+	display: flex;
+}
+
+.wp-builder-tab-btn {
+	background: transparent;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	color: var(--wpb-text-muted);
+	cursor: pointer;
+	flex: 1;
+	font: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	margin-bottom: -1px;
+	min-height: 40px;
+	padding: 8px 14px;
+	text-transform: uppercase;
+	transition: color 120ms ease, border-color 120ms ease;
+}
+
+.wp-builder-tab-btn:hover,
+.wp-builder-tab-btn:focus {
+	color: var(--wpb-text-secondary);
+	outline: none;
+}
+
+.wp-builder-tab-btn.is-active {
+	border-bottom-color: var(--wpb-accent-hover);
+	color: var(--wpb-text-primary);
+}
+
+.wp-builder-tab-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
 }
 
 /* ── Accordion ──────────────────────────────────────────────────────────── */

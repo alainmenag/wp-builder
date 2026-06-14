@@ -822,14 +822,20 @@
 		event.returnValue = '';
 	});
 
-	// Accordion — toggle open/close; only one open at a time
+	// Accordion — toggle open/close; only one open at a time within its tab panel
 	var accordions = document.querySelectorAll('.wp-builder-accordion');
 	accordions.forEach(function (accordion) {
 		var header = accordion.querySelector('.wp-builder-accordion-header');
 		if (!header) { return; }
 		header.addEventListener('click', function () {
 			var isOpen = accordion.classList.contains('is-open');
-			accordions.forEach(function (a) {
+			// Scope to the nearest tab-panel ancestor so panels are independent
+			var panel = accordion.parentNode;
+			while (panel && !panel.classList.contains('wp-builder-tab-panel')) {
+				panel = panel.parentNode;
+			}
+			var scope = panel ? panel.querySelectorAll('.wp-builder-accordion') : accordions;
+			scope.forEach(function (a) {
 				a.classList.remove('is-open');
 				var h = a.querySelector('.wp-builder-accordion-header');
 				if (h) { h.setAttribute('aria-expanded', 'false'); }
@@ -838,6 +844,23 @@
 				accordion.classList.add('is-open');
 				header.setAttribute('aria-expanded', 'true');
 			}
+		});
+	});
+
+	// Tabs — switch between tab panels
+	var tabBtns = document.querySelectorAll('.wp-builder-tab-btn');
+	tabBtns.forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			var targetId = btn.getAttribute('aria-controls');
+			tabBtns.forEach(function (b) {
+				b.classList.remove('is-active');
+				b.setAttribute('aria-selected', 'false');
+			});
+			btn.classList.add('is-active');
+			btn.setAttribute('aria-selected', 'true');
+			document.querySelectorAll('.wp-builder-tab-panel').forEach(function (p) {
+				p.hidden = p.id !== targetId;
+			});
 		});
 	});
 
