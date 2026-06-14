@@ -150,7 +150,7 @@ body.wp-builder-body {
 
 .wp-builder-workspace {
 	display: grid;
-	grid-template-columns: 300px minmax(360px, 1fr);
+	grid-template-columns: minmax(360px, 1fr) 300px;
 	padding: 10px;
 	gap: 10px;
 }

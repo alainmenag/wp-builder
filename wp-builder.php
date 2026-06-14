@@ -511,6 +511,11 @@ final class WP_Builder {
 		<div class="wp-builder-shell" id="wp-builder-app">
 
 			<div class="wp-builder-workspace">
+
+				<main class="wp-builder-canvas-panel" aria-label="<?php esc_attr_e( 'Builder canvas', 'wp-builder' ); ?>">
+					<div id="wp-builder-canvas" class="wp-builder-canvas"></div>
+				</main>
+
 				<aside class="wp-builder-panel wp-builder-left-panel" aria-label="<?php esc_attr_e( 'Builder panels', 'wp-builder' ); ?>">
 
 					<div>
@@ -641,9 +646,6 @@ final class WP_Builder {
 
 				</aside>
 
-				<main class="wp-builder-canvas-panel" aria-label="<?php esc_attr_e( 'Builder canvas', 'wp-builder' ); ?>">
-					<div id="wp-builder-canvas" class="wp-builder-canvas"></div>
-				</main>
 			</div>
 		</div>
 		<?php
