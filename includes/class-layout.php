@@ -210,7 +210,7 @@ trait WP_Builder_Layout {
 				if ( $custom_css !== '' && $id ) {
 					$selector   = '.wp-builder-container[data-wp-builder-id="' . esc_attr( $id ) . '"]';
 					$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_css );
-					$css_block  = '<style>' . $scoped_css . '</style>';
+					$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_css(); no WP escape function exists for raw CSS.
 				}
 
 				if ( $is_void ) {
@@ -222,7 +222,7 @@ trait WP_Builder_Layout {
 						$extra_attrs
 					);
 				} else {
-					$output .= $css_block . sprintf(
+					$output .= $css_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_elements().
 						'<%1$s class="wp-builder-container" data-wp-builder-id="%2$s"%3$s%4$s>%5$s%6$s</%1$s>',
 						$tag,
 						esc_attr( $id ),
@@ -235,7 +235,7 @@ trait WP_Builder_Layout {
 			} elseif ( 'html' === $element['type'] ) {
 				// Render legacy html elements as containers.
 				$content = isset( $element['content'] ) ? $element['content'] : '';
-				$output .= sprintf(
+				$output .= sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_elements().
 					'<div class="wp-builder-container" data-wp-builder-id="%1$s">%2$s</div>',
 					esc_attr( $id ),
 					$content
