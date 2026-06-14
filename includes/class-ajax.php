@@ -75,8 +75,10 @@ trait WP_Builder_Ajax {
 			);
 		}
 
-		$layout_json = isset( $_POST['layout'] ) ? wp_unslash( $_POST['layout'] ) : '';
-		$decoded     = json_decode( $layout_json, true );
+		// WordPress always runs wp_magic_quotes() which addslashes() every $_POST value.
+		// Unslash first so that JSON escape sequences (e.g. \n for newlines) survive json_decode intact.
+		$layout_raw = isset( $_POST['layout'] ) ? wp_unslash( (string) $_POST['layout'] ) : '';
+		$decoded    = json_decode( $layout_raw, true );
 
 		if ( ! is_array( $decoded ) ) {
 			wp_send_json_error(
@@ -86,7 +88,9 @@ trait WP_Builder_Ajax {
 		}
 
 		$layout = $this->sanitize_layout( $decoded );
-		update_post_meta( $post_id, self::META_KEY, wp_json_encode( $layout ) );
+		// wp_slash() is required because update_post_meta calls wp_unslash() internally before storing.
+		// Without it, JSON escape sequences like \n (backslash + n) lose their backslash and become just "n".
+		update_post_meta( $post_id, self::META_KEY, wp_slash( wp_json_encode( $layout ) ) );
 
 		$allowed_statuses = array( 'publish', 'draft', 'pending', 'private' );
 		$new_status       = isset( $_POST['post_status'] ) ? sanitize_key( wp_unslash( $_POST['post_status'] ) ) : '';
