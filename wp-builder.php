@@ -446,12 +446,10 @@ final class WP_Builder {
 				'pageTemplates' => $is_template ? array() : $this->get_available_page_templates( $post_id ),
 				'i18n'       => array(
 					'addContainer'   => __( 'Container', 'wp-builder' ),
-					'addHtml'        => __( 'HTML', 'wp-builder' ),
 					'canvas'         => __( 'Canvas', 'wp-builder' ),
 					'delete'         => __( 'Delete', 'wp-builder' ),
 					'emptyCanvas'    => __( 'Empty canvas', 'wp-builder' ),
 					'emptyContainer' => __( 'Empty container', 'wp-builder' ),
-					'emptyHtml'      => __( 'Empty HTML element', 'wp-builder' ),
 					'root'           => __( 'Root', 'wp-builder' ),
 					'renameTitle'    => __( 'Post title', 'wp-builder' ),
 					'saved'          => __( 'Saved', 'wp-builder' ),
@@ -575,26 +573,6 @@ final class WP_Builder {
 								</div>
 								<?php endif; ?>
 
-							</div>
-						</div>
-					</div>
-
-					<!-- Elements accordion -->
-					<div class="wp-builder-accordion" id="wp-builder-accordion-elements">
-						<button type="button" class="wp-builder-accordion-header" aria-expanded="false" aria-controls="wp-builder-accordion-elements-body">
-							<span><?php esc_html_e( 'Elements', 'wp-builder' ); ?></span>
-							<span class="wp-builder-accordion-chevron" aria-hidden="true"></span>
-						</button>
-						<div class="wp-builder-accordion-body" id="wp-builder-accordion-elements-body" role="region">
-							<div class="wp-builder-accordion-body-inner">
-								<button class="wp-builder-element-button" type="button" data-wp-builder-add="container">
-									<span class="wp-builder-element-icon" aria-hidden="true"></span>
-									<span><?php esc_html_e( 'Container', 'wp-builder' ); ?></span>
-								</button>
-								<button class="wp-builder-element-button" type="button" data-wp-builder-add="html">
-									<span class="wp-builder-element-icon wp-builder-element-icon-html" aria-hidden="true"></span>
-									<span><?php esc_html_e( 'HTML', 'wp-builder' ); ?></span>
-								</button>
 							</div>
 						</div>
 					</div>
@@ -905,11 +883,15 @@ final class WP_Builder {
 					'children'  => $this->sanitize_elements( $children ),
 				);
 			} elseif ( 'html' === $element['type'] ) {
+				// Migrate legacy html elements to containers.
 				$content = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
 				$clean[] = array(
-					'id'      => $id ? $id : wp_unique_id( 'html-' ),
-					'type'    => 'html',
-					'content' => $content,
+					'id'        => $id ? $id : wp_unique_id( 'container-' ),
+					'type'      => 'container',
+					'props'     => $this->sanitize_container_props( array() ),
+					'customCss' => '',
+					'content'   => $content,
+					'children'  => array(),
 				);
 			}
 		}
@@ -951,9 +933,10 @@ final class WP_Builder {
 					$this->render_elements( $children )
 				);
 			} elseif ( 'html' === $element['type'] ) {
+				// Render legacy html elements as containers.
 				$content = isset( $element['content'] ) ? $element['content'] : '';
 				$output .= sprintf(
-					'<div class="wp-builder-html" data-wp-builder-id="%1$s">%2$s</div>',
+					'<div class="wp-builder-container" data-wp-builder-id="%1$s">%2$s</div>',
 					esc_attr( $id ),
 					$content
 				);

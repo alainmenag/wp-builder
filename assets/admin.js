@@ -7,7 +7,6 @@
 	var saveButton = document.getElementById('wp-builder-save');
 	var shortcodePanel = document.getElementById('wp-builder-shortcode-panel');
 	var addNestedButton = document.getElementById('wp-builder-add-nested');
-	var addNestedHtmlButton = document.getElementById('wp-builder-add-nested-html');
 	var selectionName = document.getElementById('wp-builder-selection-name');
 	var saveStatus = document.getElementById('wp-builder-save-status');
 	var addButtons = document.querySelectorAll('[data-wp-builder-add]');
@@ -68,10 +67,14 @@
 					children: Array.isArray(element.children) ? normalizeElements(element.children) : []
 				});
 			} else if (element.type === 'html') {
+				// Migrate legacy html elements to containers.
 				clean.push({
-					id: element.id || createId('html-'),
-					type: 'html',
-					content: typeof element.content === 'string' ? element.content : ''
+					id: element.id || createId('container-'),
+					type: 'container',
+					props: { flexDirection: '', flexGrow: '', gap: '' },
+					customCss: '',
+					content: typeof element.content === 'string' ? element.content : '',
+					children: []
 				});
 			}
 
@@ -88,17 +91,9 @@
 		return { id: createId('container-'), type: 'container', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', children: [] };
 	}
 
-	function createHtml() {
-		return { id: createId('html-'), type: 'html', content: '' };
-	}
-
 	function getElementName(id) {
 		if (!id) {
 			return text.root || 'Root';
-		}
-		var el = findElement(state.layout.elements, id);
-		if (el && el.type === 'html') {
-			return text.addHtml || 'HTML';
 		}
 		return text.addContainer || 'Container';
 	}
@@ -163,12 +158,7 @@
 	}
 
 	function addElementToSelection(type) {
-		var selected = state.selectedId ? findElement(state.layout.elements, state.selectedId) : null;
-		// HTML elements cannot hold children; fall back to adding at the root level.
-		if (selected && selected.type !== 'container') {
-			state.selectedId = null;
-		}
-		var element = type === 'html' ? createHtml() : createContainer();
+		var element = createContainer();
 		if (!addElement(state.selectedId, element)) {
 			state.selectedId = null;
 			addElement(null, element);
@@ -258,9 +248,6 @@
 	}
 
 	function renderElement(element, depth) {
-		if (element.type === 'html') {
-			return renderHtmlNode(element);
-		}
 		return renderContainerNode(element, depth);
 	}
 
@@ -338,60 +325,6 @@
 		return node;
 	}
 
-	function renderHtmlNode(element) {
-		var node = document.createElement('section');
-		var bar = document.createElement('div');
-		var title = document.createElement('button');
-		var removeButton = document.createElement('button');
-		var body = document.createElement('div');
-		var preview = document.createElement('div');
-
-		node.className = 'wp-builder-node wp-builder-node-html' + (state.selectedId === element.id ? ' is-selected' : '');
-		node.dataset.wpBuilderId = element.id;
-
-		bar.className = 'wp-builder-node-bar';
-
-		title.type = 'button';
-		title.className = 'wp-builder-node-title wp-builder-node-title-html';
-		title.textContent = text.addHtml || 'HTML';
-		title.addEventListener('click', function (event) {
-			event.stopPropagation();
-			selectElement(element.id);
-		});
-
-		removeButton.type = 'button';
-		removeButton.className = 'wp-builder-node-action wp-builder-node-action-danger';
-		removeButton.textContent = 'x';
-		removeButton.setAttribute('aria-label', text.delete || 'Delete');
-		removeButton.addEventListener('click', function (event) {
-			event.stopPropagation();
-			state.selectedId = element.id;
-			deleteSelection();
-		});
-
-		preview.className = 'wp-builder-node-html-preview';
-		if (element.content) {
-			preview.innerHTML = element.content;
-		} else {
-			preview.appendChild(renderEmpty(text.emptyHtml || 'Empty HTML element'));
-		}
-
-		body.className = 'wp-builder-node-body';
-		body.appendChild(preview);
-
-		bar.appendChild(title);
-		bar.appendChild(removeButton);
-		node.appendChild(bar);
-		node.appendChild(body);
-
-		node.addEventListener('click', function (event) {
-			event.stopPropagation();
-			selectElement(element.id);
-		});
-
-		return node;
-	}
-
 	function renderEmpty(label) {
 		var empty = document.createElement('div');
 		empty.className = 'wp-builder-empty-state';
@@ -401,7 +334,6 @@
 
 	function renderInspector() {
 		var selected = state.selectedId ? findElement(state.layout.elements, state.selectedId) : null;
-		var isHtml = !!(selected && selected.type === 'html');
 		var isContainer = !!(selected && selected.type === 'container');
 
 		if (selectionName) {
@@ -409,18 +341,14 @@
 		}
 
 		if (addNestedButton) {
-			addNestedButton.hidden = isHtml;
-		}
-
-		if (addNestedHtmlButton) {
-			addNestedHtmlButton.hidden = isHtml;
+			addNestedButton.hidden = !isContainer;
 		}
 
 		if (inspectorEditor) {
-			inspectorEditor.hidden = !(isHtml || isContainer);
+			inspectorEditor.hidden = !isContainer;
 		}
 
-		if ((isHtml || isContainer) && htmlTextarea) {
+		if (isContainer && htmlTextarea) {
 			htmlTextarea.value = selected.content || '';
 		}
 
@@ -621,12 +549,6 @@
 		});
 	}
 
-	if (addNestedHtmlButton) {
-		addNestedHtmlButton.addEventListener('click', function () {
-			addElementToSelection('html');
-		});
-	}
-
 	// Content editor
 	if (htmlTextarea) {
 		htmlTextarea.addEventListener('input', function () {
@@ -634,7 +556,7 @@
 				return;
 			}
 			var element = findElement(state.layout.elements, state.selectedId);
-			if (element && (element.type === 'html' || element.type === 'container')) {
+			if (element && element.type === 'container') {
 				element.content = htmlTextarea.value;
 				markDirty();
 				updateHtmlPreview(state.selectedId, htmlTextarea.value);
