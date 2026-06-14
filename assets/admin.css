@@ -24,6 +24,7 @@
 	/* accent – green */
 	--wpb-accent:         #1f6f5c;
 	--wpb-accent-hover:   #28937b;
+	--wpb-accent-dim:     #164e40;
 	--wpb-accent-rgb:     40, 147, 123;
 
 	/* accent – blue (focus / link) */
@@ -32,6 +33,11 @@
 	/* danger */
 	--wpb-danger-border:  #b91c1c;
 	--wpb-danger-text:    #f87171;
+}
+
+/* Ensure the HTML hidden attribute is never overridden by author display rules */
+[hidden] {
+	display: none !important;
 }
 
 html,
@@ -188,13 +194,55 @@ body.wp-builder-body {
 	width: 24px;
 }
 
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+
+.wp-builder-tabs {
+	border-bottom: 1px solid var(--wpb-border-default);
+	display: flex;
+}
+
+.wp-builder-tab-btn {
+	background: transparent;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	color: var(--wpb-text-muted);
+	cursor: pointer;
+	flex: 1;
+	font: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	margin-bottom: -1px;
+	min-height: 40px;
+	padding: 8px 14px;
+	text-transform: uppercase;
+	transition: color 120ms ease, border-color 120ms ease;
+}
+
+.wp-builder-tab-btn:hover,
+.wp-builder-tab-btn:focus {
+	color: var(--wpb-text-secondary);
+	outline: none;
+}
+
+.wp-builder-tab-btn.is-active {
+	border-bottom-color: var(--wpb-accent-hover);
+	color: var(--wpb-text-primary);
+}
+
+.wp-builder-tab-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
 /* ── Accordion ──────────────────────────────────────────────────────────── */
 
 .wp-builder-accordion-header {
 	align-items: center;
-	background: var(--wpb-bg-raised);
+	background: var(--wpb-accent-dim);
 	border: 0;
-	color: var(--wpb-text-muted);
+	color: var(--wpb-text-secondary);
 	cursor: pointer;
 	display: flex;
 	font: inherit;
@@ -211,9 +259,14 @@ body.wp-builder-body {
 
 .wp-builder-accordion-header:hover,
 .wp-builder-accordion-header:focus {
-	background: var(--wpb-bg-control-hover);
-	color: var(--wpb-text-secondary);
+	background: var(--wpb-accent);
+	color: var(--wpb-text-inverse);
 	outline: none;
+}
+
+.wp-builder-accordion.is-open .wp-builder-accordion-header {
+	background: var(--wpb-accent);
+	color: var(--wpb-text-inverse);
 }
 
 .wp-builder-accordion-chevron {
@@ -223,7 +276,6 @@ body.wp-builder-body {
 	flex: 0 0 8px;
 	height: 8px;
 	transform: rotate(135deg);
-	transition: transform 200ms ease;
 	width: 8px;
 }
 
@@ -232,13 +284,11 @@ body.wp-builder-body {
 }
 
 .wp-builder-accordion-body {
-	max-height: 0;
-	overflow: hidden;
-	transition: max-height 250ms ease;
+	display: none;
 }
 
 .wp-builder-accordion.is-open .wp-builder-accordion-body {
-	max-height: 2000px;
+	display: block;
 }
 
 .wp-builder-accordion-body-inner {
@@ -246,12 +296,6 @@ body.wp-builder-body {
 	flex-direction: column;
 	gap: 10px;
 	padding: 10px 5px;
-}
-
-.wp-builder-inspector-container-editor {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
 }
 
 .wp-builder-template-actions {
