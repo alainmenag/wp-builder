@@ -57,7 +57,6 @@
 	var addButtons = document.querySelectorAll('[data-wp-builder-add]');
 	var htmlTextarea = document.getElementById('wp-builder-html-content');
 	var inspectorEditor = document.getElementById('wp-builder-inspector-editor');
-	var containerInspector = document.getElementById('wp-builder-inspector-container');
 	var flexDirectionSelect = document.getElementById('wp-builder-flex-direction');
 	var flexGrowInput = document.getElementById('wp-builder-flex-grow');
 	var gapInput = document.getElementById('wp-builder-gap');
@@ -480,10 +479,6 @@
 
 		if (showCommon && !isVoid && htmlTextarea) {
 			htmlTextarea.value = isContainer ? (selected.content || '') : (state.layout.content || '');
-		}
-
-		if (containerInspector) {
-			containerInspector.hidden = !isContainer && !isRoot;
 		}
 
 		if (shortcodePanel) {
