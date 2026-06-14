@@ -151,12 +151,15 @@ body.wp-builder-body {
 .wp-builder-workspace {
 	display: grid;
 	grid-template-columns: 300px minmax(360px, 1fr);
+	min-height: 100vh;
+	padding: 10px;
+	gap: 10px;
 }
 
 .wp-builder-panel {
     background: var(--wpb-bg-surface);
     overflow-y: auto;
-    padding: 5px;
+    padding: 0;
     gap: 5px;
     display: flex;
     flex-direction: column;
@@ -243,14 +246,14 @@ body.wp-builder-body {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	padding: 14px;
+	padding: 10px 5px;
 }
 
 .wp-builder-template-actions {
 	align-items: center;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
+	gap: 5px;
 }
 
 .wp-builder-template-actions #wp-builder-save-status {
@@ -260,14 +263,18 @@ body.wp-builder-body {
 .wp-builder-canvas-panel {
 	min-width: 0;
 	overflow: auto;
-	padding: 10px;
+	padding: 0;
 }
 
 #wp-builder-save-status {
-	color: var(--wpb-text-muted);
+	color: var(--wpb-text-secondary);
 	flex: 1;
 	font-size: 13px;
 	font-weight: 600;
+}
+
+#wp-builder-save-status:not(:empty) + span {
+	display: none;
 }
 
 .wp-builder-canvas {
@@ -381,12 +388,6 @@ body.wp-builder-body {
 	text-align: center;
 }
 
-.wp-builder-inspector-selection {
-	border: 1px solid var(--wpb-border-subtle);
-	margin-bottom: 14px;
-	padding: 12px;
-}
-
 .wp-builder-inspector-label {
 	color: var(--wpb-text-muted);
 	display: block;
@@ -396,13 +397,6 @@ body.wp-builder-body {
 	line-height: 1.25;
 	margin-bottom: 4px;
 	text-transform: uppercase;
-}
-
-.wp-builder-inspector-selection strong {
-	color: var(--wpb-text-primary);
-	display: block;
-	font-size: 16px;
-	line-height: 1.3;
 }
 
 .wp-builder-inspector-actions {
@@ -491,15 +485,6 @@ body.wp-builder-body {
 	margin: 14px 0;
 }
 
-.wp-builder-inspector-section-title {
-	color: var(--wpb-text-muted);
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.04em;
-	margin: 0 0 10px;
-	text-transform: uppercase;
-}
-
 .wp-builder-inspector-hint {
 	color: var(--wpb-text-muted);
 	font-size: 12px;
@@ -515,13 +500,9 @@ body.wp-builder-body {
 	padding: 1px 4px;
 }
 
-.wp-builder-field-group {
-	margin-bottom: 10px;
-}
-
 .wp-builder-field-group .wp-builder-inspector-label {
 	display: block;
-	margin-bottom: 4px;
+	margin-bottom: 5px;
 }
 
 .wp-builder-select,

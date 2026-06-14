@@ -8,7 +8,6 @@
 	var shortcodePanel = document.getElementById('wp-builder-shortcode-panel');
 	var addNestedButton = document.getElementById('wp-builder-add-nested');
 	var addNestedHtmlButton = document.getElementById('wp-builder-add-nested-html');
-	var deleteButton = document.getElementById('wp-builder-delete-selected');
 	var selectionName = document.getElementById('wp-builder-selection-name');
 	var saveStatus = document.getElementById('wp-builder-save-status');
 	var addButtons = document.querySelectorAll('[data-wp-builder-add]');
@@ -19,7 +18,6 @@
 	var flexGrowInput = document.getElementById('wp-builder-flex-grow');
 	var gapInput = document.getElementById('wp-builder-gap');
 	var customCssTextarea = document.getElementById('wp-builder-custom-css');
-	var rootInspector = document.getElementById('wp-builder-inspector-root');
 	var postStatusSelect = document.getElementById('wp-builder-post-status');
 	var titleInput = document.getElementById('wp-builder-title');
 	var viewLink = document.getElementById('wp-builder-view-link');
@@ -409,10 +407,6 @@
 			addNestedHtmlButton.hidden = isHtml;
 		}
 
-		if (deleteButton) {
-			deleteButton.disabled = !state.selectedId;
-		}
-
 		if (inspectorEditor) {
 			inspectorEditor.hidden = !isHtml;
 		}
@@ -427,10 +421,6 @@
 
 		if (shortcodePanel) {
 			shortcodePanel.hidden = false;
-		}
-
-		if (rootInspector) {
-			rootInspector.hidden = false;
 		}
 
 		if (postStatusSelect) {
@@ -626,10 +616,6 @@
 		addNestedHtmlButton.addEventListener('click', function () {
 			addElementToSelection('html');
 		});
-	}
-
-	if (deleteButton) {
-		deleteButton.addEventListener('click', deleteSelection);
 	}
 
 	// Content editor
