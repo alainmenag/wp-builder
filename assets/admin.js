@@ -62,6 +62,7 @@
 	var gapInput = document.getElementById('wp-builder-gap');
 	var customCssTextarea = document.getElementById('wp-builder-custom-css');
 	var cssEditor = null; // CodeMirror instance, set up below if wp.codeEditor is available.
+	var cssEditorSuppressChange = false; // True while setValue is being called programmatically.
 	var nodeSelect = document.getElementById('wp-builder-node');
 	var nodeSelectGroup = document.getElementById('wp-builder-inspector-node');
 	var postStatusSelect = document.getElementById('wp-builder-post-status');
@@ -502,7 +503,11 @@
 			if (customCssTextarea) {
 				var cssVal = selected.customCss || '';
 				customCssTextarea.value = cssVal;
-				if (cssEditor) { cssEditor.codemirror.setValue(cssVal); }
+				if (cssEditor) {
+					cssEditorSuppressChange = true;
+					cssEditor.codemirror.setValue(cssVal);
+					cssEditorSuppressChange = false;
+				}
 			}
 			renderNodeAttrsPanel(selected);
 		} else if (isRoot) {
@@ -513,7 +518,11 @@
 			if (customCssTextarea) {
 				var rootCssVal = state.layout.customCss || '';
 				customCssTextarea.value = rootCssVal;
-				if (cssEditor) { cssEditor.codemirror.setValue(rootCssVal); }
+				if (cssEditor) {
+					cssEditorSuppressChange = true;
+					cssEditor.codemirror.setValue(rootCssVal);
+					cssEditorSuppressChange = false;
+				}
 			}
 			renderNodeAttrsPanel({ node: state.layout.node, attrs: state.layout.attrs || {} });
 		} else {
@@ -748,8 +757,9 @@
 				state.pageTemplate = payload.data.pageTemplate;
 				pageTemplateSelect.value = payload.data.pageTemplate;
 			}
-			updateStatus(text.saved || 'Saved');
 			render();
+			state.dirty = false;
+			updateStatus(text.saved || 'Saved');
 		}).catch(function (error) {
 			updateStatus(error.message || 'Save failed');
 		}).finally(function () {
@@ -848,6 +858,7 @@
 				}
 			});
 			cssEditor.codemirror.on('change', function (cm) {
+				if (cssEditorSuppressChange) { return; }
 				updateSelectedContainerCss(cm.getValue());
 			});
 		} else {
