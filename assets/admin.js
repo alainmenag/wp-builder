@@ -133,7 +133,7 @@
 					props: normalizeContainerProps(element.props),
 					customCss: typeof element.customCss === 'string' ? element.customCss : '',
 					content: typeof element.content === 'string' ? element.content : '',
-					nodeAttrs: normalizeNodeAttrs(node, element.nodeAttrs),
+					attrs: normalizeNodeAttrs(node, element.attrs),
 					children: Array.isArray(element.children) ? normalizeElements(element.children) : []
 				});
 			} else if (element.type === 'html') {
@@ -145,7 +145,7 @@
 					props: { flexDirection: '', flexGrow: '', gap: '' },
 					customCss: '',
 					content: typeof element.content === 'string' ? element.content : '',
-					nodeAttrs: {},
+					attrs: {},
 					children: []
 				});
 			}
@@ -160,7 +160,7 @@
 	}
 
 	function createContainer() {
-		return { id: createId('container-'), type: 'container', node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', nodeAttrs: {}, children: [] };
+		return { id: createId('container-'), type: 'container', node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', attrs: {}, children: [] };
 	}
 
 	function getElementName(id) {
@@ -558,8 +558,8 @@
 		if (!state.selectedId) { return; }
 		var element = findElement(state.layout.elements, state.selectedId);
 		if (!element || element.type !== 'container') { return; }
-		element.nodeAttrs = element.nodeAttrs || {};
-		element.nodeAttrs[name] = value;
+		element.attrs = element.attrs || {};
+		element.attrs[name] = value;
 		markDirty();
 	}
 
@@ -573,7 +573,7 @@
 			return;
 		}
 		panel.hidden = false;
-		var nodeAttrs = selected.nodeAttrs || {};
+		var attrs = selected.attrs || {};
 		descriptors.forEach(function (desc) {
 			var group = document.createElement('div');
 			group.className = 'wp-builder-field-group';
@@ -593,7 +593,7 @@
 					option.textContent = opt || '\u2014 None \u2014';
 					control.appendChild(option);
 				});
-				control.value = nodeAttrs[desc.name] || '';
+				control.value = attrs[desc.name] || '';
 				control.addEventListener('change', (function (n) {
 					return function () { updateSelectedNodeAttr(n, control.value); };
 				}(desc.name)));
@@ -601,7 +601,7 @@
 				control = document.createElement('input');
 				control.className = 'wp-builder-input';
 				control.type = desc.type === 'number' ? 'number' : (desc.type === 'url' ? 'url' : 'text');
-				control.value = nodeAttrs[desc.name] || '';
+				control.value = attrs[desc.name] || '';
 				if (desc.placeholder) { control.placeholder = desc.placeholder; }
 				control.addEventListener('input', (function (n) {
 					return function () { updateSelectedNodeAttr(n, control.value); };
@@ -781,7 +781,7 @@
 				var element = findElement(state.layout.elements, state.selectedId);
 				if (element && element.type === 'container') {
 					element.node = nodeSelect.value;
-					element.nodeAttrs = normalizeNodeAttrs(nodeSelect.value, element.nodeAttrs);
+					element.attrs = normalizeNodeAttrs(nodeSelect.value, element.attrs);
 					markDirty();
 					render();
 				}

@@ -1000,7 +1000,7 @@ final class WP_Builder {
 				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
 				$content    = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
 				$node       = isset( $element['node'] ) ? $this->sanitize_node_tag( (string) $element['node'] ) : 'div';
-				$raw_attrs  = isset( $element['nodeAttrs'] ) && is_array( $element['nodeAttrs'] ) ? $element['nodeAttrs'] : array();
+				$raw_attrs  = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
 				$clean[]    = array(
 					'id'        => $id ? $id : wp_unique_id( 'container-' ),
 					'type'      => 'container',
@@ -1008,7 +1008,7 @@ final class WP_Builder {
 					'props'     => $this->sanitize_container_props( $props ),
 					'customCss' => $this->sanitize_custom_css( $custom_css ),
 					'content'   => $content,
-					'nodeAttrs' => $this->sanitize_node_attrs( $node, $raw_attrs ),
+					'attrs' => $this->sanitize_node_attrs( $node, $raw_attrs ),
 					'children'  => $this->sanitize_elements( $children ),
 				);
 			} elseif ( 'html' === $element['type'] ) {
@@ -1045,7 +1045,7 @@ final class WP_Builder {
 				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
 				$content    = isset( $element['content'] ) ? $element['content'] : '';
 				$tag        = isset( $element['node'] ) ? $this->sanitize_node_tag( (string) $element['node'] ) : 'div';
-				$node_attrs = isset( $element['nodeAttrs'] ) && is_array( $element['nodeAttrs'] ) ? $element['nodeAttrs'] : array();
+				$node_attrs = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
 				$is_void    = in_array( $tag, array( 'img', 'input', 'source', 'br', 'hr' ), true );
 
 				$inline_style = $this->build_container_inline_style( $props );
