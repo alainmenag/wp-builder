@@ -366,7 +366,7 @@ body.wp-builder-body {
 	box-shadow: 0 0 0 2px rgba(var(--wpb-accent-rgb), 0.28);
 }
 
-.wp-builder-canvas-root.is-selected .wp-builder-node-title,
+.wp-builder-canvas-root.is-selected > .wp-builder-node-bar > .wp-builder-node-title,
 .wp-builder-node.is-selected > .wp-builder-node-bar > .wp-builder-node-title {
 	color: var(--wpb-accent);
 }
