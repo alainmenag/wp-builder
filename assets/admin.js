@@ -172,10 +172,10 @@
 	function getElementName(id) {
 		var element;
 		if (!id) {
-			return (state.layout.node || 'div').toUpperCase();
+			return (state.layout.node || 'div').toUpperCase() + ' \u00b7 ' + state.layout.id;
 		}
 		element = findElement(state.layout.elements, id);
-		return element ? (element.node || 'div').toUpperCase() : id;
+		return element ? (element.node || 'div').toUpperCase() + ' \u00b7 ' + id : id;
 	}
 
 	function findElement(elements, id) {
@@ -309,7 +309,7 @@
 
 		title.type = 'button';
 		title.className = 'wp-builder-node-title';
-		title.textContent = (state.layout.node || 'div').toUpperCase();
+		title.textContent = (state.layout.node || 'div').toUpperCase() + ' \u00b7 ' + state.layout.id;
 		title.addEventListener('click', function (event) {
 			event.stopPropagation();
 			selectElement(null);
@@ -381,7 +381,7 @@
 
 		title.type = 'button';
 		title.className = 'wp-builder-node-title';
-		title.textContent = (element.node || 'div').toUpperCase();
+		title.textContent = (element.node || 'div').toUpperCase() + ' \u00b7 ' + element.id;
 		title.addEventListener('click', function (event) {
 			event.stopPropagation();
 			selectElement(element.id);
