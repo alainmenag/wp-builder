@@ -584,6 +584,10 @@ body.wp-builder-body {
 	background: var(--wpb-bg-control);
 }
 
+.wp-builder-field-group .CodeMirror-placeholder {
+	opacity: .25;
+}
+
 /* ── Shortcode pre ──────────────────────────────────────────────────────── */
 
 .wp-builder-shortcode-pre {
