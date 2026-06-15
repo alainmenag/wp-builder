@@ -32,7 +32,7 @@ trait WP_Builder_Layout {
 	private function empty_layout(): array {
 		return array(
 			'version'   => 1,
-			'id'        => wp_unique_id( 'wpb-' ),
+			'id'        => $this->generate_element_id(),
 			'node'      => 'div',
 			'props'     => array( 'flexDirection' => '', 'flexGrow' => '', 'gap' => '' ),
 			'customCss' => '',
@@ -52,7 +52,7 @@ trait WP_Builder_Layout {
 
 		return array(
 			'version'   => 1,
-			'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : wp_unique_id( 'wpb-' ),
+			'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : $this->generate_element_id(),
 			'node'      => $node,
 			'props'     => $this->sanitize_container_props( $props ),
 			'customCss' => $this->sanitize_custom_css( $custom_css ),
@@ -64,7 +64,7 @@ trait WP_Builder_Layout {
 
 	private function render_layout_root( array $layout, string $extra_class = '' ): string {
 		$tag        = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
-		$id         = isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : wp_unique_id( 'wpb-' );
+		$id         = isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : $this->generate_element_id();
 		$content    = isset( $layout['content'] ) ? $layout['content'] : '';
 		$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
 		$custom_css = isset( $layout['customCss'] ) ? (string) $layout['customCss'] : '';
@@ -181,6 +181,12 @@ trait WP_Builder_Layout {
 		return $clean;
 	}
 
+	private function generate_element_id(): string {
+		$time = base_convert( (string) intval( microtime( true ) * 1000 ), 10, 36 );
+		$rand = substr( base_convert( bin2hex( random_bytes( 4 ) ), 16, 36 ), 0, 6 );
+		return 'wpb-' . $time . '-' . $rand;
+	}
+
 	private function sanitize_elements( array $elements ): array {
 		$clean = array();
 
@@ -195,7 +201,7 @@ trait WP_Builder_Layout {
 			if ( isset( $element['type'] ) && 'html' === $element['type'] ) {
 				$content = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
 				$clean[] = array(
-					'id'        => $id ? $id : wp_unique_id( 'wpb-' ),
+					'id'        => $id ? $id : $this->generate_element_id(),
 					'node'      => 'div',
 					'props'     => $this->sanitize_container_props( array() ),
 					'customCss' => '',
@@ -217,7 +223,7 @@ trait WP_Builder_Layout {
 			$node       = $this->sanitize_node_tag( (string) $element['node'] );
 			$raw_attrs  = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
 			$clean[]    = array(
-				'id'        => $id ? $id : wp_unique_id( 'wpb-' ),
+				'id'        => $id ? $id : $this->generate_element_id(),
 				'node'      => $node,
 				'props'     => $this->sanitize_container_props( $props ),
 				'customCss' => $this->sanitize_custom_css( $custom_css ),
