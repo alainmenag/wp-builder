@@ -298,68 +298,8 @@
 	}
 
 	function renderCanvas() {
-		var root = document.createElement('div');
-		var bar = document.createElement('div');
-		var title = document.createElement('button');
-		var addButton = document.createElement('button');
-		var body = document.createElement('div');
 		canvas.innerHTML = '';
-		root.className = 'wp-builder-canvas-root' + (!state.selectedId ? ' is-selected' : '');
-		root.tabIndex = 0;
-		root.setAttribute('role', 'button');
-		root.setAttribute('aria-label', text.canvas || 'Canvas');
-		root.dataset.wpBuilderId = state.layout.id;
-
-		bar.className = 'wp-builder-node-bar';
-
-		title.type = 'button';
-		title.className = 'wp-builder-node-title';
-		title.textContent = (state.layout.node || 'div').toUpperCase() + ' \u00b7 ' + state.layout.id;
-		title.addEventListener('click', function (event) {
-			event.stopPropagation();
-			selectElement(null);
-		});
-
-		addButton.type = 'button';
-		addButton.className = 'wp-builder-node-action';
-		addButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>';
-		addButton.setAttribute('aria-label', text.addContainer || 'Add container');
-		addButton.addEventListener('click', function (event) {
-			event.stopPropagation();
-			state.selectedId = null;
-			addContainerToSelection();
-		});
-
-		bar.appendChild(title);
-		bar.appendChild(addButton);
-
-		body.className = 'wp-builder-canvas-root-body';
-		applyContainerFlexStyles(state.layout.props || {}, root, body);
-
-		root.addEventListener('click', function (event) {
-			if (event.target === root || event.target === body) {
-				selectElement(null);
-			}
-		});
-
-		if (state.layout.content) {
-			var rootPreview = document.createElement('div');
-			rootPreview.className = 'wp-builder-node-html-preview';
-			rootPreview.innerHTML = state.layout.content;
-			body.appendChild(rootPreview);
-		}
-
-		if (!state.layout.elements.length && !state.layout.content) {
-			body.appendChild(renderEmpty(text.emptyCanvas || 'Empty canvas'));
-		} else {
-			state.layout.elements.forEach(function (element) {
-				body.appendChild(renderElement(element, 0));
-			});
-		}
-
-		root.appendChild(bar);
-		root.appendChild(body);
-
+		var root = renderNode(state.layout, 0, true);
 		canvas.appendChild(root);
 		cleanupAllContainerStyles();
 		syncAllContainerStyles(state.layout.elements);
@@ -367,20 +307,28 @@
 	}
 
 	function renderElement(element, depth) {
-		return renderContainerNode(element, depth);
+		return renderNode(element, depth, false);
 	}
 
-	function renderContainerNode(element, depth) {
-		var node = document.createElement('section');
+	function renderNode(element, depth, isRoot) {
+		var node = document.createElement(isRoot ? 'div' : 'section');
 		var bar = document.createElement('div');
 		var title = document.createElement('button');
 		var addButton = document.createElement('button');
-		var removeButton = document.createElement('button');
 		var body = document.createElement('div');
+		var children = isRoot ? (element.elements || []) : (element.children || []);
+		var isVoid = !isRoot && VOID_NODES[element.node];
 
-		node.className = 'wp-builder-node wp-builder-node-container' + (state.selectedId === element.id ? ' is-selected' : '');
+		if (isRoot) {
+			node.className = 'wp-builder-canvas-root' + (!state.selectedId ? ' is-selected' : '');
+			node.tabIndex = 0;
+			node.setAttribute('role', 'button');
+			node.setAttribute('aria-label', text.canvas || 'Canvas');
+		} else {
+			node.className = 'wp-builder-node wp-builder-node-container' + (state.selectedId === element.id ? ' is-selected' : '');
+			node.style.setProperty('--wp-builder-depth', depth);
+		}
 		node.dataset.wpBuilderId = element.id;
-		node.style.setProperty('--wp-builder-depth', depth);
 
 		bar.className = 'wp-builder-node-bar';
 
@@ -389,62 +337,74 @@
 		title.textContent = (element.node || 'div').toUpperCase() + ' \u00b7 ' + element.id;
 		title.addEventListener('click', function (event) {
 			event.stopPropagation();
-			selectElement(element.id);
+			selectElement(isRoot ? null : element.id);
 		});
 
 		addButton.type = 'button';
 		addButton.className = 'wp-builder-node-action';
 		addButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>';
-		addButton.setAttribute('aria-label', 'Add container');
+		addButton.setAttribute('aria-label', text.addContainer || 'Add container');
 		addButton.addEventListener('click', function (event) {
 			event.stopPropagation();
-			state.selectedId = element.id;
+			state.selectedId = isRoot ? null : element.id;
 			addContainerToSelection();
 		});
 
-		removeButton.type = 'button';
-		removeButton.className = 'wp-builder-node-action wp-builder-node-action-danger';
-		removeButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.3 5.71a.996.996 0 0 0-1.41 0L12 10.59 7.11 5.7A.996.996 0 1 0 5.7 7.11L10.59 12l-4.88 4.88a.996.996 0 1 0 1.41 1.41L12 13.41l4.88 4.88a.996.996 0 1 0 1.41-1.41L13.41 12l4.88-4.88a.996.996 0 0 0-.01-1.41z"></path></svg>';
-		removeButton.setAttribute('aria-label', text.delete || 'Delete');
-		removeButton.addEventListener('click', function (event) {
-			event.stopPropagation();
-			state.selectedId = element.id;
-			deleteSelection();
-		});
+		bar.appendChild(title);
 
-		body.className = 'wp-builder-node-body';
+		if (!isRoot) {
+			var removeButton = document.createElement('button');
+			removeButton.type = 'button';
+			removeButton.className = 'wp-builder-node-action wp-builder-node-action-danger';
+			removeButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.3 5.71a.996.996 0 0 0-1.41 0L12 10.59 7.11 5.7A.996.996 0 1 0 5.7 7.11L10.59 12l-4.88 4.88a.996.996 0 1 0 1.41 1.41L12 13.41l4.88 4.88a.996.996 0 1 0 1.41-1.41L13.41 12l4.88-4.88a.996.996 0 0 0-.01-1.41z"></path></svg>';
+			removeButton.setAttribute('aria-label', text.delete || 'Delete');
+			removeButton.addEventListener('click', function (event) {
+				event.stopPropagation();
+				state.selectedId = element.id;
+				deleteSelection();
+			});
+		}
+
+		body.className = isRoot ? 'wp-builder-canvas-root-body' : 'wp-builder-node-body';
 		applyContainerFlexStyles(element.props || {}, node, body);
 
-		if (VOID_NODES[element.node]) {
+		if (isVoid) {
 			body.appendChild(renderEmpty((element.node || 'void') + ' \u00b7 ' + (text.voidElement || 'void element')));
 		} else {
-			var preview = document.createElement('div');
-			preview.className = 'wp-builder-node-html-preview';
 			if (element.content) {
+				var preview = document.createElement('div');
+				preview.className = 'wp-builder-node-html-preview';
 				preview.innerHTML = element.content;
+				body.appendChild(preview);
 			}
-			body.appendChild(preview);
 
-			if (element.children && element.children.length) {
-				element.children.forEach(function (child) {
-					body.appendChild(renderElement(child, depth + 1));
+			if (!children.length && !element.content) {
+				body.appendChild(renderEmpty(isRoot ? (text.emptyCanvas || 'Empty canvas') : (text.emptyContainer || 'Empty container')));
+			} else {
+				children.forEach(function (child) {
+					body.appendChild(renderElement(child, isRoot ? 0 : depth + 1));
 				});
-			} else if (!element.content) {
-				body.appendChild(renderEmpty(text.emptyContainer || 'Empty container'));
 			}
 		}
 
-		bar.appendChild(title);
-		if (!VOID_NODES[element.node]) {
+		if (!isVoid) {
 			bar.appendChild(addButton);
 		}
-		bar.appendChild(removeButton);
+		if (!isRoot) {
+			bar.appendChild(removeButton);
+		}
 		node.appendChild(bar);
 		node.appendChild(body);
 
 		node.addEventListener('click', function (event) {
-			event.stopPropagation();
-			selectElement(element.id);
+			if (isRoot) {
+				if (event.target === node || event.target === body) {
+					selectElement(null);
+				}
+			} else {
+				event.stopPropagation();
+				selectElement(element.id);
+			}
 		});
 
 		return node;
