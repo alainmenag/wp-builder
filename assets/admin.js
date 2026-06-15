@@ -90,20 +90,45 @@
 	}
 
 	function normalizeLayout(layout) {
-		if (!layout || !Array.isArray(layout.elements)) {
-			return { version: 1, id: createId(), node: 'div', props: normalizeContainerProps({}), customCss: '', content: '', attrs: {}, elements: [] };
+		var now = Date.now();
+		var rootData, rootNode, rootEl;
+
+		// No layout at all → fresh v2 envelope.
+		if (!layout || typeof layout !== 'object') {
+			return { version: 2, createdAt: now, updatedAt: now, children: [createContainer()] };
 		}
-		var node = normalizeNodeTag(layout.node);
-		return {
-			version: 1,
-			id: layout.id ? layout.id : createId(),
-			node: node,
-			props: normalizeContainerProps(layout.props),
-			customCss: typeof layout.customCss === 'string' ? layout.customCss : '',
-			content: typeof layout.content === 'string' ? layout.content : '',
-			attrs: normalizeNodeAttrs(node, layout.attrs),
-			elements: normalizeElements(layout.elements)
+
+		// v1 migration: root element fields were at the top level; child elements were in 'elements'.
+		if (!layout.version || layout.version < 2) {
+			rootNode = normalizeNodeTag(layout.node);
+			rootEl = {
+				id: layout.id ? layout.id : createId(),
+				node: rootNode,
+				props: normalizeContainerProps(layout.props),
+				customCss: typeof layout.customCss === 'string' ? layout.customCss : '',
+				content: typeof layout.content === 'string' ? layout.content : '',
+				attrs: normalizeNodeAttrs(rootNode, layout.attrs),
+				children: Array.isArray(layout.elements) ? normalizeElements(layout.elements) : []
+			};
+			return { version: 2, createdAt: now, updatedAt: now, children: [rootEl] };
+		}
+
+		// v2: children[0] is the root element.
+		rootData = Array.isArray(layout.children) && layout.children[0] ? layout.children[0] : null;
+		if (!rootData) {
+			return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [createContainer()] };
+		}
+		rootNode = normalizeNodeTag(rootData.node);
+		rootEl = {
+			id: rootData.id ? rootData.id : createId(),
+			node: rootNode,
+			props: normalizeContainerProps(rootData.props),
+			customCss: typeof rootData.customCss === 'string' ? rootData.customCss : '',
+			content: typeof rootData.content === 'string' ? rootData.content : '',
+			attrs: normalizeNodeAttrs(rootNode, rootData.attrs),
+			children: Array.isArray(rootData.children) ? normalizeElements(rootData.children) : []
 		};
+		return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [rootEl] };
 	}
 
 	function normalizeContainerProps(props) {
@@ -174,11 +199,12 @@
 	}
 
 	function getElementName(id) {
-		var element;
+		var element, root;
 		if (!id) {
-			return (state.layout.node || 'div').toUpperCase() + ' \u00b7 ' + state.layout.id;
+			root = state.layout.children[0] || {};
+			return (root.node || 'div').toUpperCase() + ' \u00b7 ' + (root.id || '');
 		}
-		element = findElement(state.layout.elements, id);
+		element = findElement(state.layout.children[0].children || [], id);
 		return element ? (element.node || 'div').toUpperCase() + ' \u00b7 ' + id : id;
 	}
 
@@ -199,10 +225,11 @@
 	function addElement(parentId, element) {
 		var parent;
 		if (!parentId) {
-			state.layout.elements.push(element);
+			state.layout.children[0].children = state.layout.children[0].children || [];
+			state.layout.children[0].children.push(element);
 			return true;
 		}
-		parent = findElement(state.layout.elements, parentId);
+		parent = findElement(state.layout.children[0].children || [], parentId);
 		if (!parent) {
 			return false;
 		}
@@ -287,7 +314,7 @@
 		if (!state.selectedId) {
 			return;
 		}
-		if (deleteElement(state.layout.elements, state.selectedId)) {
+		if (deleteElement(state.layout.children[0].children || [], state.selectedId)) {
 			state.selectedId = null;
 			markDirty();
 			render();
@@ -301,11 +328,11 @@
 
 	function renderCanvas() {
 		canvas.innerHTML = '';
-		var root = renderNode(state.layout, 0, true);
+		var root = renderNode(state.layout.children[0], 0, true);
 		canvas.appendChild(root);
 		cleanupAllContainerStyles();
-		syncAllContainerStyles(state.layout.elements);
-		updateContainerStyle(state.layout.id, state.layout.customCss || '');
+		syncAllContainerStyles(state.layout.children[0].children || []);
+		updateContainerStyle(state.layout.children[0].id, state.layout.children[0].customCss || '');
 	}
 
 	function renderElement(element, depth) {
@@ -318,7 +345,7 @@
 		var title = document.createElement('button');
 		var addButton = document.createElement('button');
 		var body = document.createElement('div');
-		var children = isRoot ? (element.elements || []) : (element.children || []);
+		var children = element.children || [];
 		var isVoid = !isRoot && VOID_NODES[element.node];
 
 		if (isRoot) {
@@ -420,7 +447,8 @@
 	}
 
 	function renderInspector() {
-		var selected = state.selectedId ? findElement(state.layout.elements, state.selectedId) : null;
+		var root = state.layout.children[0] || {};
+		var selected = state.selectedId ? findElement(root.children || [], state.selectedId) : null;
 		var isContainer = !!(selected && selected.node);
 		var isRoot = !state.selectedId;
 		var showCommon = isRoot || isContainer;
@@ -443,14 +471,14 @@
 		}
 
 		if (idInput) {
-			idInput.value = isContainer ? (selected.id || '') : (isRoot ? (state.layout.id || '') : '');
+			idInput.value = isContainer ? (selected.id || '') : (isRoot ? (root.id || '') : '');
 		}
 
 		if (nodeSelect) {
 			if (isContainer) {
 				nodeSelect.value = selected.node || 'div';
 			} else if (isRoot) {
-				nodeSelect.value = state.layout.node || 'div';
+				nodeSelect.value = root.node || 'div';
 			}
 		}
 
@@ -459,7 +487,7 @@
 		}
 
 		if (showCommon && !isVoid && htmlTextarea) {
-			htmlTextarea.value = isContainer ? (selected.content || '') : (state.layout.content || '');
+			htmlTextarea.value = isContainer ? (selected.content || '') : (root.content || '');
 		}
 
 		if (shortcodePanel) {
@@ -490,12 +518,12 @@
 			}
 			renderNodeAttrsPanel(selected);
 		} else if (isRoot) {
-			var rootProps = state.layout.props || {};
+			var rootProps = root.props || {};
 			if (flexDirectionSelect) { flexDirectionSelect.value = rootProps.flexDirection || ''; }
 			if (flexGrowInput) { flexGrowInput.value = rootProps.flexGrow || ''; }
 			if (gapInput) { gapInput.value = rootProps.gap || ''; }
 			if (customCssTextarea) {
-				var rootCssVal = state.layout.customCss || '';
+				var rootCssVal = root.customCss || '';
 				customCssTextarea.value = rootCssVal;
 				if (cssEditor) {
 					cssEditorSuppressChange = true;
@@ -503,7 +531,7 @@
 					cssEditorSuppressChange = false;
 				}
 			}
-			renderNodeAttrsPanel({ node: state.layout.node, attrs: state.layout.attrs || {} });
+			renderNodeAttrsPanel({ node: root.node, attrs: root.attrs || {} });
 		} else {
 			renderNodeAttrsPanel(null);
 		}
@@ -562,17 +590,17 @@
 
 	function updateSelectedContainerProp(prop, value) {
 		if (!state.selectedId) {
-			state.layout.props = state.layout.props || {};
-			state.layout.props[prop] = value;
+			state.layout.children[0].props = state.layout.children[0].props || {};
+			state.layout.children[0].props[prop] = value;
 			markDirty();
 			var rootNode = canvas.querySelector('.wp-builder-canvas-root');
 			if (rootNode) {
 				var rootBody = rootNode.querySelector('.wp-builder-canvas-root-body');
-				if (rootBody) { applyContainerFlexStyles(state.layout.props, rootNode, rootBody); }
+				if (rootBody) { applyContainerFlexStyles(state.layout.children[0].props, rootNode, rootBody); }
 			}
 			return;
 		}
-		var element = findElement(state.layout.elements, state.selectedId);
+		var element = findElement(state.layout.children[0].children || [], state.selectedId);
 		if (!element) { return; }
 		element.props = element.props || {};
 		element.props[prop] = value;
@@ -586,12 +614,12 @@
 
 	function updateSelectedContainerCss(css) {
 		if (!state.selectedId) {
-			state.layout.customCss = css;
+			state.layout.children[0].customCss = css;
 			markDirty();
-			updateContainerStyle(state.layout.id, css);
+			updateContainerStyle(state.layout.children[0].id, css);
 			return;
 		}
-		var element = findElement(state.layout.elements, state.selectedId);
+		var element = findElement(state.layout.children[0].children || [], state.selectedId);
 		if (!element) { return; }
 		element.customCss = css;
 		markDirty();
@@ -600,12 +628,12 @@
 
 	function updateSelectedNodeAttr(name, value) {
 		if (!state.selectedId) {
-			state.layout.attrs = state.layout.attrs || {};
-			state.layout.attrs[name] = value;
+			state.layout.children[0].attrs = state.layout.children[0].attrs || {};
+			state.layout.children[0].attrs[name] = value;
 			markDirty();
 			return;
 		}
-		var element = findElement(state.layout.elements, state.selectedId);
+		var element = findElement(state.layout.children[0].children || [], state.selectedId);
 		if (!element) { return; }
 		element.attrs = element.attrs || {};
 		element.attrs[name] = value;
@@ -624,7 +652,7 @@
 		}
 
 		if (state.selectedId) {
-			var element = findElement(state.layout.elements, state.selectedId);
+			var element = findElement(state.layout.children[0].children || [], state.selectedId);
 			if (!element) { return; }
 			if (element.id === sanitized) {
 				if (idInput) { idInput.value = sanitized; }
@@ -633,11 +661,11 @@
 			element.id = sanitized;
 			state.selectedId = sanitized;
 		} else {
-			if (state.layout.id === sanitized) {
+			if (state.layout.children[0].id === sanitized) {
 				if (idInput) { idInput.value = sanitized; }
 				return;
 			}
-			state.layout.id = sanitized;
+			state.layout.children[0].id = sanitized;
 		}
 
 		markDirty();
@@ -817,7 +845,7 @@
 			if (empty) { body.removeChild(empty); }
 		} else {
 			if (preview) { body.removeChild(preview); }
-			if (!state.layout.elements.length && !body.querySelector('.wp-builder-empty-state')) {
+			if (!state.layout.children[0].children.length && !body.querySelector('.wp-builder-empty-state')) {
 				body.appendChild(renderEmpty(text.emptyCanvas || 'Empty canvas'));
 			}
 		}
@@ -827,14 +855,14 @@
 	if (htmlTextarea) {
 		htmlTextarea.addEventListener('input', function () {
 			if (state.selectedId) {
-				var element = findElement(state.layout.elements, state.selectedId);
+				var element = findElement(state.layout.children[0].children || [], state.selectedId);
 				if (element && element.node) {
 					element.content = htmlTextarea.value;
 					markDirty();
 					updateHtmlPreview(state.selectedId, htmlTextarea.value);
 				}
 			} else {
-				state.layout.content = htmlTextarea.value;
+				state.layout.children[0].content = htmlTextarea.value;
 				markDirty();
 				updateRootHtmlPreview(htmlTextarea.value);
 			}
@@ -883,7 +911,7 @@
 	if (nodeSelect) {
 		nodeSelect.addEventListener('change', function () {
 			if (state.selectedId) {
-				var element = findElement(state.layout.elements, state.selectedId);
+				var element = findElement(state.layout.children[0].children || [], state.selectedId);
 				if (element && element.node) {
 					element.node = nodeSelect.value;
 					element.attrs = normalizeNodeAttrs(nodeSelect.value, element.attrs);
@@ -891,8 +919,8 @@
 					render();
 				}
 			} else {
-				state.layout.node = nodeSelect.value;
-				state.layout.attrs = normalizeNodeAttrs(nodeSelect.value, state.layout.attrs);
+				state.layout.children[0].node = nodeSelect.value;
+				state.layout.children[0].attrs = normalizeNodeAttrs(nodeSelect.value, state.layout.children[0].attrs);
 				markDirty();
 				renderCanvas();
 			}
