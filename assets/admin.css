@@ -32,6 +32,7 @@
 
 	/* danger */
 	--wpb-danger:         #b91c1c;
+	--wpb-danger-hover:   #dc2626;
 	--wpb-danger-border:  #b91c1c;
 	--wpb-danger-text:    #f87171;
 }
@@ -125,6 +126,17 @@ body.wp-builder-body {
 	background: var(--wpb-accent-hover);
 	border-color: var(--wpb-accent-hover);
 	color: var(--wpb-text-inverse);
+}
+
+.wp-builder-button-primary.is-dirty {
+	background: var(--wpb-danger);
+	border-color: var(--wpb-danger-border);
+}
+
+.wp-builder-button-primary.is-dirty:hover,
+.wp-builder-button-primary.is-dirty:focus {
+	background: var(--wpb-danger-hover);
+	border-color: var(--wpb-danger-hover);
 }
 
 .wp-builder-button-secondary {
