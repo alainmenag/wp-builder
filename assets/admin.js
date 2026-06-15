@@ -223,6 +223,9 @@
 
 	function markDirty() {
 		state.dirty = true;
+		if (saveButton) {
+			saveButton.classList.add('is-dirty');
+		}
 		updateStatus(text.unsaved || 'Unsaved changes');
 	}
 
@@ -761,6 +764,9 @@
 			}
 			render();
 			state.dirty = false;
+			if (saveButton) {
+				saveButton.classList.remove('is-dirty');
+			}
 			updateStatus(text.saved || 'Saved');
 		}).catch(function (error) {
 			updateStatus(error.message || 'Save failed');
