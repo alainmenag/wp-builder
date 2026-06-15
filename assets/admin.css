@@ -66,26 +66,18 @@ body.wp-builder-body {
 }
 
 .wp-builder-title-button {
-	background: transparent;
-	border: 1px solid transparent;
+	background: transparent !important;
+	border: none !important;
 	border-radius: 4px;
 	color: var(--wpb-text-primary);
 	cursor: pointer;
 	font-size: 20px;
 	font-weight: bold;
 	line-height: 1.25;
-	margin: 2px 0 0;
-	padding: 1px 4px;
+	margin: 0;
+	padding: 0;
 	text-align: left;
-}
-
-.wp-builder-title-button:hover {
-	border-color: var(--wpb-border-strong);
-}
-
-.wp-builder-title-button:focus {
-	border-color: var(--wpb-blue);
-	outline: none;
+	outline: none !important;
 }
 
 .wp-builder-actions,

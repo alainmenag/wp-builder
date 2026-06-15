@@ -162,14 +162,14 @@ trait WP_Builder_Builder_Page {
 
 					<div>
 						<button type="button" id="wp-builder-title" class="wp-builder-title-button" aria-label="<?php esc_attr_e( 'Edit post title', 'wp-builder' ); ?>"><?php echo esc_html( get_the_title( $post_id ) ); ?></button>
+						<div>
+							<strong id="wp-builder-selection-name"><?php esc_html_e( 'Root', 'wp-builder' ); ?></strong>
+						</div>
 					</div>
 
 					<div class="wp-builder-template-actions">
-						<a id="wp-builder-view-link" class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer">
+						<a id="wp-builder-view-link" class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer" style="flex: 0;">
 							<?php esc_html_e( 'View', 'wp-builder' ); ?>
-						</a>
-						<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( add_query_arg( 'view', 'json', $this->get_builder_url( $post_id ) ) ); ?>" target="_blank" rel="noreferrer">
-							<?php esc_html_e( 'Export', 'wp-builder' ); ?>
 						</a>
 						<button class="wp-builder-button wp-builder-button-primary" type="button" id="wp-builder-save">
 							<span id="wp-builder-save-status" role="status" aria-live="polite"></span>
@@ -244,6 +244,23 @@ trait WP_Builder_Builder_Page {
 							</div>
 						</div>
 
+						<!-- Accordion: Data -->
+						<div class="wp-builder-accordion" id="wp-builder-accordion-data">
+							<button type="button" class="wp-builder-accordion-header" aria-expanded="false" aria-controls="wp-builder-accordion-data-body">
+								<span><?php esc_html_e( 'Data', 'wp-builder' ); ?></span>
+								<span class="wp-builder-accordion-chevron" aria-hidden="true"></span>
+							</button>
+							<div class="wp-builder-accordion-body" id="wp-builder-accordion-data-body" role="region">
+								<div class="wp-builder-accordion-body-inner">
+									<div id="wp-builder-data-panel" class="wp-builder-field-group">
+										<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( add_query_arg( 'view', 'json', $this->get_builder_url( $post_id ) ) ); ?>" target="_blank" rel="noreferrer" style="width: 100%;">
+											<?php esc_html_e( 'Export', 'wp-builder' ); ?>
+										</a>
+									</div>
+								</div>
+							</div>
+						</div>
+
 					</div>
 
 					<!-- Tab panel: Element -->
@@ -257,10 +274,6 @@ trait WP_Builder_Builder_Page {
 							</button>
 							<div class="wp-builder-accordion-body" id="wp-builder-accordion-identity-body" role="region">
 								<div class="wp-builder-accordion-body-inner">
-									<div class="wp-builder-inspector-selection">
-										<span class="wp-builder-inspector-label"><?php esc_html_e( 'Selected', 'wp-builder' ); ?></span>
-										<strong id="wp-builder-selection-name"><?php esc_html_e( 'Root', 'wp-builder' ); ?></strong>
-									</div>
 									<div id="wp-builder-inspector-node" class="wp-builder-field-group" hidden>
 										<label class="wp-builder-inspector-label" for="wp-builder-node"><?php esc_html_e( 'Node', 'wp-builder' ); ?></label>
 										<select id="wp-builder-node" class="wp-builder-select">
