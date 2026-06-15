@@ -31,8 +31,13 @@
 	--wpb-blue:           #58a6ff;
 
 	/* danger */
+	--wpb-danger:         #b91c1c;
 	--wpb-danger-border:  #b91c1c;
 	--wpb-danger-text:    #f87171;
+}
+
+.color-wpb-accent {
+	color: var(--wpb-accent) !important;
 }
 
 /* Ensure the HTML hidden attribute is never overridden by author display rules */
