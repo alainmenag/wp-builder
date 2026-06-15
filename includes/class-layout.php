@@ -32,7 +32,7 @@ trait WP_Builder_Layout {
 	private function empty_layout(): array {
 		return array(
 			'version'   => 1,
-			'id'        => 'wp-builder-root',
+			'id'        => $this->generate_element_id(),
 			'node'      => 'div',
 			'props'     => array( 'flexDirection' => '', 'flexGrow' => '', 'gap' => '' ),
 			'customCss' => '',
@@ -52,7 +52,7 @@ trait WP_Builder_Layout {
 
 		return array(
 			'version'   => 1,
-			'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : 'wp-builder-root',
+			'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : $this->generate_element_id(),
 			'node'      => $node,
 			'props'     => $this->sanitize_container_props( $props ),
 			'customCss' => $this->sanitize_custom_css( $custom_css ),
@@ -64,7 +64,7 @@ trait WP_Builder_Layout {
 
 	private function render_layout_root( array $layout, string $extra_class = '' ): string {
 		$tag        = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
-		$id         = isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : 'wp-builder-root';
+		$id         = isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : $this->generate_element_id();
 		$content    = isset( $layout['content'] ) ? $layout['content'] : '';
 		$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
 		$custom_css = isset( $layout['customCss'] ) ? (string) $layout['customCss'] : '';
@@ -181,46 +181,56 @@ trait WP_Builder_Layout {
 		return $clean;
 	}
 
+	private function generate_element_id(): string {
+		$time = base_convert( (string) intval( microtime( true ) * 1000 ), 10, 36 );
+		$rand = substr( base_convert( bin2hex( random_bytes( 4 ) ), 16, 36 ), 0, 6 );
+		return 'wpb-' . $time . '-' . $rand;
+	}
+
 	private function sanitize_elements( array $elements ): array {
 		$clean = array();
 
 		foreach ( $elements as $element ) {
-			if ( ! is_array( $element ) || ! isset( $element['type'] ) ) {
+			if ( ! is_array( $element ) ) {
 				continue;
 			}
 
 			$id = isset( $element['id'] ) ? sanitize_key( (string) $element['id'] ) : '';
 
-			if ( 'container' === $element['type'] ) {
-				$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
-				$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
-				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
-				$content    = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
-				$node       = isset( $element['node'] ) ? $this->sanitize_node_tag( (string) $element['node'] ) : 'div';
-				$raw_attrs  = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
-				$clean[]    = array(
-					'id'        => $id ? $id : wp_unique_id( 'container-' ),
-					'type'      => 'container',
-					'node'      => $node,
-					'props'     => $this->sanitize_container_props( $props ),
-					'customCss' => $this->sanitize_custom_css( $custom_css ),
-					'content'   => $content,
-					'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
-					'children'  => $this->sanitize_elements( $children ),
-				);
-			} elseif ( 'html' === $element['type'] ) {
-				// Migrate legacy html elements to containers.
+			// Migrate legacy html elements.
+			if ( isset( $element['type'] ) && 'html' === $element['type'] ) {
 				$content = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
 				$clean[] = array(
-					'id'        => $id ? $id : wp_unique_id( 'container-' ),
-					'type'      => 'container',
+					'id'        => $id ? $id : $this->generate_element_id(),
 					'node'      => 'div',
 					'props'     => $this->sanitize_container_props( array() ),
 					'customCss' => '',
 					'content'   => $content,
+					'attrs'     => array(),
 					'children'  => array(),
 				);
+				continue;
 			}
+
+			if ( ! isset( $element['node'] ) ) {
+				continue;
+			}
+
+			$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
+			$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
+			$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
+			$content    = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
+			$node       = $this->sanitize_node_tag( (string) $element['node'] );
+			$raw_attrs  = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
+			$clean[]    = array(
+				'id'        => $id ? $id : $this->generate_element_id(),
+				'node'      => $node,
+				'props'     => $this->sanitize_container_props( $props ),
+				'customCss' => $this->sanitize_custom_css( $custom_css ),
+				'content'   => $content,
+				'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
+				'children'  => $this->sanitize_elements( $children ),
+			);
 		}
 
 		return $clean;
@@ -230,65 +240,54 @@ trait WP_Builder_Layout {
 		$output = '';
 
 		foreach ( $elements as $element ) {
-			if ( ! is_array( $element ) || ! isset( $element['type'] ) ) {
+			if ( ! is_array( $element ) || ! isset( $element['node'] ) ) {
 				continue;
 			}
 
-			$id = isset( $element['id'] ) ? sanitize_key( (string) $element['id'] ) : '';
+			$id         = isset( $element['id'] ) ? sanitize_key( (string) $element['id'] ) : '';
+			$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
+			$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
+			$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
+			$content    = isset( $element['content'] ) ? $element['content'] : '';
+			$tag        = $this->sanitize_node_tag( (string) $element['node'] );
+			$node_attrs = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
+			$is_void    = in_array( $tag, array( 'img', 'input', 'source', 'br', 'hr' ), true );
 
-			if ( 'container' === $element['type'] ) {
-				$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
-				$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
-				$custom_css = isset( $element['customCss'] ) ? (string) $element['customCss'] : '';
-				$content    = isset( $element['content'] ) ? $element['content'] : '';
-				$tag        = isset( $element['node'] ) ? $this->sanitize_node_tag( (string) $element['node'] ) : 'div';
-				$node_attrs = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
-				$is_void    = in_array( $tag, array( 'img', 'input', 'source', 'br', 'hr' ), true );
+			$inline_style = $this->build_container_inline_style( $props );
+			$style_attr   = $inline_style ? ' style="' . esc_attr( $inline_style ) . '"' : '';
 
-				$inline_style = $this->build_container_inline_style( $props );
-				$style_attr   = $inline_style ? ' style="' . esc_attr( $inline_style ) . '"' : '';
-
-				$extra_attrs = '';
-				foreach ( $node_attrs as $attr_name => $attr_value ) {
-					$attr_name = sanitize_key( $attr_name );
-					if ( $attr_name && '' !== $attr_value ) {
-						$extra_attrs .= ' ' . esc_attr( $attr_name ) . '="' . esc_attr( $attr_value ) . '"';
-					}
+			$extra_attrs = '';
+			foreach ( $node_attrs as $attr_name => $attr_value ) {
+				$attr_name = sanitize_key( $attr_name );
+				if ( $attr_name && '' !== $attr_value ) {
+					$extra_attrs .= ' ' . esc_attr( $attr_name ) . '="' . esc_attr( $attr_value ) . '"';
 				}
+			}
 
-				$css_block = '';
-				if ( $custom_css !== '' && $id ) {
-					$selector   = '.wp-builder-container[data-wp-builder-id="' . esc_attr( $id ) . '"]';
-					$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_css );
-					$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_css(); no WP escape function exists for raw CSS.
-				}
+			$css_block = '';
+			if ( $custom_css !== '' && $id ) {
+				$selector   = '.wp-builder-container[data-wp-builder-id="' . esc_attr( $id ) . '"]';
+				$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_css );
+				$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_css(); no WP escape function exists for raw CSS.
+			}
 
-				if ( $is_void ) {
-					$output .= $css_block . sprintf(
-						'<%1$s class="wp-builder-container" data-wp-builder-id="%2$s"%3$s%4$s />',
-						$tag,
-						esc_attr( $id ),
-						$style_attr,
-						$extra_attrs
-					);
-				} else {
-					$output .= $css_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_elements().
-						'<%1$s class="wp-builder-container" data-wp-builder-id="%2$s"%3$s%4$s>%5$s%6$s</%1$s>',
-						$tag,
-						esc_attr( $id ),
-						$style_attr,
-						$extra_attrs,
-						$content,
-						$this->render_elements( $children )
-					);
-				}
-			} elseif ( 'html' === $element['type'] ) {
-				// Render legacy html elements as containers.
-				$content = isset( $element['content'] ) ? $element['content'] : '';
-				$output .= sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_elements().
-					'<div class="wp-builder-container" data-wp-builder-id="%1$s">%2$s</div>',
+			if ( $is_void ) {
+				$output .= $css_block . sprintf(
+					'<%1$s class="wp-builder-container" data-wp-builder-id="%2$s"%3$s%4$s />',
+					$tag,
 					esc_attr( $id ),
-					$content
+					$style_attr,
+					$extra_attrs
+				);
+			} else {
+				$output .= $css_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_elements().
+					'<%1$s class="wp-builder-container" data-wp-builder-id="%2$s"%3$s%4$s>%5$s%6$s</%1$s>',
+					$tag,
+					esc_attr( $id ),
+					$style_attr,
+					$extra_attrs,
+					$content,
+					$this->render_elements( $children )
 				);
 			}
 		}
@@ -343,13 +342,11 @@ trait WP_Builder_Layout {
 		$count = 0;
 
 		foreach ( $elements as $element ) {
-			if ( ! is_array( $element ) || ! isset( $element['type'] ) ) {
+			if ( ! is_array( $element ) || ! isset( $element['node'] ) ) {
 				continue;
 			}
 
-			if ( 'container' === $element['type'] || 'html' === $element['type'] ) {
-				++$count;
-			}
+			++$count;
 
 			$children = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
 			$count   += $this->count_elements( $children );

@@ -91,12 +91,12 @@
 
 	function normalizeLayout(layout) {
 		if (!layout || !Array.isArray(layout.elements)) {
-			return { version: 1, id: createId('root-'), node: 'div', props: normalizeContainerProps({}), customCss: '', content: '', attrs: {}, elements: [] };
+			return { version: 1, id: createId(), node: 'div', props: normalizeContainerProps({}), customCss: '', content: '', attrs: {}, elements: [] };
 		}
 		var node = normalizeNodeTag(layout.node);
 		return {
 			version: 1,
-			id: (layout.id && layout.id !== 'wp-builder-root') ? layout.id : createId('root-'),
+			id: layout.id ? layout.id : createId(),
 			node: node,
 			props: normalizeContainerProps(layout.props),
 			customCss: typeof layout.customCss === 'string' ? layout.customCss : '',
@@ -128,27 +128,14 @@
 
 	function normalizeElements(elements) {
 		return elements.reduce(function (clean, element) {
-			if (!element || typeof element.type !== 'string') {
+			if (!element || typeof element !== 'object') {
 				return clean;
 			}
 
-			if (element.type === 'container') {
-				var node = normalizeNodeTag(element.node);
+			// Migrate legacy html elements.
+			if (element.type === 'html') {
 				clean.push({
-					id: element.id || createId('container-'),
-					type: 'container',
-					node: node,
-					props: normalizeContainerProps(element.props),
-					customCss: typeof element.customCss === 'string' ? element.customCss : '',
-					content: typeof element.content === 'string' ? element.content : '',
-					attrs: normalizeNodeAttrs(node, element.attrs),
-					children: Array.isArray(element.children) ? normalizeElements(element.children) : []
-				});
-			} else if (element.type === 'html') {
-				// Migrate legacy html elements to containers.
-				clean.push({
-					id: element.id || createId('container-'),
-					type: 'container',
+					id: element.id || createId(),
 					node: 'div',
 					props: { flexDirection: '', flexGrow: '', gap: '' },
 					customCss: '',
@@ -156,19 +143,34 @@
 					attrs: {},
 					children: []
 				});
+				return clean;
 			}
+
+			if (typeof element.node !== 'string') {
+				return clean;
+			}
+
+			var node = normalizeNodeTag(element.node);
+			clean.push({
+				id: element.id || createId(),
+				node: node,
+				props: normalizeContainerProps(element.props),
+				customCss: typeof element.customCss === 'string' ? element.customCss : '',
+				content: typeof element.content === 'string' ? element.content : '',
+				attrs: normalizeNodeAttrs(node, element.attrs),
+				children: Array.isArray(element.children) ? normalizeElements(element.children) : []
+			});
 
 			return clean;
 		}, []);
 	}
 
-	function createId(prefix) {
-		prefix = prefix || 'container-';
-		return prefix + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+	function createId() {
+		return 'wpb-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
 	}
 
 	function createContainer() {
-		return { id: createId('container-'), type: 'container', node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', attrs: {}, children: [] };
+		return { id: createId(), node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', attrs: {}, children: [] };
 	}
 
 	function getElementName(id) {
@@ -201,7 +203,7 @@
 			return true;
 		}
 		parent = findElement(state.layout.elements, parentId);
-		if (!parent || parent.type !== 'container') {
+		if (!parent) {
 			return false;
 		}
 		parent.children = parent.children || [];
@@ -419,7 +421,7 @@
 
 	function renderInspector() {
 		var selected = state.selectedId ? findElement(state.layout.elements, state.selectedId) : null;
-		var isContainer = !!(selected && selected.type === 'container');
+		var isContainer = !!(selected && selected.node);
 		var isRoot = !state.selectedId;
 		var showCommon = isRoot || isContainer;
 		var isVoid = isContainer && VOID_NODES[selected.node];
@@ -553,10 +555,8 @@
 
 	function syncAllContainerStyles(elements) {
 		elements.forEach(function (element) {
-			if (element.type === 'container') {
-				updateContainerStyle(element.id, element.customCss || '');
-				syncAllContainerStyles(element.children || []);
-			}
+			updateContainerStyle(element.id, element.customCss || '');
+			syncAllContainerStyles(element.children || []);
 		});
 	}
 
@@ -573,7 +573,7 @@
 			return;
 		}
 		var element = findElement(state.layout.elements, state.selectedId);
-		if (!element || element.type !== 'container') { return; }
+		if (!element) { return; }
 		element.props = element.props || {};
 		element.props[prop] = value;
 		markDirty();
@@ -592,7 +592,7 @@
 			return;
 		}
 		var element = findElement(state.layout.elements, state.selectedId);
-		if (!element || element.type !== 'container') { return; }
+		if (!element) { return; }
 		element.customCss = css;
 		markDirty();
 		updateContainerStyle(state.selectedId, css);
@@ -606,7 +606,7 @@
 			return;
 		}
 		var element = findElement(state.layout.elements, state.selectedId);
-		if (!element || element.type !== 'container') { return; }
+		if (!element) { return; }
 		element.attrs = element.attrs || {};
 		element.attrs[name] = value;
 		markDirty();
@@ -620,7 +620,7 @@
 			.replace(/^-+|-+$/g, '');
 
 		if (!sanitized) {
-			sanitized = state.selectedId ? createId('container-') : createId('root-');
+			sanitized = createId();
 		}
 
 		if (state.selectedId) {
@@ -828,7 +828,7 @@
 		htmlTextarea.addEventListener('input', function () {
 			if (state.selectedId) {
 				var element = findElement(state.layout.elements, state.selectedId);
-				if (element && element.type === 'container') {
+				if (element && element.node) {
 					element.content = htmlTextarea.value;
 					markDirty();
 					updateHtmlPreview(state.selectedId, htmlTextarea.value);
@@ -884,7 +884,7 @@
 		nodeSelect.addEventListener('change', function () {
 			if (state.selectedId) {
 				var element = findElement(state.layout.elements, state.selectedId);
-				if (element && element.type === 'container') {
+				if (element && element.node) {
 					element.node = nodeSelect.value;
 					element.attrs = normalizeNodeAttrs(nodeSelect.value, element.attrs);
 					markDirty();
