@@ -26,49 +26,99 @@ trait WP_Builder_Layout {
 
 	private function has_builder_layout( int $post_id ): bool {
 		$layout = $this->get_layout( $post_id );
-		return ! empty( $layout['elements'] );
+		return ! empty( $layout['children'] );
 	}
 
 	private function empty_layout(): array {
+		$now = time();
 		return array(
-			'version'   => 1,
-			'id'        => $this->generate_element_id(),
-			'node'      => 'div',
-			'props'     => array( 'flexDirection' => '', 'flexGrow' => '', 'gap' => '' ),
-			'customCss' => '',
-			'content'   => '',
-			'attrs'     => array(),
-			'elements'  => array(),
+			'version'   => 2,
+			'createdAt' => $now,
+			'updatedAt' => $now,
+			'children'  => array(
+				array(
+					'id'        => $this->generate_element_id(),
+					'node'      => 'div',
+					'props'     => array( 'flexDirection' => '', 'flexGrow' => '', 'gap' => '' ),
+					'customCss' => '',
+					'content'   => '',
+					'attrs'     => array(),
+					'children'  => array(),
+				),
+			),
 		);
 	}
 
 	private function sanitize_layout( array $layout ): array {
-		$elements   = isset( $layout['elements'] ) && is_array( $layout['elements'] ) ? $layout['elements'] : array();
-		$node       = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
-		$content    = isset( $layout['content'] ) ? wp_kses_post( (string) $layout['content'] ) : '';
-		$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
-		$custom_css = isset( $layout['customCss'] ) ? (string) $layout['customCss'] : '';
-		$raw_attrs  = isset( $layout['attrs'] ) && is_array( $layout['attrs'] ) ? $layout['attrs'] : array();
+		$now = time();
 
-		return array(
-			'version'   => 1,
-			'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : $this->generate_element_id(),
+		// Migrate v1 layouts: root element fields lived at the top level; child elements were in 'elements'.
+		if ( ! isset( $layout['version'] ) || (int) $layout['version'] < 2 ) {
+			$node       = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
+			$content    = isset( $layout['content'] ) ? wp_kses_post( (string) $layout['content'] ) : '';
+			$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
+			$custom_css = isset( $layout['customCss'] ) ? (string) $layout['customCss'] : '';
+			$raw_attrs  = isset( $layout['attrs'] ) && is_array( $layout['attrs'] ) ? $layout['attrs'] : array();
+			$elements   = isset( $layout['elements'] ) && is_array( $layout['elements'] ) ? $layout['elements'] : array();
+
+			$root = array(
+				'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : $this->generate_element_id(),
+				'node'      => $node,
+				'props'     => $this->sanitize_container_props( $props ),
+				'customCss' => $this->sanitize_custom_css( $custom_css ),
+				'content'   => $content,
+				'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
+				'children'  => $this->sanitize_elements( $elements ),
+			);
+
+			return array(
+				'version'   => 2,
+				'createdAt' => $now,
+				'updatedAt' => $now,
+				'children'  => array( $root ),
+			);
+		}
+
+		// v2 layout: the root element is children[0].
+		$created_at = isset( $layout['createdAt'] ) ? absint( $layout['createdAt'] ) : $now;
+		$raw_children = isset( $layout['children'] ) && is_array( $layout['children'] ) ? $layout['children'] : array();
+		$root_data    = ! empty( $raw_children[0] ) && is_array( $raw_children[0] ) ? $raw_children[0] : array();
+
+		$node       = isset( $root_data['node'] ) ? $this->sanitize_node_tag( (string) $root_data['node'] ) : 'div';
+		$content    = isset( $root_data['content'] ) ? wp_kses_post( (string) $root_data['content'] ) : '';
+		$props      = isset( $root_data['props'] ) && is_array( $root_data['props'] ) ? $root_data['props'] : array();
+		$custom_css = isset( $root_data['customCss'] ) ? (string) $root_data['customCss'] : '';
+		$raw_attrs  = isset( $root_data['attrs'] ) && is_array( $root_data['attrs'] ) ? $root_data['attrs'] : array();
+		$children   = isset( $root_data['children'] ) && is_array( $root_data['children'] ) ? $root_data['children'] : array();
+
+		$root = array(
+			'id'        => isset( $root_data['id'] ) && is_string( $root_data['id'] ) && '' !== $root_data['id'] ? sanitize_key( $root_data['id'] ) : $this->generate_element_id(),
 			'node'      => $node,
 			'props'     => $this->sanitize_container_props( $props ),
 			'customCss' => $this->sanitize_custom_css( $custom_css ),
 			'content'   => $content,
 			'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
-			'elements'  => $this->sanitize_elements( $elements ),
+			'children'  => $this->sanitize_elements( $children ),
+		);
+
+		return array(
+			'version'   => 2,
+			'createdAt' => $created_at,
+			'updatedAt' => $now,
+			'children'  => array( $root ),
 		);
 	}
 
 	private function render_layout_root( array $layout, string $extra_class = '' ): string {
-		$tag        = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
-		$id         = isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : $this->generate_element_id();
-		$content    = isset( $layout['content'] ) ? $layout['content'] : '';
-		$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
-		$custom_css = isset( $layout['customCss'] ) ? (string) $layout['customCss'] : '';
-		$raw_attrs  = isset( $layout['attrs'] ) && is_array( $layout['attrs'] ) ? $layout['attrs'] : array();
+		// The root element is stored as children[0] in the v2 envelope.
+		$root       = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
+		$tag        = isset( $root['node'] ) ? $this->sanitize_node_tag( (string) $root['node'] ) : 'div';
+		$id         = isset( $root['id'] ) && is_string( $root['id'] ) && '' !== $root['id'] ? sanitize_key( $root['id'] ) : $this->generate_element_id();
+		$content    = isset( $root['content'] ) ? $root['content'] : '';
+		$props      = isset( $root['props'] ) && is_array( $root['props'] ) ? $root['props'] : array();
+		$custom_css = isset( $root['customCss'] ) ? (string) $root['customCss'] : '';
+		$raw_attrs  = isset( $root['attrs'] ) && is_array( $root['attrs'] ) ? $root['attrs'] : array();
+		$children   = isset( $root['children'] ) && is_array( $root['children'] ) ? $root['children'] : array();
 
 		$class        = 'wp-builder-page' . ( $extra_class ? ' ' . $extra_class : '' );
 		$inline_style = $this->build_container_inline_style( $props );
@@ -97,7 +147,7 @@ trait WP_Builder_Layout {
 			$style_attr,
 			$extra_attrs,
 			$content,
-			$this->render_elements( $layout['elements'] )
+			$this->render_elements( $children )
 		);
 	}
 
