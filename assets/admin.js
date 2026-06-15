@@ -937,6 +937,9 @@
 			if (!isOpen) {
 				accordion.classList.add('is-open');
 				header.setAttribute('aria-expanded', 'true');
+				if (cssEditor && accordion.id === 'wp-builder-accordion-style') {
+					cssEditor.codemirror.refresh();
+				}
 			}
 		});
 	});
