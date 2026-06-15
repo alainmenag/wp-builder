@@ -322,7 +322,7 @@
 
 		addButton.type = 'button';
 		addButton.className = 'wp-builder-node-action';
-		addButton.textContent = '+';
+		addButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>';
 		addButton.setAttribute('aria-label', text.addContainer || 'Add container');
 		addButton.addEventListener('click', function (event) {
 			event.stopPropagation();
@@ -394,7 +394,7 @@
 
 		addButton.type = 'button';
 		addButton.className = 'wp-builder-node-action';
-		addButton.textContent = '+';
+		addButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>';
 		addButton.setAttribute('aria-label', 'Add container');
 		addButton.addEventListener('click', function (event) {
 			event.stopPropagation();
@@ -404,7 +404,7 @@
 
 		removeButton.type = 'button';
 		removeButton.className = 'wp-builder-node-action wp-builder-node-action-danger';
-		removeButton.textContent = 'x';
+		removeButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.3 5.71a.996.996 0 0 0-1.41 0L12 10.59 7.11 5.7A.996.996 0 1 0 5.7 7.11L10.59 12l-4.88 4.88a.996.996 0 1 0 1.41 1.41L12 13.41l4.88 4.88a.996.996 0 1 0 1.41-1.41L13.41 12l4.88-4.88a.996.996 0 0 0-.01-1.41z"></path></svg>';
 		removeButton.setAttribute('aria-label', text.delete || 'Delete');
 		removeButton.addEventListener('click', function (event) {
 			event.stopPropagation();

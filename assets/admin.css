@@ -421,13 +421,15 @@ body.wp-builder-body {
 	background: var(--wpb-bg-control);
 	border: 1px solid var(--wpb-border-default);
 	color: var(--wpb-text-secondary);
-	flex: 0 0 28px;
+	flex: 0 0 30px;
 	font-size: 16px;
 	font-weight: 700;
-	height: 28px;
+	height: 30px;
 	line-height: 1;
 	padding: 0;
-	width: 28px;
+	width: 30px;
+	line-height: 30px;
+	border-radius: 0;
 }
 
 .wp-builder-node-action:hover,
