@@ -87,18 +87,18 @@ The layout is stored as JSON in post meta under the key `_wp_builder_layout`. Th
 ```json
 {
   "version": 1,
+  "id": "wpb-lxyz12-abc456",
   "node": "div",
   "content": "",
-  "elements": [ /* array of container elements */ ]
+  "elements": [ /* array of elements */ ]
 }
 ```
 
-Each **container element**:
+Each **element**:
 
 ```json
 {
-  "id": "container-1",
-  "type": "container",
+  "id": "wpb-lxyz12-abc456",
   "node": "div",
   "props": {
     "flexDirection": "row",
@@ -108,7 +108,7 @@ Each **container element**:
   "customCss": "self { background: red; }",
   "content": "<p>Hello</p>",
   "attrs": { "src": "https://…" },
-  "children": [ /* nested container elements */ ]
+  "children": [ /* nested elements */ ]
 }
 ```
 
