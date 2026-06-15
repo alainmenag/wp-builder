@@ -65,6 +65,8 @@
 	var cssEditorSuppressChange = false; // True while setValue is being called programmatically.
 	var nodeSelect = document.getElementById('wp-builder-node');
 	var nodeSelectGroup = document.getElementById('wp-builder-inspector-node');
+	var idInput = document.getElementById('wp-builder-node-id');
+	var idInputGroup = document.getElementById('wp-builder-inspector-id');
 	var postStatusSelect = document.getElementById('wp-builder-post-status');
 	var titleInput = document.getElementById('wp-builder-title');
 	var viewLink = document.getElementById('wp-builder-view-link');
@@ -469,6 +471,14 @@
 			nodeSelectGroup.hidden = !showCommon;
 		}
 
+		if (idInputGroup) {
+			idInputGroup.hidden = !showCommon;
+		}
+
+		if (idInput) {
+			idInput.value = isContainer ? (selected.id || '') : (isRoot ? (state.layout.id || '') : '');
+		}
+
 		if (nodeSelect) {
 			if (isContainer) {
 				nodeSelect.value = selected.node || 'div';
@@ -635,6 +645,38 @@
 		element.attrs = element.attrs || {};
 		element.attrs[name] = value;
 		markDirty();
+	}
+
+	function updateSelectedId(rawValue) {
+		var sanitized = rawValue.toLowerCase()
+			.replace(/\s+/g, '-')
+			.replace(/[^a-z0-9_-]/g, '')
+			.replace(/-+/g, '-')
+			.replace(/^-+|-+$/g, '');
+
+		if (!sanitized) {
+			sanitized = state.selectedId ? createId('container-') : createId('root-');
+		}
+
+		if (state.selectedId) {
+			var element = findElement(state.layout.elements, state.selectedId);
+			if (!element) { return; }
+			if (element.id === sanitized) {
+				if (idInput) { idInput.value = sanitized; }
+				return;
+			}
+			element.id = sanitized;
+			state.selectedId = sanitized;
+		} else {
+			if (state.layout.id === sanitized) {
+				if (idInput) { idInput.value = sanitized; }
+				return;
+			}
+			state.layout.id = sanitized;
+		}
+
+		markDirty();
+		render();
 	}
 
 	function renderNodeAttrsPanel(selected) {
@@ -885,6 +927,18 @@
 				state.layout.attrs = normalizeNodeAttrs(nodeSelect.value, state.layout.attrs);
 				markDirty();
 				renderCanvas();
+			}
+		});
+	}
+
+	if (idInput) {
+		idInput.addEventListener('blur', function () {
+			updateSelectedId(idInput.value);
+		});
+		idInput.addEventListener('keydown', function (event) {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				idInput.blur();
 			}
 		});
 	}

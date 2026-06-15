@@ -20,6 +20,7 @@ A lightweight, Elementor-inspired page builder plugin for WordPress. Build infin
 - Full-screen drag-free builder accessible from `wp-admin/post.php?post={id}&action=builder`.
 - **Container** element — the single, composable building block. Containers nest inside each other without a depth limit.
 - Each container exposes:
+  - **ID** — editable element identifier; auto-regenerated if left blank.
   - **Node** — choose any semantic HTML tag (`div`, `section`, `article`, `main`, `header`, `footer`, `nav`, `p`, `span`, `h1`–`h6`, `a`, `button`, `figure`, `figcaption`, `img`, `input`, `label`, `audio`, `video`, `source`, `iframe`).
   - **Content** — rich-text inner HTML (filtered through `wp_kses_post`).
   - **Direction** — flexbox row or column layout.

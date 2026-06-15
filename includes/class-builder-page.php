@@ -274,6 +274,10 @@ trait WP_Builder_Builder_Page {
 							</button>
 							<div class="wp-builder-accordion-body" id="wp-builder-accordion-identity-body" role="region">
 								<div class="wp-builder-accordion-body-inner">
+									<div class="wp-builder-field-group" id="wp-builder-inspector-id" hidden>
+										<label class="wp-builder-inspector-label" for="wp-builder-node-id"><?php esc_html_e( 'ID', 'wp-builder' ); ?></label>
+										<input type="text" id="wp-builder-node-id" class="wp-builder-input" placeholder="<?php esc_attr_e( 'e.g. my-element', 'wp-builder' ); ?>">
+									</div>
 									<div id="wp-builder-inspector-node" class="wp-builder-field-group" hidden>
 										<label class="wp-builder-inspector-label" for="wp-builder-node"><?php esc_html_e( 'Node', 'wp-builder' ); ?></label>
 										<select id="wp-builder-node" class="wp-builder-select">
