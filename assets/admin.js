@@ -173,7 +173,7 @@
 		if (!id) {
 			return text.root || 'Root';
 		}
-		return text.addContainer || 'Container';
+		return id;
 	}
 
 	function findElement(elements, id) {
@@ -307,7 +307,7 @@
 
 		title.type = 'button';
 		title.className = 'wp-builder-node-title';
-		title.textContent = (text.root || 'Root') + ' \u00b7 ' + (state.layout.node || 'div');
+		title.textContent = (text.root || 'Root') + ' \u00b7 ' + state.layout.id;
 		title.addEventListener('click', function (event) {
 			event.stopPropagation();
 			selectElement(null);
@@ -379,7 +379,7 @@
 
 		title.type = 'button';
 		title.className = 'wp-builder-node-title';
-		title.textContent = (text.addContainer || 'Container') + ' \u00b7 ' + (element.node || 'div');
+		title.textContent = (text.addContainer || 'Container') + ' \u00b7 ' + element.id;
 		title.addEventListener('click', function (event) {
 			event.stopPropagation();
 			selectElement(element.id);
