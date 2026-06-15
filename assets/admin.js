@@ -433,7 +433,9 @@
 		}
 
 		bar.appendChild(title);
-		bar.appendChild(addButton);
+		if (!VOID_NODES[element.node]) {
+			bar.appendChild(addButton);
+		}
 		bar.appendChild(removeButton);
 		node.appendChild(bar);
 		node.appendChild(body);
