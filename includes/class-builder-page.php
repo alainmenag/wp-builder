@@ -163,7 +163,7 @@ trait WP_Builder_Builder_Page {
 					<div>
 						<button type="button" id="wp-builder-title" class="wp-builder-title-button" aria-label="<?php esc_attr_e( 'Edit post title', 'wp-builder' ); ?>"><?php echo esc_html( get_the_title( $post_id ) ); ?></button>
 						<div>
-							<strong id="wp-builder-selection-name"><?php esc_html_e( 'Root', 'wp-builder' ); ?></strong>
+							<strong id="wp-builder-selection-name" class="color-wpb-accent"></strong>
 						</div>
 					</div>
 

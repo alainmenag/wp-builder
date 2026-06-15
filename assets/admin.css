@@ -31,8 +31,13 @@
 	--wpb-blue:           #58a6ff;
 
 	/* danger */
+	--wpb-danger:         #b91c1c;
 	--wpb-danger-border:  #b91c1c;
 	--wpb-danger-text:    #f87171;
+}
+
+.color-wpb-accent {
+	color: var(--wpb-accent) !important;
 }
 
 /* Ensure the HTML hidden attribute is never overridden by author display rules */
@@ -364,6 +369,11 @@ body.wp-builder-body {
 .wp-builder-node.is-selected {
 	border-color: var(--wpb-accent-hover);
 	box-shadow: 0 0 0 2px rgba(var(--wpb-accent-rgb), 0.28);
+}
+
+.wp-builder-canvas-root.is-selected > .wp-builder-node-bar > .wp-builder-node-title,
+.wp-builder-node.is-selected > .wp-builder-node-bar > .wp-builder-node-title {
+	color: var(--wpb-accent);
 }
 
 .wp-builder-node-bar {
