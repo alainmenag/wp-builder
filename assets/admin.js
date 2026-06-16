@@ -142,20 +142,6 @@
 				return clean;
 			}
 
-			// Migrate legacy html elements.
-			if (element.type === 'html') {
-				clean.push({
-					id: element.id || createId(),
-					node: 'div',
-					props: { flexDirection: '', flexGrow: '', gap: '' },
-					style: '',
-					content: typeof element.content === 'string' ? element.content : '',
-					attrs: {},
-					children: []
-				});
-				return clean;
-			}
-
 			if (typeof element.node !== 'string') {
 				return clean;
 			}
