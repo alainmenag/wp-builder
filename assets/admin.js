@@ -60,7 +60,7 @@
 	var flexDirectionSelect = document.getElementById('wp-builder-flex-direction');
 	var flexGrowInput = document.getElementById('wp-builder-flex-grow');
 	var gapInput = document.getElementById('wp-builder-gap');
-	var customCssTextarea = document.getElementById('wp-builder-custom-css');
+	var customStyleTextarea = document.getElementById('wp-builder-custom-css');
 	var cssEditor = null; // CodeMirror instance, set up below if wp.codeEditor is available.
 	var cssEditorSuppressChange = false; // True while setValue is being called programmatically.
 	var nodeSelect = document.getElementById('wp-builder-node');
@@ -98,22 +98,7 @@
 			return { version: 2, createdAt: now, updatedAt: now, children: [createContainer()] };
 		}
 
-		// v1 migration: root element fields were at the top level; child elements were in 'elements'.
-		if (!layout.version || layout.version < 2) {
-			rootNode = normalizeNodeTag(layout.node);
-			rootEl = {
-				id: layout.id ? layout.id : createId(),
-				node: rootNode,
-				props: normalizeContainerProps(layout.props),
-				style: typeof layout.style === 'string' ? layout.style : (typeof layout.customCss === 'string' ? layout.customCss : ''),
-				content: typeof layout.content === 'string' ? layout.content : '',
-				attrs: normalizeNodeAttrs(rootNode, layout.attrs),
-				children: Array.isArray(layout.elements) ? normalizeElements(layout.elements) : []
-			};
-			return { version: 2, createdAt: now, updatedAt: now, children: [rootEl] };
-		}
-
-		// v2: children[0] is the root element.
+		// children[0] is the root element.
 		rootData = Array.isArray(layout.children) && layout.children[0] ? layout.children[0] : null;
 		if (!rootData) {
 			return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [createContainer()] };
@@ -123,7 +108,7 @@
 			id: rootData.id ? rootData.id : createId(),
 			node: rootNode,
 			props: normalizeContainerProps(rootData.props),
-			style: typeof rootData.style === 'string' ? rootData.style : (typeof rootData.customCss === 'string' ? rootData.customCss : ''),
+			style: typeof rootData.style === 'string' ? rootData.style : null,
 			content: typeof rootData.content === 'string' ? rootData.content : '',
 			attrs: normalizeNodeAttrs(rootNode, rootData.attrs),
 			children: Array.isArray(rootData.children) ? normalizeElements(rootData.children) : []
@@ -180,7 +165,7 @@
 				id: element.id || createId(),
 				node: node,
 				props: normalizeContainerProps(element.props),
-				style: typeof element.style === 'string' ? element.style : (typeof element.customCss === 'string' ? element.customCss : ''),
+				style: typeof element.style === 'string' ? element.style : null,
 				content: typeof element.content === 'string' ? element.content : '',
 				attrs: normalizeNodeAttrs(node, element.attrs),
 				children: Array.isArray(element.children) ? normalizeElements(element.children) : []
@@ -507,9 +492,9 @@
 			if (flexDirectionSelect) { flexDirectionSelect.value = props.flexDirection || ''; }
 			if (flexGrowInput) { flexGrowInput.value = props.flexGrow || ''; }
 			if (gapInput) { gapInput.value = props.gap || ''; }
-			if (customCssTextarea) {
+			if (customStyleTextarea) {
 				var cssVal = selected.style || '';
-				customCssTextarea.value = cssVal;
+				customStyleTextarea.value = cssVal;
 				if (cssEditor) {
 					cssEditorSuppressChange = true;
 					cssEditor.codemirror.setValue(cssVal);
@@ -522,9 +507,9 @@
 			if (flexDirectionSelect) { flexDirectionSelect.value = rootProps.flexDirection || ''; }
 			if (flexGrowInput) { flexGrowInput.value = rootProps.flexGrow || ''; }
 			if (gapInput) { gapInput.value = rootProps.gap || ''; }
-			if (customCssTextarea) {
+			if (customStyleTextarea) {
 				var rootCssVal = root.style || '';
-				customCssTextarea.value = rootCssVal;
+				customStyleTextarea.value = rootCssVal;
 				if (cssEditor) {
 					cssEditorSuppressChange = true;
 					cssEditor.codemirror.setValue(rootCssVal);
@@ -555,11 +540,11 @@
 		}
 	}
 
-	function updateContainerStyle(id, customCss) {
+	function updateContainerStyle(id, customStyle) {
 		var styleId = 'wpb-style-' + id;
 		var styleEl = document.getElementById(styleId);
 		var selector = '[data-wp-builder-id="' + id + '"]';
-		var scoped = customCss ? customCss.replace(/\bself\b/g, selector) : '';
+		var scoped = customStyle ? customStyle.replace(/\bself\b/g, selector) : '';
 
 		if (!scoped) {
 			if (styleEl) { styleEl.parentNode.removeChild(styleEl); }
@@ -888,9 +873,9 @@
 		});
 	}
 
-	if (customCssTextarea) {
+	if (customStyleTextarea) {
 		if (window.wp && window.wp.codeEditor) {
-			cssEditor = window.wp.codeEditor.initialize(customCssTextarea, {
+			cssEditor = window.wp.codeEditor.initialize(customStyleTextarea, {
 				codemirror: {
 					mode: 'css',
 					autoCloseBrackets: true,
@@ -902,8 +887,8 @@
 				updateSelectedContainerCss(cm.getValue());
 			});
 		} else {
-			customCssTextarea.addEventListener('input', function () {
-				updateSelectedContainerCss(customCssTextarea.value);
+			customStyleTextarea.addEventListener('input', function () {
+				updateSelectedContainerCss(customStyleTextarea.value);
 			});
 		}
 	}

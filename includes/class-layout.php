@@ -57,7 +57,7 @@ trait WP_Builder_Layout {
 			$node       = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
 			$content    = isset( $layout['content'] ) ? wp_kses_post( (string) $layout['content'] ) : '';
 			$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
-			$custom_css = isset( $layout['style'] ) ? (string) $layout['style'] : ( isset( $layout['customCss'] ) ? (string) $layout['customCss'] : '' );
+			$custom_style = isset( $layout['style'] ) ? (string) $layout['style'] : ( isset( $layout['customStyle'] ) ? (string) $layout['customStyle'] : '' );
 			$raw_attrs  = isset( $layout['attrs'] ) && is_array( $layout['attrs'] ) ? $layout['attrs'] : array();
 			$elements   = isset( $layout['elements'] ) && is_array( $layout['elements'] ) ? $layout['elements'] : array();
 
@@ -65,7 +65,7 @@ trait WP_Builder_Layout {
 				'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : $this->generate_element_id(),
 				'node'      => $node,
 				'props'     => $this->sanitize_container_props( $props ),
-				'customCss' => $this->sanitize_custom_css( $custom_css ),
+				'customStyle' => $this->sanitize_custom_style( $custom_style ),
 				'content'   => $content,
 				'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
 				'children'  => $this->sanitize_elements( $elements ),
@@ -87,7 +87,7 @@ trait WP_Builder_Layout {
 		$node       = isset( $root_data['node'] ) ? $this->sanitize_node_tag( (string) $root_data['node'] ) : 'div';
 		$content    = isset( $root_data['content'] ) ? wp_kses_post( (string) $root_data['content'] ) : '';
 		$props      = isset( $root_data['props'] ) && is_array( $root_data['props'] ) ? $root_data['props'] : array();
-		$custom_css = isset( $root_data['style'] ) ? (string) $root_data['style'] : ( isset( $root_data['customCss'] ) ? (string) $root_data['customCss'] : '' );
+		$custom_style = isset( $root_data['style'] ) ? (string) $root_data['style'] : '';
 		$raw_attrs  = isset( $root_data['attrs'] ) && is_array( $root_data['attrs'] ) ? $root_data['attrs'] : array();
 		$children   = isset( $root_data['children'] ) && is_array( $root_data['children'] ) ? $root_data['children'] : array();
 
@@ -95,7 +95,7 @@ trait WP_Builder_Layout {
 			'id'        => isset( $root_data['id'] ) && is_string( $root_data['id'] ) && '' !== $root_data['id'] ? sanitize_key( $root_data['id'] ) : $this->generate_element_id(),
 			'node'      => $node,
 			'props'     => $this->sanitize_container_props( $props ),
-			'style'     => $this->sanitize_custom_css( $custom_css ),
+			'style'     => $this->sanitize_custom_style( $custom_style ),
 			'content'   => $content,
 			'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
 			'children'  => $this->sanitize_elements( $children ),
@@ -116,7 +116,7 @@ trait WP_Builder_Layout {
 		$id         = isset( $root['id'] ) && is_string( $root['id'] ) && '' !== $root['id'] ? sanitize_key( $root['id'] ) : $this->generate_element_id();
 		$content    = isset( $root['content'] ) ? $root['content'] : '';
 		$props      = isset( $root['props'] ) && is_array( $root['props'] ) ? $root['props'] : array();
-		$custom_css = isset( $root['style'] ) ? (string) $root['style'] : ( isset( $root['customCss'] ) ? (string) $root['customCss'] : '' );
+		$custom_style = isset( $root['style'] ) ? (string) $root['style'] : '';
 		$raw_attrs  = isset( $root['attrs'] ) && is_array( $root['attrs'] ) ? $root['attrs'] : array();
 		$children   = isset( $root['children'] ) && is_array( $root['children'] ) ? $root['children'] : array();
 
@@ -133,10 +133,10 @@ trait WP_Builder_Layout {
 		}
 
 		$css_block = '';
-		if ( $custom_css !== '' ) {
+		if ( $custom_style !== '' ) {
 			$selector   = '[data-wp-builder-id="' . esc_attr( $id ) . '"]';
-			$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_css );
-			$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_css(); no WP escape function exists for raw CSS.
+			$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_style );
+			$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_style(); no WP escape function exists for raw CSS.
 		}
 
 		return $css_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_layout(); render_elements() output is pre-escaped.
@@ -268,7 +268,7 @@ trait WP_Builder_Layout {
 
 			$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
 			$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
-			$custom_css = isset( $element['style'] ) ? (string) $element['style'] : ( isset( $element['customCss'] ) ? (string) $element['customCss'] : '' );
+			$custom_style = isset( $element['style'] ) ? (string) $element['style'] : ( isset( $element['customStyle'] ) ? (string) $element['customStyle'] : '' );
 			$content    = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
 			$node       = $this->sanitize_node_tag( (string) $element['node'] );
 			$raw_attrs  = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
@@ -276,7 +276,7 @@ trait WP_Builder_Layout {
 				'id'        => $id ? $id : $this->generate_element_id(),
 				'node'      => $node,
 				'props'     => $this->sanitize_container_props( $props ),
-					'style'     => $this->sanitize_custom_css( $custom_css ),
+					'style'     => $this->sanitize_custom_style( $custom_style ),
 				'content'   => $content,
 				'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
 				'children'  => $this->sanitize_elements( $children ),
@@ -297,7 +297,7 @@ trait WP_Builder_Layout {
 			$id         = isset( $element['id'] ) ? sanitize_key( (string) $element['id'] ) : '';
 			$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
 			$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
-			$custom_css = isset( $element['style'] ) ? (string) $element['style'] : ( isset( $element['customCss'] ) ? (string) $element['customCss'] : '' );
+			$custom_style = isset( $element['style'] ) ? (string) $element['style'] : '';
 			$content    = isset( $element['content'] ) ? $element['content'] : '';
 			$tag        = $this->sanitize_node_tag( (string) $element['node'] );
 			$node_attrs = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
@@ -315,10 +315,10 @@ trait WP_Builder_Layout {
 			}
 
 			$css_block = '';
-			if ( $custom_css !== '' && $id ) {
+			if ( $custom_style !== '' && $id ) {
 				$selector   = '.wp-builder-container[data-wp-builder-id="' . esc_attr( $id ) . '"]';
-				$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_css );
-				$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_css(); no WP escape function exists for raw CSS.
+				$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_style );
+				$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_style(); no WP escape function exists for raw CSS.
 			}
 
 			if ( $is_void ) {
@@ -359,7 +359,7 @@ trait WP_Builder_Layout {
 		);
 	}
 
-	private function sanitize_custom_css( string $css ): string {
+	private function sanitize_custom_style( string $css ): string {
 		// Prevent breaking out of the <style> tag.
 		$css = preg_replace( '/<\/style\s*>/i', '', $css );
 		return wp_strip_all_tags( $css );
