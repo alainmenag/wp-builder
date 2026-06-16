@@ -33,16 +33,9 @@ trait WP_Builder_Frontend {
 			return '';
 		}
 
-		wp_enqueue_style(
-			'wp-builder-frontend',
-			WP_BUILDER_URL . 'assets/frontend.css',
-			array(),
-			self::VERSION
-		);
+		$this->enqueue_frontend_style();
 
-		$layout      = $this->get_layout( $post_id );
-		$first_child = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
-		return $this->render_element( $first_child, 'wp-builder-page wp-builder-template' );
+		return $this->render_element( $this->get_layout_root_element( $post_id ), 'wp-builder-page wp-builder-template' );
 	}
 
 	public function render_content_shortcode( array $atts ): string {
@@ -62,16 +55,9 @@ trait WP_Builder_Frontend {
 			return '';
 		}
 
-		wp_enqueue_style(
-			'wp-builder-frontend',
-			WP_BUILDER_URL . 'assets/frontend.css',
-			array(),
-			self::VERSION
-		);
+		$this->enqueue_frontend_style();
 
-		$layout      = $this->get_layout( $post_id );
-		$first_child = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
-		return $this->render_element( $first_child, 'wp-builder-page wp-builder-shortcode' );
+		return $this->render_element( $this->get_layout_root_element( $post_id ), 'wp-builder-page wp-builder-shortcode' );
 	}
 
 	public function enqueue_frontend_assets(): void {
@@ -88,12 +74,7 @@ trait WP_Builder_Frontend {
 			return;
 		}
 
-		wp_enqueue_style(
-			'wp-builder-frontend',
-			WP_BUILDER_URL . 'assets/frontend.css',
-			array(),
-			self::VERSION
-		);
+		$this->enqueue_frontend_style();
 	}
 
 	public function render_builder_content( string $content ): string {
@@ -110,8 +91,20 @@ trait WP_Builder_Frontend {
 			return $content;
 		}
 
-		$layout      = $this->get_layout( $post_id );
-		$first_child = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
-		return $this->render_element( $first_child, 'wp-builder-page' );
+		return $this->render_element( $this->get_layout_root_element( $post_id ), 'wp-builder-page' );
+	}
+
+	private function enqueue_frontend_style(): void {
+		wp_enqueue_style(
+			'wp-builder-frontend',
+			WP_BUILDER_URL . 'assets/frontend.css',
+			array(),
+			self::VERSION
+		);
+	}
+
+	private function get_layout_root_element( int $post_id ): array {
+		$layout = $this->get_layout( $post_id );
+		return isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
 	}
 }
