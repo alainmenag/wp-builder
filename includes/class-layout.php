@@ -50,35 +50,16 @@ trait WP_Builder_Layout {
 	}
 
 	private function sanitize_layout( array $layout ): array {
-		$now = time();
-
-		// layout: the root element is children[0].
-		$created_at = isset( $layout['createdAt'] ) ? absint( $layout['createdAt'] ) : $now;
+		$now          = time();
+		$created_at   = isset( $layout['createdAt'] ) ? absint( $layout['createdAt'] ) : $now;
 		$raw_children = isset( $layout['children'] ) && is_array( $layout['children'] ) ? $layout['children'] : array();
 		$root_data    = ! empty( $raw_children[0] ) && is_array( $raw_children[0] ) ? $raw_children[0] : array();
-
-		$node       = isset( $root_data['node'] ) ? $this->sanitize_node_tag( (string) $root_data['node'] ) : 'div';
-		$content    = isset( $root_data['content'] ) ? wp_kses_post( (string) $root_data['content'] ) : '';
-		$props      = isset( $root_data['props'] ) && is_array( $root_data['props'] ) ? $root_data['props'] : array();
-		$custom_style = isset( $root_data['style'] ) ? (string) $root_data['style'] : '';
-		$raw_attrs  = isset( $root_data['attrs'] ) && is_array( $root_data['attrs'] ) ? $root_data['attrs'] : array();
-		$children   = isset( $root_data['children'] ) && is_array( $root_data['children'] ) ? $root_data['children'] : array();
-
-		$root = array(
-			'id'        => isset( $root_data['id'] ) && is_string( $root_data['id'] ) && '' !== $root_data['id'] ? sanitize_key( $root_data['id'] ) : $this->generate_element_id(),
-			'node'      => $node,
-			'props'     => $this->sanitize_container_props( $props ),
-			'style'     => $this->sanitize_custom_style( $custom_style ),
-			'content'   => $content,
-			'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
-			'children'  => $this->sanitize_elements( $children ),
-		);
 
 		return array(
 			'version'   => 2,
 			'createdAt' => $created_at,
 			'updatedAt' => $now,
-			'children'  => array( $root ),
+			'children'  => array( $this->sanitize_element( $root_data ) ),
 		);
 	}
 
@@ -223,35 +204,33 @@ trait WP_Builder_Layout {
 		return 'wpb-' . $time . '-' . $rand;
 	}
 
+	private function sanitize_element( array $raw ): array {
+		$node         = isset( $raw['node'] ) ? $this->sanitize_node_tag( (string) $raw['node'] ) : 'div';
+		$custom_style = isset( $raw['style'] ) ? (string) $raw['style'] : ( isset( $raw['customStyle'] ) ? (string) $raw['customStyle'] : '' );
+		$props        = isset( $raw['props'] ) && is_array( $raw['props'] ) ? $raw['props'] : array();
+		$raw_attrs    = isset( $raw['attrs'] ) && is_array( $raw['attrs'] ) ? $raw['attrs'] : array();
+		$children     = isset( $raw['children'] ) && is_array( $raw['children'] ) ? $raw['children'] : array();
+
+		return array(
+			'id'       => isset( $raw['id'] ) && is_string( $raw['id'] ) && '' !== $raw['id'] ? sanitize_key( $raw['id'] ) : $this->generate_element_id(),
+			'node'     => $node,
+			'props'    => $this->sanitize_container_props( $props ),
+			'style'    => $this->sanitize_custom_style( $custom_style ),
+			'content'  => isset( $raw['content'] ) ? wp_kses_post( (string) $raw['content'] ) : '',
+			'attrs'    => $this->sanitize_node_attrs( $node, $raw_attrs ),
+			'children' => $this->sanitize_elements( $children ),
+		);
+	}
+
 	private function sanitize_elements( array $elements ): array {
 		$clean = array();
 
 		foreach ( $elements as $element ) {
-			if ( ! is_array( $element ) ) {
+			if ( ! is_array( $element ) || ! isset( $element['node'] ) ) {
 				continue;
 			}
 
-			$id = isset( $element['id'] ) ? sanitize_key( (string) $element['id'] ) : '';
-
-			if ( ! isset( $element['node'] ) ) {
-				continue;
-			}
-
-			$children   = isset( $element['children'] ) && is_array( $element['children'] ) ? $element['children'] : array();
-			$props      = isset( $element['props'] ) && is_array( $element['props'] ) ? $element['props'] : array();
-			$custom_style = isset( $element['style'] ) ? (string) $element['style'] : ( isset( $element['customStyle'] ) ? (string) $element['customStyle'] : '' );
-			$content    = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
-			$node       = $this->sanitize_node_tag( (string) $element['node'] );
-			$raw_attrs  = isset( $element['attrs'] ) && is_array( $element['attrs'] ) ? $element['attrs'] : array();
-			$clean[]    = array(
-				'id'        => $id ? $id : $this->generate_element_id(),
-				'node'      => $node,
-				'props'     => $this->sanitize_container_props( $props ),
-				'style'     => $this->sanitize_custom_style( $custom_style ),
-				'content'   => $content,
-				'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
-				'children'  => $this->sanitize_elements( $children ),
-			);
+			$clean[] = $this->sanitize_element( $element );
 		}
 
 		return $clean;
