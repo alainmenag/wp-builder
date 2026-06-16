@@ -23,22 +23,22 @@ trait WP_Builder_Page_Templates {
 			$post          = get_post( $post_id );
 			$page_template = get_post_meta( $post_id, '_wp_page_template', true );
 
+			$canvas     = WP_BUILDER_DIR . 'templates/wp-builder-canvas.php';
+			$full_width = WP_BUILDER_DIR . 'templates/wp-builder-full-width.php';
+
 			// Custom builder templates always use the Builder Canvas template.
 			if ( $post && self::TEMPLATE_CPT === $post->post_type ) {
-				$canvas = WP_BUILDER_DIR . 'templates/wp-builder-canvas.php';
 				if ( file_exists( $canvas ) ) {
 					return $canvas;
 				}
 			}
 
 			if ( 'wp-builder-canvas' === $page_template ) {
-				$canvas = WP_BUILDER_DIR . 'templates/wp-builder-canvas.php';
 				if ( file_exists( $canvas ) ) {
 					return $canvas;
 				}
 			}
 			if ( 'wp-builder-full-width' === $page_template ) {
-				$full_width = WP_BUILDER_DIR . 'templates/wp-builder-full-width.php';
 				if ( file_exists( $full_width ) ) {
 					return $full_width;
 				}

@@ -10,10 +10,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 trait WP_Builder_Ajax {
 
-	public function ajax_update_title(): void {
-		check_ajax_referer( self::TITLE_NONCE_ACTION, 'nonce' );
-
-		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+	/**
+	 * Resolve and validate the post from the current AJAX request.
+	 *
+	 * Reads `$_POST['post_id']`, verifies the post exists, belongs to a
+	 * supported post type, and that the current user can edit it.
+	 * Terminates with a JSON error response if any check fails.
+	 *
+	 * @param string $permission_error Error message used for the 403 response.
+	 * @return WP_Post The resolved, editable post.
+	 */
+	private function resolve_ajax_post( string $permission_error ): WP_Post {
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by caller before resolve_ajax_post() is called.
 		$post    = $post_id ? get_post( $post_id ) : null;
 
 		if ( ! $post || ! $this->is_supported_post_type( $post->post_type ) ) {
@@ -25,10 +33,19 @@ trait WP_Builder_Ajax {
 
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'You do not have permission to edit this post.', 'wp-builder' ) ),
+				array( 'message' => $permission_error ),
 				403
 			);
 		}
+
+		return $post;
+	}
+
+	public function ajax_update_title(): void {
+		check_ajax_referer( self::TITLE_NONCE_ACTION, 'nonce' );
+
+		$post    = $this->resolve_ajax_post( __( 'You do not have permission to edit this post.', 'wp-builder' ) );
+		$post_id = $post->ID;
 
 		$title = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
 
@@ -39,18 +56,11 @@ trait WP_Builder_Ajax {
 			)
 		);
 
-		$is_template = self::TEMPLATE_CPT === $post->post_type;
-		$preview_url = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
-
 		wp_send_json_success(
 			array(
 				'title'      => get_the_title( $post_id ),
-				'docTitle'   => sprintf(
-					/* translators: %s: post title. */
-					__( 'Builder: %s', 'wp-builder' ),
-					get_the_title( $post_id )
-				),
-				'previewUrl' => $preview_url,
+				'docTitle'   => $this->get_builder_doc_title( $post_id ),
+				'previewUrl' => $this->get_preview_url( $post_id ),
 			)
 		);
 	}
@@ -58,22 +68,8 @@ trait WP_Builder_Ajax {
 	public function ajax_save_layout(): void {
 		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
 
-		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
-		$post    = $post_id ? get_post( $post_id ) : null;
-
-		if ( ! $post || ! $this->is_supported_post_type( $post->post_type ) ) {
-			wp_send_json_error(
-				array( 'message' => __( 'Unsupported post type.', 'wp-builder' ) ),
-				400
-			);
-		}
-
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
-			wp_send_json_error(
-				array( 'message' => __( 'You do not have permission to save this layout.', 'wp-builder' ) ),
-				403
-			);
-		}
+		$post    = $this->resolve_ajax_post( __( 'You do not have permission to save this layout.', 'wp-builder' ) );
+		$post_id = $post->ID;
 
 		// WordPress always runs wp_magic_quotes() which addslashes() every $_POST value.
 		// Unslash first so that JSON escape sequences (e.g. \n for newlines) survive json_decode intact.
@@ -125,19 +121,13 @@ trait WP_Builder_Ajax {
 			update_post_meta( $post_id, '_wp_page_template', $page_template_value );
 		}
 
-		$preview_url = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
-
 		wp_send_json_success(
 			array(
 				'layout'       => $layout,
 				'postStatus'   => $post ? $post->post_status : 'draft',
 				'postTitle'    => get_the_title( $post_id ),
-				'docTitle'     => sprintf(
-					/* translators: %s: post title. */
-					__( 'Builder: %s', 'wp-builder' ),
-					get_the_title( $post_id )
-				),
-				'previewUrl'   => $preview_url,
+				'docTitle'     => $this->get_builder_doc_title( $post_id ),
+				'previewUrl'   => $this->get_preview_url( $post_id ),
 				'pageTemplate' => get_post_meta( $post_id, '_wp_page_template', true ) ?: 'default',
 				'message'      => __( 'Layout saved.', 'wp-builder' ),
 			)

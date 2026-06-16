@@ -85,4 +85,20 @@ final class WP_Builder {
 	private function is_supported_post_type( string $post_type ): bool {
 		return in_array( $post_type, $this->supported_post_types(), true );
 	}
+
+	private function get_preview_url( int $post_id ): string {
+		$post = get_post( $post_id );
+		if ( $post && self::TEMPLATE_CPT === $post->post_type ) {
+			return (string) get_preview_post_link( $post_id );
+		}
+		return (string) get_permalink( $post_id );
+	}
+
+	private function get_builder_doc_title( int $post_id ): string {
+		return sprintf(
+			/* translators: %s: post title. */
+			__( 'Builder: %s', 'wp-builder' ),
+			get_the_title( $post_id )
+		);
+	}
 }

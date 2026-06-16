@@ -57,11 +57,8 @@ trait WP_Builder_Builder_Page {
 	}
 
 	private function enqueue_builder_assets( int $post_id ): void {
-		$asset_url   = WP_BUILDER_URL . 'assets/';
-		$post        = get_post( $post_id );
-		$is_template = $post && self::TEMPLATE_CPT === $post->post_type;
-		$post_status = $post ? $post->post_status : 'draft';
-		$preview_url = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
+		$asset_url = WP_BUILDER_URL . 'assets/';
+		$ctx       = $this->get_post_context( $post_id );
 
 		// Load WordPress's bundled CodeMirror for the CSS editor (available since WP 4.9).
 		wp_enqueue_style( 'code-editor' );
@@ -91,13 +88,13 @@ trait WP_Builder_Builder_Page {
 				'titleNonce' => wp_create_nonce( self::TITLE_NONCE_ACTION ),
 				'postId'     => $post_id,
 				'postTitle'  => get_the_title( $post_id ),
-				'isTemplate' => $is_template,
-				'postStatus' => $post_status,
+				'isTemplate' => $ctx['is_template'],
+				'postStatus' => $ctx['post_status'],
 				'layout'     => $this->get_layout( $post_id ),
 				'editUrl'    => get_edit_post_link( $post_id, '' ),
-				'previewUrl' => $preview_url,
-				'pageTemplate'  => $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
-				'pageTemplates' => $is_template ? array() : $this->get_available_page_templates( $post_id ),
+				'previewUrl' => $ctx['preview_url'],
+				'pageTemplate'  => $ctx['current_template'],
+				'pageTemplates' => $ctx['page_templates'],
 				'i18n'       => array(
 					'addContainer'   => __( 'Container', 'wp-builder' ),
 					'canvas'         => __( 'Canvas', 'wp-builder' ),
@@ -114,11 +111,7 @@ trait WP_Builder_Builder_Page {
 	}
 
 	private function render_builder_document( WP_Post $post ): void {
-		$title = sprintf(
-			/* translators: %s: post title. */
-			__( 'Builder: %s', 'wp-builder' ),
-			get_the_title( $post )
-		);
+		$title = $this->get_builder_doc_title( $post->ID );
 		// Prevent wp_head() from emitting a duplicate <title> tag.
 		remove_action( 'wp_head', '_wp_render_title_tag', 1 );
 		?>
@@ -140,13 +133,14 @@ trait WP_Builder_Builder_Page {
 	}
 
 	private function render_builder_shell( WP_Post $post ): void {
-		$post_id           = $post->ID;
-		$is_template       = self::TEMPLATE_CPT === $post->post_type;
-		$is_published      = 'publish' === $post->post_status;
-		$preview_url       = $is_template ? get_preview_post_link( $post_id ) : get_permalink( $post_id );
-		$shortcode         = '[wp_builder_content id=\'' . absint( $post_id ) . '\']';
-		$page_templates    = $is_template ? array() : $this->get_available_page_templates( $post_id );
-		$current_template  = $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' );
+		$post_id          = $post->ID;
+		$ctx              = $this->get_post_context( $post_id );
+		$is_template      = $ctx['is_template'];
+		$is_published     = 'publish' === $post->post_status;
+		$preview_url      = $ctx['preview_url'];
+		$shortcode        = '[wp_builder_content id=\'' . absint( $post_id ) . '\']';
+		$page_templates   = $ctx['page_templates'];
+		$current_template = $ctx['current_template'];
 		?>
 		<div class="wp-builder-shell" id="wp-builder-app">
 
@@ -383,5 +377,31 @@ trait WP_Builder_Builder_Page {
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Build a context array for a given post containing the values that both
+	 * enqueue_builder_assets() and render_builder_shell() need.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array {
+	 *     @type bool   $is_template      Whether the post is a builder template CPT.
+	 *     @type string $post_status      The post's current status.
+	 *     @type string $preview_url      Frontend preview URL.
+	 *     @type string $current_template Active page-template slug.
+	 *     @type array  $page_templates   Available page templates (empty for templates).
+	 * }
+	 */
+	private function get_post_context( int $post_id ): array {
+		$post        = get_post( $post_id );
+		$is_template = $post && self::TEMPLATE_CPT === $post->post_type;
+
+		return array(
+			'is_template'      => $is_template,
+			'post_status'      => $post ? $post->post_status : 'draft',
+			'preview_url'      => $this->get_preview_url( $post_id ),
+			'current_template' => $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
+			'page_templates'   => $is_template ? array() : $this->get_available_page_templates( $post_id ),
+		);
 	}
 }
