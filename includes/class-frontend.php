@@ -40,9 +40,9 @@ trait WP_Builder_Frontend {
 			self::VERSION
 		);
 
-		$layout = $this->get_layout( $post_id );
-		$root   = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
-		return $this->render_element( $root, 'wp-builder-page wp-builder-template' );
+		$layout      = $this->get_layout( $post_id );
+		$first_child = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
+		return $this->render_element( $first_child, 'wp-builder-page wp-builder-template' );
 	}
 
 	public function render_content_shortcode( array $atts ): string {
@@ -69,9 +69,9 @@ trait WP_Builder_Frontend {
 			self::VERSION
 		);
 
-		$layout = $this->get_layout( $post_id );
-		$root   = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
-		return $this->render_element( $root, 'wp-builder-page wp-builder-shortcode' );
+		$layout      = $this->get_layout( $post_id );
+		$first_child = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
+		return $this->render_element( $first_child, 'wp-builder-page wp-builder-shortcode' );
 	}
 
 	public function enqueue_frontend_assets(): void {
@@ -110,8 +110,8 @@ trait WP_Builder_Frontend {
 			return $content;
 		}
 
-		$layout = $this->get_layout( $post_id );
-		$root   = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
-		return $this->render_element( $root, 'wp-builder-page' );
+		$layout      = $this->get_layout( $post_id );
+		$first_child = isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
+		return $this->render_element( $first_child, 'wp-builder-page' );
 	}
 }
