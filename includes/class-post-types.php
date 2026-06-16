@@ -53,7 +53,7 @@ trait WP_Builder_Post_Types {
 				'supports'            => array( 'title' ),
 				'capability_type'     => 'post',
 				'map_meta_cap'        => true,
-				'rewrite'             => array( 'slug' => 'wp_builder_template', 'with_front' => false ),
+				'rewrite'             => false,
 			)
 		);
 	}
