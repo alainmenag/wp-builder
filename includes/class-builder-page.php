@@ -372,7 +372,7 @@ trait WP_Builder_Builder_Page {
 									<div class="wp-builder-field-group">
 										<p class="wp-builder-inspector-label"><?php esc_html_e( 'Custom CSS', 'wp-builder' ); ?></p>
 										<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Use', 'wp-builder' ); ?> <code>self</code> <?php esc_html_e( 'to target this element.', 'wp-builder' ); ?></p>
-										<textarea id="wp-builder-custom-css" class="wp-builder-html-editor" rows="8" spellcheck="false" placeholder="self {&#10;  background-color: red;&#10;}"></textarea>
+										<textarea id="wp-builder-custom-style" class="wp-builder-html-editor" rows="8" spellcheck="false" placeholder="self {&#10;  background-color: red;&#10;}"></textarea>
 									</div>
 								</div>
 							</div>

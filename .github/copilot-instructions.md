@@ -105,7 +105,7 @@ Each **element**:
     "flexGrow": "1",
     "gap": "16px"
   },
-  "customCss": "self { background: red; }",
+  "style": "self { background: red; }",
   "content": "<p>Hello</p>",
   "attrs": { "src": "https://…" },
   "children": [ /* nested elements */ ]
@@ -114,7 +114,7 @@ Each **element**:
 
 - `node` must be one of the allowed tags defined in `sanitize_node_tag()` (see `class-layout.php`).
 - `props` supports `flexDirection` (`"row"` | `"column"` | `""`), `flexGrow` (numeric string or `""`), and `gap` (CSS value string).
-- `customCss` is scoped: `self` is replaced with `[data-wp-builder-id="<id>"]` at render time.
+- `style` is scoped: `self` is replaced with `[data-wp-builder-id="<id>"]` at render time.
 - `content` is stored and rendered as raw HTML (sanitised through `wp_kses_post`).
 - `attrs` is a flat object of node-specific HTML attributes (see `get_node_glossary()` in `class-layout.php` for the allowed set per tag).
 
