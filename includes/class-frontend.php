@@ -13,9 +13,6 @@ trait WP_Builder_Frontend {
 
 	public function register_shortcodes(): void {
 		add_shortcode( 'wp_builder', array( $this, 'render_builder_shortcode' ) );
-		// Backwards-compatible aliases so existing content continues to work.
-		add_shortcode( 'wp_builder_template', array( $this, 'render_builder_shortcode' ) );
-		add_shortcode( 'wp_builder_content', array( $this, 'render_builder_shortcode' ) );
 	}
 
 	public function render_builder_shortcode( array $atts ): string {
