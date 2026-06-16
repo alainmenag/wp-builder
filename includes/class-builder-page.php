@@ -138,7 +138,9 @@ trait WP_Builder_Builder_Page {
 		$is_template      = $ctx['is_template'];
 		$is_published     = 'publish' === $post->post_status;
 		$preview_url      = $ctx['preview_url'];
-		$shortcode        = '[wp_builder_content id=\'' . absint( $post_id ) . '\']';
+		$shortcode        = $is_template
+			? '[wp_builder_template id=\'' . absint( $post_id ) . '\']'
+			: '[wp_builder_content id=\'' . absint( $post_id ) . '\']';
 		$page_templates   = $ctx['page_templates'];
 		$current_template = $ctx['current_template'];
 		?>
