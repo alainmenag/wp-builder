@@ -53,13 +53,13 @@ trait WP_Builder_Layout {
 		$now          = time();
 		$created_at   = isset( $layout['createdAt'] ) ? absint( $layout['createdAt'] ) : $now;
 		$raw_children = isset( $layout['children'] ) && is_array( $layout['children'] ) ? $layout['children'] : array();
-		$root_data    = ! empty( $raw_children[0] ) && is_array( $raw_children[0] ) ? $raw_children[0] : array();
+		$first_child = ! empty( $raw_children[0] ) && is_array( $raw_children[0] ) ? $raw_children[0] : array();
 
 		return array(
 			'version'   => 2,
 			'createdAt' => $created_at,
 			'updatedAt' => $now,
-			'children'  => array( $this->sanitize_element( $root_data ) ),
+			'children'  => array( $this->sanitize_element( $first_child ) ),
 		);
 	}
 

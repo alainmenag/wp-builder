@@ -76,9 +76,10 @@
 		return;
 	}
 
+	var initialLayout = normalizeLayout(config.layout);
 	var state = {
-		layout: normalizeLayout(config.layout),
-		selectedId: null,
+		layout: initialLayout,
+		selectedId: initialLayout.children[0].id,
 		dirty: false,
 		saving: false,
 		pageTemplate: config.pageTemplate || 'default'
@@ -98,7 +99,7 @@
 			return { version: 2, createdAt: now, updatedAt: now, children: [createContainer()] };
 		}
 
-		// children[0] is the root element.
+		// children[0] is the first (top-level) element.
 		rootData = Array.isArray(layout.children) && layout.children[0] ? layout.children[0] : null;
 		if (!rootData) {
 			return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [createContainer()] };
@@ -170,13 +171,8 @@
 	}
 
 	function getElementName(id) {
-		var element, root;
-		if (!id) {
-			root = state.layout.children[0] || {};
-			return (root.node || 'div').toUpperCase() + ' \u00b7 ' + (root.id || '');
-		}
-		element = findElement(state.layout.children[0].children || [], id);
-		return element ? (element.node || 'div').toUpperCase() + ' \u00b7 ' + id : id;
+		var element = findElement(state.layout.children, id);
+		return element ? (element.node || 'div').toUpperCase() + ' \u00b7 ' + (element.id || id) : (id || '');
 	}
 
 	function findElement(elements, id) {
@@ -194,13 +190,7 @@
 	}
 
 	function addElement(parentId, element) {
-		var parent;
-		if (!parentId) {
-			state.layout.children[0].children = state.layout.children[0].children || [];
-			state.layout.children[0].children.push(element);
-			return true;
-		}
-		parent = findElement(state.layout.children[0].children || [], parentId);
+		var parent = findElement(state.layout.children, parentId);
 		if (!parent) {
 			return false;
 		}
@@ -261,7 +251,7 @@
 	}
 
 	function selectElement(id) {
-		state.selectedId = id || null;
+		state.selectedId = id || state.layout.children[0].id;
 		render();
 		focusElementIdentity();
 	}
@@ -269,8 +259,7 @@
 	function addElementToSelection(type) {
 		var element = createContainer();
 		if (!addElement(state.selectedId, element)) {
-			state.selectedId = null;
-			addElement(null, element);
+			addElement(state.layout.children[0].id, element);
 		}
 		state.selectedId = element.id;
 		markDirty();
@@ -282,11 +271,11 @@
 	}
 
 	function deleteSelection() {
-		if (!state.selectedId) {
+		if (!state.selectedId || state.selectedId === state.layout.children[0].id) {
 			return;
 		}
 		if (deleteElement(state.layout.children[0].children || [], state.selectedId)) {
-			state.selectedId = null;
+			state.selectedId = state.layout.children[0].id;
 			markDirty();
 			render();
 		}
@@ -299,35 +288,27 @@
 
 	function renderCanvas() {
 		canvas.innerHTML = '';
-		var root = renderNode(state.layout.children[0], 0, true);
-		canvas.appendChild(root);
+		var firstChild = renderNode(state.layout.children[0], 0, false);
+		canvas.appendChild(firstChild);
 		cleanupAllContainerStyles();
-		syncAllContainerStyles(state.layout.children[0].children || []);
-		updateContainerStyle(state.layout.children[0].id, state.layout.children[0].style || '');
+		syncAllContainerStyles(state.layout.children);
 	}
 
 	function renderElement(element, depth) {
-		return renderNode(element, depth, false);
+		return renderNode(element, depth, true);
 	}
 
-	function renderNode(element, depth, isRoot) {
-		var node = document.createElement(isRoot ? 'div' : 'section');
+	function renderNode(element, depth, isDeletable) {
+		var node = document.createElement('section');
 		var bar = document.createElement('div');
 		var title = document.createElement('button');
 		var addButton = document.createElement('button');
 		var body = document.createElement('div');
 		var children = element.children || [];
-		var isVoid = !isRoot && VOID_NODES[element.node];
+		var isVoid = VOID_NODES[element.node];
 
-		if (isRoot) {
-			node.className = 'wp-builder-canvas-root' + (!state.selectedId ? ' is-selected' : '');
-			node.tabIndex = 0;
-			node.setAttribute('role', 'button');
-			node.setAttribute('aria-label', text.canvas || 'Canvas');
-		} else {
-			node.className = 'wp-builder-node wp-builder-node-container' + (state.selectedId === element.id ? ' is-selected' : '');
-			node.style.setProperty('--wp-builder-depth', depth);
-		}
+		node.className = 'wp-builder-node wp-builder-node-container' + (state.selectedId === element.id ? ' is-selected' : '');
+		node.style.setProperty('--wp-builder-depth', depth);
 		node.dataset.wpBuilderId = element.id;
 
 		bar.className = 'wp-builder-node-bar';
@@ -337,7 +318,7 @@
 		title.textContent = (element.node || 'div').toUpperCase() + ' \u00b7 ' + element.id;
 		title.addEventListener('click', function (event) {
 			event.stopPropagation();
-			selectElement(isRoot ? null : element.id);
+			selectElement(element.id);
 		});
 
 		addButton.type = 'button';
@@ -346,13 +327,13 @@
 		addButton.setAttribute('aria-label', text.addContainer || 'Add container');
 		addButton.addEventListener('click', function (event) {
 			event.stopPropagation();
-			state.selectedId = isRoot ? null : element.id;
+			state.selectedId = element.id;
 			addContainerToSelection();
 		});
 
 		bar.appendChild(title);
 
-		if (!isRoot) {
+		if (isDeletable) {
 			var removeButton = document.createElement('button');
 			removeButton.type = 'button';
 			removeButton.className = 'wp-builder-node-action wp-builder-node-action-danger';
@@ -365,7 +346,7 @@
 			});
 		}
 
-		body.className = isRoot ? 'wp-builder-canvas-root-body' : 'wp-builder-node-body';
+		body.className = 'wp-builder-node-body';
 		applyContainerFlexStyles(element.props || {}, node, body);
 
 		if (isVoid) {
@@ -379,10 +360,10 @@
 			}
 
 			if (!children.length && !element.content) {
-				body.appendChild(renderEmpty(isRoot ? (text.emptyCanvas || 'Empty canvas') : (text.emptyContainer || 'Empty container')));
+				body.appendChild(renderEmpty(text.emptyContainer || 'Empty container'));
 			} else {
 				children.forEach(function (child) {
-					body.appendChild(renderElement(child, isRoot ? 0 : depth + 1));
+					body.appendChild(renderElement(child, depth + 1));
 				});
 			}
 		}
@@ -390,21 +371,15 @@
 		if (!isVoid) {
 			bar.appendChild(addButton);
 		}
-		if (!isRoot) {
+		if (isDeletable) {
 			bar.appendChild(removeButton);
 		}
 		node.appendChild(bar);
 		node.appendChild(body);
 
 		node.addEventListener('click', function (event) {
-			if (isRoot) {
-				if (event.target === node || event.target === body) {
-					selectElement(null);
-				}
-			} else {
-				event.stopPropagation();
-				selectElement(element.id);
-			}
+			event.stopPropagation();
+			selectElement(element.id);
 		});
 
 		return node;
@@ -418,11 +393,8 @@
 	}
 
 	function renderInspector() {
-		var root = state.layout.children[0] || {};
-		var selected = state.selectedId ? findElement(root.children || [], state.selectedId) : null;
-		var isContainer = !!(selected && selected.node);
-		var isRoot = !state.selectedId;
-		var showCommon = isRoot || isContainer;
+		var selected = findElement(state.layout.children, state.selectedId) || {};
+		var isContainer = !!(selected && selected.node !== undefined);
 		var isVoid = isContainer && VOID_NODES[selected.node];
 
 		if (selectionName) {
@@ -434,31 +406,27 @@
 		}
 
 		if (nodeSelectGroup) {
-			nodeSelectGroup.hidden = !showCommon;
+			nodeSelectGroup.hidden = !isContainer;
 		}
 
 		if (idInputGroup) {
-			idInputGroup.hidden = !showCommon;
+			idInputGroup.hidden = !isContainer;
 		}
 
 		if (idInput) {
-			idInput.value = isContainer ? (selected.id || '') : (isRoot ? (root.id || '') : '');
+			idInput.value = selected.id || '';
 		}
 
-		if (nodeSelect) {
-			if (isContainer) {
-				nodeSelect.value = selected.node || 'div';
-			} else if (isRoot) {
-				nodeSelect.value = root.node || 'div';
-			}
+		if (nodeSelect && isContainer) {
+			nodeSelect.value = selected.node || 'div';
 		}
 
 		if (inspectorEditor) {
-			inspectorEditor.hidden = !showCommon || isVoid;
+			inspectorEditor.hidden = !isContainer || isVoid;
 		}
 
-		if (showCommon && !isVoid && htmlTextarea) {
-			htmlTextarea.value = isContainer ? (selected.content || '') : (root.content || '');
+		if (isContainer && !isVoid && htmlTextarea) {
+			htmlTextarea.value = selected.content || '';
 		}
 
 		if (shortcodePanel) {
@@ -473,7 +441,7 @@
 			pageTemplateSelect.value = state.pageTemplate || 'default';
 		}
 
-		if (isContainer && selected) {
+		if (isContainer) {
 			var props = selected.props || {};
 			if (flexDirectionSelect) { flexDirectionSelect.value = props.flexDirection || ''; }
 			if (flexGrowInput) { flexGrowInput.value = props.flexGrow || ''; }
@@ -488,21 +456,6 @@
 				}
 			}
 			renderNodeAttrsPanel(selected);
-		} else if (isRoot) {
-			var rootProps = root.props || {};
-			if (flexDirectionSelect) { flexDirectionSelect.value = rootProps.flexDirection || ''; }
-			if (flexGrowInput) { flexGrowInput.value = rootProps.flexGrow || ''; }
-			if (gapInput) { gapInput.value = rootProps.gap || ''; }
-			if (customStyleTextarea) {
-				var rootCssVal = root.style || '';
-				customStyleTextarea.value = rootCssVal;
-				if (styleEditor) {
-					styleEditorSuppressChange = true;
-					styleEditor.codemirror.setValue(rootCssVal);
-					styleEditorSuppressChange = false;
-				}
-			}
-			renderNodeAttrsPanel({ node: root.node, attrs: root.attrs || {} });
 		} else {
 			renderNodeAttrsPanel(null);
 		}
@@ -560,18 +513,7 @@
 	}
 
 	function updateSelectedContainerProp(prop, value) {
-		if (!state.selectedId) {
-			state.layout.children[0].props = state.layout.children[0].props || {};
-			state.layout.children[0].props[prop] = value;
-			markDirty();
-			var rootNode = canvas.querySelector('.wp-builder-canvas-root');
-			if (rootNode) {
-				var rootBody = rootNode.querySelector('.wp-builder-canvas-root-body');
-				if (rootBody) { applyContainerFlexStyles(state.layout.children[0].props, rootNode, rootBody); }
-			}
-			return;
-		}
-		var element = findElement(state.layout.children[0].children || [], state.selectedId);
+		var element = findElement(state.layout.children, state.selectedId);
 		if (!element) { return; }
 		element.props = element.props || {};
 		element.props[prop] = value;
@@ -584,13 +526,7 @@
 	}
 
 	function updateSelectedContainerStyle(style) {
-		if (!state.selectedId) {
-			state.layout.children[0].style = style;
-			markDirty();
-			updateContainerStyle(state.layout.children[0].id, style);
-			return;
-		}
-		var element = findElement(state.layout.children[0].children || [], state.selectedId);
+		var element = findElement(state.layout.children, state.selectedId);
 		if (!element) { return; }
 		element.style = style;
 		markDirty();
@@ -598,13 +534,7 @@
 	}
 
 	function updateSelectedNodeAttr(name, value) {
-		if (!state.selectedId) {
-			state.layout.children[0].attrs = state.layout.children[0].attrs || {};
-			state.layout.children[0].attrs[name] = value;
-			markDirty();
-			return;
-		}
-		var element = findElement(state.layout.children[0].children || [], state.selectedId);
+		var element = findElement(state.layout.children, state.selectedId);
 		if (!element) { return; }
 		element.attrs = element.attrs || {};
 		element.attrs[name] = value;
@@ -622,23 +552,14 @@
 			sanitized = createId();
 		}
 
-		if (state.selectedId) {
-			var element = findElement(state.layout.children[0].children || [], state.selectedId);
-			if (!element) { return; }
-			if (element.id === sanitized) {
-				if (idInput) { idInput.value = sanitized; }
-				return;
-			}
-			element.id = sanitized;
-			state.selectedId = sanitized;
-		} else {
-			if (state.layout.children[0].id === sanitized) {
-				if (idInput) { idInput.value = sanitized; }
-				return;
-			}
-			state.layout.children[0].id = sanitized;
+		var element = findElement(state.layout.children, state.selectedId);
+		if (!element) { return; }
+		if (element.id === sanitized) {
+			if (idInput) { idInput.value = sanitized; }
+			return;
 		}
-
+		element.id = sanitized;
+		state.selectedId = sanitized;
 		markDirty();
 		render();
 	}
@@ -746,6 +667,9 @@
 				throw new Error(payload && payload.data && payload.data.message ? payload.data.message : 'Save failed');
 			}
 			state.layout = normalizeLayout(payload.data.layout);
+			if (!findElement(state.layout.children, state.selectedId)) {
+				state.selectedId = state.layout.children[0].id;
+			}
 			state.dirty = false;
 			if (payload.data.postStatus) {
 				config.postStatus = payload.data.postStatus;
@@ -793,49 +717,14 @@
 		});
 	}
 
-	function updateRootHtmlPreview(content) {
-		var rootEl = canvas.querySelector('.wp-builder-canvas-root');
-		if (!rootEl) { return; }
-		var body = rootEl.querySelector('.wp-builder-canvas-root-body');
-		if (!body) { return; }
-		var preview = null;
-		for (var i = 0; i < body.children.length; i++) {
-			if (body.children[i].classList.contains('wp-builder-node-html-preview')) {
-				preview = body.children[i];
-				break;
-			}
-		}
-		if (content) {
-			if (!preview) {
-				preview = document.createElement('div');
-				preview.className = 'wp-builder-node-html-preview';
-				body.insertBefore(preview, body.firstChild);
-			}
-			preview.innerHTML = content;
-			var empty = body.querySelector('.wp-builder-empty-state');
-			if (empty) { body.removeChild(empty); }
-		} else {
-			if (preview) { body.removeChild(preview); }
-			if (!state.layout.children[0].children.length && !body.querySelector('.wp-builder-empty-state')) {
-				body.appendChild(renderEmpty(text.emptyCanvas || 'Empty canvas'));
-			}
-		}
-	}
-
 	// Content editor
 	if (htmlTextarea) {
 		htmlTextarea.addEventListener('input', function () {
-			if (state.selectedId) {
-				var element = findElement(state.layout.children[0].children || [], state.selectedId);
-				if (element && element.node) {
-					element.content = htmlTextarea.value;
-					markDirty();
-					updateHtmlPreview(state.selectedId, htmlTextarea.value);
-				}
-			} else {
-				state.layout.children[0].content = htmlTextarea.value;
+			var element = findElement(state.layout.children, state.selectedId);
+			if (element && element.node !== undefined) {
+				element.content = htmlTextarea.value;
 				markDirty();
-				updateRootHtmlPreview(htmlTextarea.value);
+				updateHtmlPreview(state.selectedId, htmlTextarea.value);
 			}
 		});
 	}
@@ -881,19 +770,12 @@
 
 	if (nodeSelect) {
 		nodeSelect.addEventListener('change', function () {
-			if (state.selectedId) {
-				var element = findElement(state.layout.children[0].children || [], state.selectedId);
-				if (element && element.node) {
-					element.node = nodeSelect.value;
-					element.attrs = normalizeNodeAttrs(nodeSelect.value, element.attrs);
-					markDirty();
-					render();
-				}
-			} else {
-				state.layout.children[0].node = nodeSelect.value;
-				state.layout.children[0].attrs = normalizeNodeAttrs(nodeSelect.value, state.layout.children[0].attrs);
+			var element = findElement(state.layout.children, state.selectedId);
+			if (element && element.node !== undefined) {
+				element.node = nodeSelect.value;
+				element.attrs = normalizeNodeAttrs(nodeSelect.value, element.attrs);
 				markDirty();
-				renderCanvas();
+				render();
 			}
 		});
 	}
