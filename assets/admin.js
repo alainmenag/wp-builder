@@ -105,7 +105,7 @@
 				id: layout.id ? layout.id : createId(),
 				node: rootNode,
 				props: normalizeContainerProps(layout.props),
-				customCss: typeof layout.customCss === 'string' ? layout.customCss : '',
+				style: typeof layout.style === 'string' ? layout.style : (typeof layout.customCss === 'string' ? layout.customCss : ''),
 				content: typeof layout.content === 'string' ? layout.content : '',
 				attrs: normalizeNodeAttrs(rootNode, layout.attrs),
 				children: Array.isArray(layout.elements) ? normalizeElements(layout.elements) : []
@@ -123,7 +123,7 @@
 			id: rootData.id ? rootData.id : createId(),
 			node: rootNode,
 			props: normalizeContainerProps(rootData.props),
-			customCss: typeof rootData.customCss === 'string' ? rootData.customCss : '',
+			style: typeof rootData.style === 'string' ? rootData.style : (typeof rootData.customCss === 'string' ? rootData.customCss : ''),
 			content: typeof rootData.content === 'string' ? rootData.content : '',
 			attrs: normalizeNodeAttrs(rootNode, rootData.attrs),
 			children: Array.isArray(rootData.children) ? normalizeElements(rootData.children) : []
@@ -163,7 +163,7 @@
 					id: element.id || createId(),
 					node: 'div',
 					props: { flexDirection: '', flexGrow: '', gap: '' },
-					customCss: '',
+					style: '',
 					content: typeof element.content === 'string' ? element.content : '',
 					attrs: {},
 					children: []
@@ -180,7 +180,7 @@
 				id: element.id || createId(),
 				node: node,
 				props: normalizeContainerProps(element.props),
-				customCss: typeof element.customCss === 'string' ? element.customCss : '',
+				style: typeof element.style === 'string' ? element.style : (typeof element.customCss === 'string' ? element.customCss : ''),
 				content: typeof element.content === 'string' ? element.content : '',
 				attrs: normalizeNodeAttrs(node, element.attrs),
 				children: Array.isArray(element.children) ? normalizeElements(element.children) : []
@@ -195,7 +195,7 @@
 	}
 
 	function createContainer() {
-		return { id: createId(), node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, customCss: '', content: '', attrs: {}, children: [] };
+		return { id: createId(), node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, style: '', content: '', attrs: {}, children: [] };
 	}
 
 	function getElementName(id) {
@@ -332,7 +332,7 @@
 		canvas.appendChild(root);
 		cleanupAllContainerStyles();
 		syncAllContainerStyles(state.layout.children[0].children || []);
-		updateContainerStyle(state.layout.children[0].id, state.layout.children[0].customCss || '');
+		updateContainerStyle(state.layout.children[0].id, state.layout.children[0].style || '');
 	}
 
 	function renderElement(element, depth) {
@@ -508,7 +508,7 @@
 			if (flexGrowInput) { flexGrowInput.value = props.flexGrow || ''; }
 			if (gapInput) { gapInput.value = props.gap || ''; }
 			if (customCssTextarea) {
-				var cssVal = selected.customCss || '';
+				var cssVal = selected.style || '';
 				customCssTextarea.value = cssVal;
 				if (cssEditor) {
 					cssEditorSuppressChange = true;
@@ -523,7 +523,7 @@
 			if (flexGrowInput) { flexGrowInput.value = rootProps.flexGrow || ''; }
 			if (gapInput) { gapInput.value = rootProps.gap || ''; }
 			if (customCssTextarea) {
-				var rootCssVal = root.customCss || '';
+				var rootCssVal = root.style || '';
 				customCssTextarea.value = rootCssVal;
 				if (cssEditor) {
 					cssEditorSuppressChange = true;
@@ -583,7 +583,7 @@
 
 	function syncAllContainerStyles(elements) {
 		elements.forEach(function (element) {
-			updateContainerStyle(element.id, element.customCss || '');
+			updateContainerStyle(element.id, element.style || '');
 			syncAllContainerStyles(element.children || []);
 		});
 	}
@@ -614,14 +614,14 @@
 
 	function updateSelectedContainerCss(css) {
 		if (!state.selectedId) {
-			state.layout.children[0].customCss = css;
+			state.layout.children[0].style = css;
 			markDirty();
 			updateContainerStyle(state.layout.children[0].id, css);
 			return;
 		}
 		var element = findElement(state.layout.children[0].children || [], state.selectedId);
 		if (!element) { return; }
-		element.customCss = css;
+		element.style = css;
 		markDirty();
 		updateContainerStyle(state.selectedId, css);
 	}
