@@ -52,34 +52,7 @@ trait WP_Builder_Layout {
 	private function sanitize_layout( array $layout ): array {
 		$now = time();
 
-		// Migrate v1 layouts: root element fields lived at the top level; child elements were in 'elements'.
-		if ( ! isset( $layout['version'] ) || (int) $layout['version'] < 2 ) {
-			$node       = isset( $layout['node'] ) ? $this->sanitize_node_tag( (string) $layout['node'] ) : 'div';
-			$content    = isset( $layout['content'] ) ? wp_kses_post( (string) $layout['content'] ) : '';
-			$props      = isset( $layout['props'] ) && is_array( $layout['props'] ) ? $layout['props'] : array();
-			$custom_style = isset( $layout['style'] ) ? (string) $layout['style'] : ( isset( $layout['customStyle'] ) ? (string) $layout['customStyle'] : '' );
-			$raw_attrs  = isset( $layout['attrs'] ) && is_array( $layout['attrs'] ) ? $layout['attrs'] : array();
-			$elements   = isset( $layout['elements'] ) && is_array( $layout['elements'] ) ? $layout['elements'] : array();
-
-			$root = array(
-				'id'        => isset( $layout['id'] ) && is_string( $layout['id'] ) && '' !== $layout['id'] ? sanitize_key( $layout['id'] ) : $this->generate_element_id(),
-				'node'      => $node,
-				'props'     => $this->sanitize_container_props( $props ),
-				'customStyle' => $this->sanitize_custom_style( $custom_style ),
-				'content'   => $content,
-				'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
-				'children'  => $this->sanitize_elements( $elements ),
-			);
-
-			return array(
-				'version'   => 2,
-				'createdAt' => $now,
-				'updatedAt' => $now,
-				'children'  => array( $root ),
-			);
-		}
-
-		// v2 layout: the root element is children[0].
+		// layout: the root element is children[0].
 		$created_at = isset( $layout['createdAt'] ) ? absint( $layout['createdAt'] ) : $now;
 		$raw_children = isset( $layout['children'] ) && is_array( $layout['children'] ) ? $layout['children'] : array();
 		$root_data    = ! empty( $raw_children[0] ) && is_array( $raw_children[0] ) ? $raw_children[0] : array();
@@ -260,21 +233,6 @@ trait WP_Builder_Layout {
 
 			$id = isset( $element['id'] ) ? sanitize_key( (string) $element['id'] ) : '';
 
-			// Migrate legacy html elements.
-			if ( isset( $element['type'] ) && 'html' === $element['type'] ) {
-				$content = isset( $element['content'] ) ? wp_kses_post( (string) $element['content'] ) : '';
-				$clean[] = array(
-					'id'        => $id ? $id : $this->generate_element_id(),
-					'node'      => 'div',
-					'props'     => $this->sanitize_container_props( array() ),
-					'style'     => '',
-					'content'   => $content,
-					'attrs'     => array(),
-					'children'  => array(),
-				);
-				continue;
-			}
-
 			if ( ! isset( $element['node'] ) ) {
 				continue;
 			}
@@ -289,7 +247,7 @@ trait WP_Builder_Layout {
 				'id'        => $id ? $id : $this->generate_element_id(),
 				'node'      => $node,
 				'props'     => $this->sanitize_container_props( $props ),
-					'style'     => $this->sanitize_custom_style( $custom_style ),
+				'style'     => $this->sanitize_custom_style( $custom_style ),
 				'content'   => $content,
 				'attrs'     => $this->sanitize_node_attrs( $node, $raw_attrs ),
 				'children'  => $this->sanitize_elements( $children ),
