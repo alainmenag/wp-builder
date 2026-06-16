@@ -135,6 +135,6 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 		}
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo do_shortcode( '[wp_builder_template id="' . $template_id . '"]' );
+		echo do_shortcode( '[wp_builder id="' . $template_id . '"]' );
 	}
 }

@@ -143,8 +143,7 @@ Each **element**:
 
 | Shortcode | Attribute | Description |
 |-----------|-----------|-------------|
-| `[wp_builder_template id="N"]` | `id` (post ID) | Renders a published `wp_builder_template` post. |
-| `[wp_builder_content id="N"]`  | `id` (post ID) | Renders the builder layout of any published post/page. |
+| `[wp_builder id="N"]` | `id` (post ID) | Renders the builder layout of any published post, page, or template. |
 
 ---
 

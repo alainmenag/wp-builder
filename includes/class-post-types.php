@@ -53,7 +53,7 @@ trait WP_Builder_Post_Types {
 				'supports'            => array( 'title' ),
 				'capability_type'     => 'post',
 				'map_meta_cap'        => true,
-				'rewrite'             => array( 'slug' => 'wp_builder_template', 'with_front' => false ),
+				'rewrite'             => false,
 			)
 		);
 	}
@@ -63,5 +63,19 @@ trait WP_Builder_Post_Types {
 			flush_rewrite_rules( false );
 			update_option( self::REWRITE_VERSION_OPTION, self::REWRITE_VERSION );
 		}
+	}
+
+	public function template_post_type_link( string $url, WP_Post $post ): string {
+		if ( self::TEMPLATE_CPT !== $post->post_type ) {
+			return $url;
+		}
+
+		return add_query_arg(
+			array(
+				'post_type' => self::TEMPLATE_CPT,
+				'p'         => $post->ID,
+			),
+			home_url( '/' )
+		);
 	}
 }

@@ -41,8 +41,7 @@ A lightweight, Elementor-inspired page builder plugin for WordPress. Build infin
 ### Shortcodes
 | Shortcode | Description |
 |-----------|-------------|
-| `[wp_builder_template id="42"]` | Renders a published Builder Template by its post ID. |
-| `[wp_builder_content id="42"]`  | Renders the builder layout saved on any published post or page. |
+| `[wp_builder id="42"]` | Renders the builder layout of any published post, page, or template. |
 
 ### Page templates
 | Template slug | Description |
@@ -80,7 +79,7 @@ When Elementor is active, a **Builder Template** widget appears in the Elementor
 ### Embedding a template
 **Shortcode:**
 ```
-[wp_builder_template id="42"]
+[wp_builder id="42"]
 ```
 
 **Elementor widget:**

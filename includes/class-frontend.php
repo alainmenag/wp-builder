@@ -12,12 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 trait WP_Builder_Frontend {
 
 	public function register_shortcodes(): void {
-		add_shortcode( 'wp_builder_template', array( $this, 'render_template_shortcode' ) );
-		add_shortcode( 'wp_builder_content', array( $this, 'render_content_shortcode' ) );
+		add_shortcode( 'wp_builder', array( $this, 'render_builder_shortcode' ) );
 	}
 
-	public function render_template_shortcode( array $atts ): string {
-		$atts    = shortcode_atts( array( 'id' => 0 ), $atts, 'wp_builder_template' );
+	public function render_builder_shortcode( array $atts ): string {
+		$atts    = shortcode_atts( array( 'id' => 0 ), $atts, 'wp_builder' );
 		$post_id = absint( $atts['id'] );
 
 		if ( ! $post_id ) {
@@ -25,7 +24,15 @@ trait WP_Builder_Frontend {
 		}
 
 		$post = get_post( $post_id );
-		if ( ! $post || self::TEMPLATE_CPT !== $post->post_type || 'publish' !== $post->post_status ) {
+		if ( ! $post || 'publish' !== $post->post_status ) {
+			return '';
+		}
+
+		if ( self::TEMPLATE_CPT === $post->post_type ) {
+			$css_classes = 'wp-builder-page wp-builder-template';
+		} elseif ( $this->is_supported_post_type( $post->post_type ) ) {
+			$css_classes = 'wp-builder-page wp-builder-shortcode';
+		} else {
 			return '';
 		}
 
@@ -35,29 +42,7 @@ trait WP_Builder_Frontend {
 
 		$this->enqueue_frontend_style();
 
-		return $this->render_element( $this->get_layout_root_element( $post_id ), 'wp-builder-page wp-builder-template' );
-	}
-
-	public function render_content_shortcode( array $atts ): string {
-		$atts    = shortcode_atts( array( 'id' => 0 ), $atts, 'wp_builder_content' );
-		$post_id = absint( $atts['id'] );
-
-		if ( ! $post_id ) {
-			return '';
-		}
-
-		$post = get_post( $post_id );
-		if ( ! $post || ! $this->is_supported_post_type( $post->post_type ) || 'publish' !== $post->post_status ) {
-			return '';
-		}
-
-		if ( ! $this->has_builder_layout( $post_id ) ) {
-			return '';
-		}
-
-		$this->enqueue_frontend_style();
-
-		return $this->render_element( $this->get_layout_root_element( $post_id ), 'wp-builder-page wp-builder-shortcode' );
+		return $this->render_element( $this->get_layout_root_element( $post_id ), $css_classes );
 	}
 
 	public function enqueue_frontend_assets(): void {
