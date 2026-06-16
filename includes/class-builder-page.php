@@ -27,6 +27,11 @@ trait WP_Builder_Builder_Page {
 			wp_die( esc_html__( 'You do not have permission to edit this content.', 'wp-builder' ) );
 		}
 
+		// Populate the global $post so that admin-bar callbacks such as
+		// wp_admin_bar_edit_menu() can call get_post() without returning null.
+		$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		setup_postdata( $post );
+
 		$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		if ( 'json' === $view ) {
