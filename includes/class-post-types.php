@@ -64,4 +64,18 @@ trait WP_Builder_Post_Types {
 			update_option( self::REWRITE_VERSION_OPTION, self::REWRITE_VERSION );
 		}
 	}
+
+	public function template_post_type_link( string $url, WP_Post $post ): string {
+		if ( self::TEMPLATE_CPT !== $post->post_type ) {
+			return $url;
+		}
+
+		return add_query_arg(
+			array(
+				'post_type' => self::TEMPLATE_CPT,
+				'p'         => $post->ID,
+			),
+			home_url( '/' )
+		);
+	}
 }
