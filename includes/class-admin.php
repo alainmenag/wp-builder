@@ -117,7 +117,7 @@ trait WP_Builder_Admin {
 		}
 
 		$layout = $this->get_layout( $post->ID );
-		$count  = $this->count_elements( $layout['elements'] );
+		$count  = $this->count_elements( $layout['children'] );
 
 		printf(
 			'<p><a class="button button-primary button-large" href="%1$s">%2$s</a></p>',
