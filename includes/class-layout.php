@@ -132,14 +132,14 @@ trait WP_Builder_Layout {
 			}
 		}
 
-		$css_block = '';
+		$style_block = '';
 		if ( $custom_style !== '' ) {
 			$selector   = '[data-wp-builder-id="' . esc_attr( $id ) . '"]';
-			$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_style );
-			$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_style(); no WP escape function exists for raw CSS.
+			$scoped_style = preg_replace( '/\bself\b/', $selector, $custom_style );
+			$style_block  = '<style>' . $scoped_style . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_style(); no WP escape function exists for raw CSS.
 		}
 
-		return $css_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_layout(); render_elements() output is pre-escaped.
+		return $style_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_layout(); render_elements() output is pre-escaped.
 			'<%1$s class="%2$s" data-wp-builder-id="%3$s"%4$s%5$s>%6$s%7$s</%1$s>',
 			$tag,
 			esc_attr( $class ),
@@ -314,15 +314,15 @@ trait WP_Builder_Layout {
 				}
 			}
 
-			$css_block = '';
+			$style_block = '';
 			if ( $custom_style !== '' && $id ) {
 				$selector   = '.wp-builder-container[data-wp-builder-id="' . esc_attr( $id ) . '"]';
-				$scoped_css = preg_replace( '/\bself\b/', $selector, $custom_style );
-				$css_block  = '<style>' . $scoped_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_style(); no WP escape function exists for raw CSS.
+				$scoped_style = preg_replace( '/\bself\b/', $selector, $custom_style );
+				$style_block  = '<style>' . $scoped_style . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS sanitized by sanitize_custom_style(); no WP escape function exists for raw CSS.
 			}
 
 			if ( $is_void ) {
-				$output .= $css_block . sprintf(
+				$output .= $style_block . sprintf(
 					'<%1$s class="wp-builder-container" data-wp-builder-id="%2$s"%3$s%4$s />',
 					$tag,
 					esc_attr( $id ),
@@ -330,7 +330,7 @@ trait WP_Builder_Layout {
 					$extra_attrs
 				);
 			} else {
-				$output .= $css_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_elements().
+				$output .= $style_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post in sanitize_elements().
 					'<%1$s class="wp-builder-container" data-wp-builder-id="%2$s"%3$s%4$s>%5$s%6$s</%1$s>',
 					$tag,
 					esc_attr( $id ),
@@ -359,10 +359,10 @@ trait WP_Builder_Layout {
 		);
 	}
 
-	private function sanitize_custom_style( string $css ): string {
+	private function sanitize_custom_style( string $style ): string {
 		// Prevent breaking out of the <style> tag.
-		$css = preg_replace( '/<\/style\s*>/i', '', $css );
-		return wp_strip_all_tags( $css );
+		$style = preg_replace( '/<\/style\s*>/i', '', $style );
+		return wp_strip_all_tags( $style );
 	}
 
 	private function build_container_inline_style( array $props ): string {

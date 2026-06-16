@@ -60,9 +60,9 @@
 	var flexDirectionSelect = document.getElementById('wp-builder-flex-direction');
 	var flexGrowInput = document.getElementById('wp-builder-flex-grow');
 	var gapInput = document.getElementById('wp-builder-gap');
-	var customStyleTextarea = document.getElementById('wp-builder-custom-css');
-	var cssEditor = null; // CodeMirror instance, set up below if wp.codeEditor is available.
-	var cssEditorSuppressChange = false; // True while setValue is being called programmatically.
+	var customStyleTextarea = document.getElementById('wp-builder-custom-style');
+	var styleEditor = null; // CodeMirror instance, set up below if wp.codeEditor is available.
+	var styleEditorSuppressChange = false; // True while setValue is being called programmatically.
 	var nodeSelect = document.getElementById('wp-builder-node');
 	var nodeSelectGroup = document.getElementById('wp-builder-inspector-node');
 	var idInput = document.getElementById('wp-builder-node-id');
@@ -493,12 +493,12 @@
 			if (flexGrowInput) { flexGrowInput.value = props.flexGrow || ''; }
 			if (gapInput) { gapInput.value = props.gap || ''; }
 			if (customStyleTextarea) {
-				var cssVal = selected.style || '';
-				customStyleTextarea.value = cssVal;
-				if (cssEditor) {
-					cssEditorSuppressChange = true;
-					cssEditor.codemirror.setValue(cssVal);
-					cssEditorSuppressChange = false;
+				var styleVal = selected.style || '';
+				customStyleTextarea.value = styleVal;
+				if (styleEditor) {
+					styleEditorSuppressChange = true;
+					styleEditor.codemirror.setValue(styleVal);
+					styleEditorSuppressChange = false;
 				}
 			}
 			renderNodeAttrsPanel(selected);
@@ -510,10 +510,10 @@
 			if (customStyleTextarea) {
 				var rootCssVal = root.style || '';
 				customStyleTextarea.value = rootCssVal;
-				if (cssEditor) {
-					cssEditorSuppressChange = true;
-					cssEditor.codemirror.setValue(rootCssVal);
-					cssEditorSuppressChange = false;
+				if (styleEditor) {
+					styleEditorSuppressChange = true;
+					styleEditor.codemirror.setValue(rootCssVal);
+					styleEditorSuppressChange = false;
 				}
 			}
 			renderNodeAttrsPanel({ node: root.node, attrs: root.attrs || {} });
@@ -597,18 +597,18 @@
 		}
 	}
 
-	function updateSelectedContainerCss(css) {
+	function updateSelectedContainerStyle(style) {
 		if (!state.selectedId) {
-			state.layout.children[0].style = css;
+			state.layout.children[0].style = style;
 			markDirty();
-			updateContainerStyle(state.layout.children[0].id, css);
+			updateContainerStyle(state.layout.children[0].id, style);
 			return;
 		}
 		var element = findElement(state.layout.children[0].children || [], state.selectedId);
 		if (!element) { return; }
-		element.style = css;
+		element.style = style;
 		markDirty();
-		updateContainerStyle(state.selectedId, css);
+		updateContainerStyle(state.selectedId, style);
 	}
 
 	function updateSelectedNodeAttr(name, value) {
@@ -875,20 +875,20 @@
 
 	if (customStyleTextarea) {
 		if (window.wp && window.wp.codeEditor) {
-			cssEditor = window.wp.codeEditor.initialize(customStyleTextarea, {
+			styleEditor = window.wp.codeEditor.initialize(customStyleTextarea, {
 				codemirror: {
 					mode: 'css',
 					autoCloseBrackets: true,
 					matchBrackets: true
 				}
 			});
-			cssEditor.codemirror.on('change', function (cm) {
-				if (cssEditorSuppressChange) { return; }
-				updateSelectedContainerCss(cm.getValue());
+			styleEditor.codemirror.on('change', function (cm) {
+				if (styleEditorSuppressChange) { return; }
+				updateSelectedContainerStyle(cm.getValue());
 			});
 		} else {
 			customStyleTextarea.addEventListener('input', function () {
-				updateSelectedContainerCss(customStyleTextarea.value);
+				updateSelectedContainerStyle(customStyleTextarea.value);
 			});
 		}
 	}
@@ -974,8 +974,8 @@
 			if (!isOpen) {
 				accordion.classList.add('is-open');
 				header.setAttribute('aria-expanded', 'true');
-				if (cssEditor && accordion.id === 'wp-builder-accordion-style') {
-					cssEditor.codemirror.refresh();
+				if (styleEditor && accordion.id === 'wp-builder-accordion-style') {
+					styleEditor.codemirror.refresh();
 				}
 			}
 		});
