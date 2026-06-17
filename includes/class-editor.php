@@ -101,14 +101,17 @@ trait WP_Builder_Editor {
 				'pageTemplate'  => $ctx['current_template'],
 				'pageTemplates' => $ctx['page_templates'],
 				'i18n'       => array(
-					'addContainer'   => __( 'Container', 'wp-builder' ),
-					'delete'         => __( 'Delete', 'wp-builder' ),
-					'emptyContainer' => __( 'Empty container', 'wp-builder' ),
-					'renameTitle'    => __( 'Post title', 'wp-builder' ),
-					'saved'          => __( 'Saved', 'wp-builder' ),
-					'saving'         => __( 'Saving...', 'wp-builder' ),
-					'selected'       => __( 'Selected', 'wp-builder' ),
-					'unsaved'        => __( 'Unsaved changes', 'wp-builder' ),
+					'addContainer'    => __( 'Container', 'wp-builder' ),
+					'delete'          => __( 'Delete', 'wp-builder' ),
+					'emptyContainer'  => __( 'Empty container', 'wp-builder' ),
+					'saved'           => __( 'Saved', 'wp-builder' ),
+					'saving'          => __( 'Saving...', 'wp-builder' ),
+					'selected'        => __( 'Selected', 'wp-builder' ),
+					'unsaved'         => __( 'Unsaved changes', 'wp-builder' ),
+					'statusPublished' => __( 'Published', 'wp-builder' ),
+					'statusDraft'     => __( 'Draft', 'wp-builder' ),
+					'statusPending'   => __( 'Pending Review', 'wp-builder' ),
+					'statusPrivate'   => __( 'Private', 'wp-builder' ),
 				),
 			)
 		);
@@ -158,8 +161,20 @@ trait WP_Builder_Editor {
 
 					<div>
 						<button type="button" id="wp-builder-title" class="wp-builder-title-button" aria-label="<?php esc_attr_e( 'Edit post title', 'wp-builder' ); ?>"><?php echo esc_html( get_the_title( $post_id ) ); ?></button>
-						<div>
-							<strong id="wp-builder-selection-name" class="color-wpb-accent"></strong>
+						<?php
+						$status_labels = array(
+							'publish'  => __( 'Published', 'wp-builder' ),
+							'draft'    => __( 'Draft', 'wp-builder' ),
+							'pending'  => __( 'Pending Review', 'wp-builder' ),
+							'private'  => __( 'Private', 'wp-builder' ),
+						);
+						$status_label  = isset( $status_labels[ $post->post_status ] ) ? $status_labels[ $post->post_status ] : ucfirst( $post->post_status );
+						?>
+						<button type="button" id="wp-builder-post-status-badge" class="wp-builder-status-badge" aria-label="<?php esc_attr_e( 'Edit post status', 'wp-builder' ); ?>"><?php echo esc_html( $status_label ); ?></button>
+						<div class="wp-builder-selection-identity">
+							<button type="button" id="wp-builder-selection-node" class="wp-builder-selection-part" aria-label="<?php esc_attr_e( 'Edit node type', 'wp-builder' ); ?>"></button>
+							<span class="wp-builder-selection-sep" aria-hidden="true">·</span>
+							<button type="button" id="wp-builder-selection-id" class="wp-builder-selection-part" aria-label="<?php esc_attr_e( 'Edit element ID', 'wp-builder' ); ?>"></button>
 						</div>
 					</div>
 
@@ -194,6 +209,10 @@ trait WP_Builder_Editor {
 							</button>
 							<div class="wp-builder-accordion-body" id="wp-builder-accordion-settings-body" role="region">
 								<div class="wp-builder-accordion-body-inner">
+									<div class="wp-builder-field-group">
+										<label class="wp-builder-inspector-label" for="wp-builder-post-title"><?php esc_html_e( 'Title', 'wp-builder' ); ?></label>
+										<input type="text" id="wp-builder-post-title" class="wp-builder-input" value="<?php echo esc_attr( get_the_title( $post_id ) ); ?>" />
+									</div>
 									<div class="wp-builder-field-group">
 										<label class="wp-builder-inspector-label" for="wp-builder-post-status"><?php esc_html_e( 'Status', 'wp-builder' ); ?></label>
 										<select id="wp-builder-post-status" class="wp-builder-select">
@@ -270,10 +289,6 @@ trait WP_Builder_Editor {
 							</button>
 							<div class="wp-builder-accordion-body" id="wp-builder-accordion-identity-body" role="region">
 								<div class="wp-builder-accordion-body-inner">
-									<div class="wp-builder-field-group" id="wp-builder-inspector-id" hidden>
-										<label class="wp-builder-inspector-label" for="wp-builder-node-id"><?php esc_html_e( 'ID', 'wp-builder' ); ?></label>
-										<input type="text" id="wp-builder-node-id" class="wp-builder-input" placeholder="<?php esc_attr_e( 'e.g. my-element', 'wp-builder' ); ?>">
-									</div>
 									<div id="wp-builder-inspector-node" class="wp-builder-field-group" hidden>
 										<label class="wp-builder-inspector-label" for="wp-builder-node"><?php esc_html_e( 'Node', 'wp-builder' ); ?></label>
 										<select id="wp-builder-node" class="wp-builder-select">
@@ -305,6 +320,10 @@ trait WP_Builder_Editor {
 											<option value="source">source</option>
 											<option value="iframe">iframe</option>
 										</select>
+									</div>
+									<div class="wp-builder-field-group" id="wp-builder-inspector-id" hidden>
+										<label class="wp-builder-inspector-label" for="wp-builder-node-id"><?php esc_html_e( 'ID', 'wp-builder' ); ?></label>
+										<input type="text" id="wp-builder-node-id" class="wp-builder-input" placeholder="<?php esc_attr_e( 'e.g. my-element', 'wp-builder' ); ?>">
 									</div>
 								</div>
 							</div>
