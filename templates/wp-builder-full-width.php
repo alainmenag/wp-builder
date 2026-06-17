@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 get_header();
 ?>
-<div class="wp-builder-full-width-page">
+<div class="wp-builder-template wp-builder-template--page">
 	<?php
 	while ( have_posts() ) :
 		the_post();
