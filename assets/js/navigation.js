@@ -97,7 +97,12 @@ export function initAccordions( getStyleEditor ) {
  * @param {string}      [field]  Element ID to focus after opening.
  */
 export function navigate( tab, section, field ) {
-	const tabMap = { main: 'wp-builder-tab-page', element: 'wp-builder-tab-element' };
+	// Build the map dynamically from data-tab-key attributes so that adding a
+	// new tab in PHP requires no changes here.
+	const tabMap = {};
+	document.querySelectorAll( '.wp-builder-tab-btn[data-tab-key]' ).forEach( ( btn ) => {
+		tabMap[ btn.dataset.tabKey ] = btn.getAttribute( 'aria-controls' );
+	} );
 	const tabId  = tabMap[ tab ];
 	if ( ! tabId ) { return; }
 
