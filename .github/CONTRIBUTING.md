@@ -38,7 +38,7 @@ Use the **Feature request** issue template. Describe the problem your feature so
 2. Clone or copy this repository into `wp-content/plugins/wp-builder/`.
 3. Activate the **Builder** plugin in WordPress Admin → Plugins.
 
-There are no build steps — the plugin ships plain PHP, CSS, and vanilla JavaScript.
+There are no build steps — the plugin ships plain PHP and CSS. The editor JavaScript uses native ES6 modules in `assets/js/` loaded directly by the browser with no transpiler.
 
 **Syntax validation:**
 
@@ -47,7 +47,7 @@ There are no build steps — the plugin ships plain PHP, CSS, and vanilla JavaSc
 php -l wp-builder.php
 
 # JavaScript
-node --check assets/admin.js
+for f in assets/js/*.js; do node --check "$f"; done
 ```
 
 ---
@@ -58,7 +58,7 @@ node --check assets/admin.js
   - Tabs for indentation.
   - All output must be escaped (`esc_html`, `esc_attr`, `esc_url`, etc.).
   - All user input must be sanitised and nonces verified before processing.
-- **JavaScript** — plain ES5-compatible vanilla JS; no build tool or transpiler is used.
+- **JavaScript** — ES6 native modules in `assets/js/`; no build tool or transpiler is used. `editor.js` is the entry point.
 - **CSS** — BEM-style class names prefixed with `wp-builder-`.
 - Keep all PHP logic inside the appropriate trait in `includes/class-*.php`.
 - Do not introduce new dependencies (Composer packages, npm packages) without prior discussion.
@@ -75,7 +75,7 @@ node --check assets/admin.js
 3. Validate syntax:
    ```bash
    php -l wp-builder.php
-   node --check assets/admin.js
+   for f in assets/js/*.js; do node --check "$f"; done
    ```
 4. Open a pull request against `main`. Fill in the pull request template completely.
 5. Keep the PR focused — one feature or fix per PR makes review easier.
