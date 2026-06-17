@@ -104,7 +104,6 @@ trait WP_Builder_Editor {
 					'addContainer'   => __( 'Container', 'wp-builder' ),
 					'delete'         => __( 'Delete', 'wp-builder' ),
 					'emptyContainer' => __( 'Empty container', 'wp-builder' ),
-					'renameTitle'    => __( 'Post title', 'wp-builder' ),
 					'saved'          => __( 'Saved', 'wp-builder' ),
 					'saving'         => __( 'Saving...', 'wp-builder' ),
 					'selected'       => __( 'Selected', 'wp-builder' ),
@@ -194,6 +193,10 @@ trait WP_Builder_Editor {
 							</button>
 							<div class="wp-builder-accordion-body" id="wp-builder-accordion-settings-body" role="region">
 								<div class="wp-builder-accordion-body-inner">
+									<div class="wp-builder-field-group">
+										<label class="wp-builder-inspector-label" for="wp-builder-post-title"><?php esc_html_e( 'Title', 'wp-builder' ); ?></label>
+										<input type="text" id="wp-builder-post-title" class="wp-builder-input" value="<?php echo esc_attr( get_the_title( $post_id ) ); ?>" />
+									</div>
 									<div class="wp-builder-field-group">
 										<label class="wp-builder-inspector-label" for="wp-builder-post-status"><?php esc_html_e( 'Status', 'wp-builder' ); ?></label>
 										<select id="wp-builder-post-status" class="wp-builder-select">

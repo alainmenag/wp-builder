@@ -68,6 +68,7 @@
 	var idInput = document.getElementById('wp-builder-node-id');
 	var idInputGroup = document.getElementById('wp-builder-inspector-id');
 	var postStatusSelect = document.getElementById('wp-builder-post-status');
+	var postTitleInput = document.getElementById('wp-builder-post-title');
 	var titleInput = document.getElementById('wp-builder-title');
 	var viewLink = document.getElementById('wp-builder-view-link');
 	var pageTemplateSelect = document.getElementById('wp-builder-chrome-template');
@@ -678,6 +679,7 @@
 			if (payload.data.postTitle) {
 				config.postTitle = payload.data.postTitle;
 				if (titleInput) { titleInput.textContent = payload.data.postTitle; }
+				if (postTitleInput) { postTitleInput.value = payload.data.postTitle; }
 			}
 			if (payload.data.docTitle) {
 				document.title = payload.data.docTitle;
@@ -726,6 +728,15 @@
 				markDirty();
 				updateHtmlPreview(state.selectedId, htmlTextarea.value);
 			}
+		});
+	}
+
+	// Settings title input — keep in sync with the header title button
+	if (postTitleInput) {
+		postTitleInput.addEventListener('input', function () {
+			var value = postTitleInput.value.trim();
+			if (titleInput) { titleInput.textContent = value || config.postTitle || ''; }
+			markDirty();
 		});
 	}
 
@@ -801,15 +812,10 @@
 		});
 	}
 
-	// Title rename — click to open prompt
+	// Title button — click to navigate to the title field in the Settings panel
 	if (titleInput) {
 		titleInput.addEventListener('click', function () {
-			var current = titleInput.textContent.trim() || config.postTitle || '';
-			var newTitle = window.prompt(text.renameTitle || 'Post title', current);
-			if (newTitle !== null && newTitle.trim()) {
-				titleInput.textContent = newTitle.trim();
-				markDirty();
-			}
+			navigate('main', 'settings', 'wp-builder-post-title');
 		});
 	}
 
@@ -866,11 +872,12 @@
 		});
 	});
 
-	// Panel navigation utility — navigate( tab, section )
+	// Panel navigation utility — navigate( tab, section, field )
 	// tab:     'main'     | 'element'
 	// section: 'settings' | 'shortcode' | 'data'                           (main tab)
 	//          'identity' | 'content'   | 'layout' | 'style' | 'attrs'    (element tab)
-	function navigate(tab, section) {
+	// field:   id of a form element inside the accordion to focus (optional)
+	function navigate(tab, section, field) {
 		var tabMap = { main: 'wp-builder-tab-page', element: 'wp-builder-tab-element' };
 		var tabId = tabMap[tab];
 		if (!tabId) { return; }
@@ -888,6 +895,12 @@
 				var header = accordion.querySelector('.wp-builder-accordion-header');
 				if (header) { header.click(); }
 			}
+		}
+
+		// Focus the requested field, if provided.
+		if (field) {
+			var fieldEl = document.getElementById(field);
+			if (fieldEl) { fieldEl.focus(); }
 		}
 	}
 
