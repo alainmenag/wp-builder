@@ -46,8 +46,18 @@
 
 	var VOID_NODES = { img: true, input: true, br: true, hr: true, source: true };
 
+	var ICON_ADD    = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>';
+	var ICON_REMOVE = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.3 5.71a.996.996 0 0 0-1.41 0L12 10.59 7.11 5.7A.996.996 0 1 0 5.7 7.11L10.59 12l-4.88 4.88a.996.996 0 1 0 1.41 1.41L12 13.41l4.88 4.88a.996.996 0 1 0 1.41-1.41L13.41 12l4.88-4.88a.996.996 0 0 0-.01-1.41z"></path></svg>';
+
 	var config = window.wpBuilder || {};
 	var text = config.i18n || {};
+
+	var STATUS_LABELS = {
+		'publish': text.statusPublished || 'Published',
+		'draft':   text.statusDraft     || 'Draft',
+		'pending': text.statusPending   || 'Pending Review',
+		'private': text.statusPrivate   || 'Private'
+	};
 	var stage = document.getElementById('wp-builder-stage');
 	var saveButton = document.getElementById('wp-builder-save');
 	var embedPanel = document.getElementById('wp-builder-embed-panel');
@@ -93,9 +103,22 @@
 		return (typeof tag === 'string' && allowed[tag]) ? tag : 'div';
 	}
 
+	function normalizeElement(data) {
+		var node = normalizeNodeTag(data.node);
+		return {
+			id: data.id || createId(),
+			node: node,
+			props: normalizeContainerProps(data.props),
+			style: typeof data.style === 'string' ? data.style : null,
+			content: typeof data.content === 'string' ? data.content : '',
+			attrs: normalizeNodeAttrs(node, data.attrs),
+			children: Array.isArray(data.children) ? normalizeElements(data.children) : []
+		};
+	}
+
 	function normalizeLayout(layout) {
 		var now = Date.now();
-		var rootData, rootNode, rootEl;
+		var rootData;
 
 		// No layout at all → fresh v2 envelope.
 		if (!layout || typeof layout !== 'object') {
@@ -107,17 +130,7 @@
 		if (!rootData) {
 			return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [createContainer()] };
 		}
-		rootNode = normalizeNodeTag(rootData.node);
-		rootEl = {
-			id: rootData.id ? rootData.id : createId(),
-			node: rootNode,
-			props: normalizeContainerProps(rootData.props),
-			style: typeof rootData.style === 'string' ? rootData.style : null,
-			content: typeof rootData.content === 'string' ? rootData.content : '',
-			attrs: normalizeNodeAttrs(rootNode, rootData.attrs),
-			children: Array.isArray(rootData.children) ? normalizeElements(rootData.children) : []
-		};
-		return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [rootEl] };
+		return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [normalizeElement(rootData)] };
 	}
 
 	function normalizeContainerProps(props) {
@@ -142,25 +155,10 @@
 
 	function normalizeElements(elements) {
 		return elements.reduce(function (clean, element) {
-			if (!element || typeof element !== 'object') {
+			if (!element || typeof element !== 'object' || typeof element.node !== 'string') {
 				return clean;
 			}
-
-			if (typeof element.node !== 'string') {
-				return clean;
-			}
-
-			var node = normalizeNodeTag(element.node);
-			clean.push({
-				id: element.id || createId(),
-				node: node,
-				props: normalizeContainerProps(element.props),
-				style: typeof element.style === 'string' ? element.style : null,
-				content: typeof element.content === 'string' ? element.content : '',
-				attrs: normalizeNodeAttrs(node, element.attrs),
-				children: Array.isArray(element.children) ? normalizeElements(element.children) : []
-			});
-
+			clean.push(normalizeElement(element));
 			return clean;
 		}, []);
 	}
@@ -171,11 +169,6 @@
 
 	function createContainer() {
 		return { id: createId(), node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, style: '', content: '', attrs: {}, children: [] };
-	}
-
-	function getElementName(id) {
-		var element = findElement(state.layout.children, id);
-		return element ? (element.node || 'div').toUpperCase() + ' \u00b7 ' + (element.id || id) : (id || '');
 	}
 
 	function findElement(elements, id) {
@@ -232,37 +225,12 @@
 
 	function updateStatusBadge(status) {
 		if (postStatusBadge) {
-			var labels = {
-				'publish':  (config.i18n && config.i18n.statusPublished)    || 'Published',
-				'draft':    (config.i18n && config.i18n.statusDraft)         || 'Draft',
-				'pending':  (config.i18n && config.i18n.statusPending)       || 'Pending Review',
-				'private':  (config.i18n && config.i18n.statusPrivate)       || 'Private'
-			};
-			postStatusBadge.textContent = (status && labels[status]) ? labels[status] : (status || '');
+			postStatusBadge.textContent = (status && STATUS_LABELS[status]) ? STATUS_LABELS[status] : (status || '');
 		}
 	}
 
 	function focusElementIdentity() {
-		var elementTabBtn = document.getElementById('wp-builder-tab-btn-element');
-		var pageTabBtn = document.getElementById('wp-builder-tab-btn-page');
-		var elementTabPanel = document.getElementById('wp-builder-tab-element');
-		var pageTabPanel = document.getElementById('wp-builder-tab-page');
-		var identityAccordion = document.getElementById('wp-builder-accordion-identity');
-
-		if (pageTabBtn) {
-			pageTabBtn.classList.remove('is-active');
-			pageTabBtn.setAttribute('aria-selected', 'false');
-		}
-		if (elementTabBtn) {
-			elementTabBtn.classList.add('is-active');
-			elementTabBtn.setAttribute('aria-selected', 'true');
-		}
-		if (pageTabPanel) {
-			pageTabPanel.hidden = true;
-		}
-		if (elementTabPanel) {
-			elementTabPanel.hidden = false;
-		}
+		navigate('element', null);
 	}
 
 	function selectElement(id) {
@@ -279,10 +247,6 @@
 		state.selectedId = element.id;
 		markDirty();
 		render();
-	}
-
-	function addContainerToSelection() {
-		addElementToSelection('container');
 	}
 
 	function deleteSelection() {
@@ -303,21 +267,13 @@
 
 	function renderCanvas() {
 		stage.innerHTML = '';
-		var firstChild = renderNode(state.layout.children[0], 0, false);
-		stage.appendChild(firstChild);
-		cleanupAllContainerStyles();
-		syncAllContainerStyles(state.layout.children);
-	}
-
-	function renderElement(element, depth) {
-		return renderNode(element, depth, true);
+		stage.appendChild(renderNode(state.layout.children[0], 0, false));
+		rebuildContainerStyles(state.layout.children);
 	}
 
 	function renderNode(element, depth, isDeletable) {
 		var node = document.createElement('section');
 		var bar = document.createElement('div');
-		var title = document.createElement('button');
-		var addButton = document.createElement('button');
 		var body = document.createElement('div');
 		var children = element.children || [];
 		var isVoid = VOID_NODES[element.node];
@@ -328,6 +284,7 @@
 
 		bar.className = 'wp-builder-node-bar';
 
+		var title = document.createElement('button');
 		title.type = 'button';
 		title.className = 'wp-builder-node-title';
 		title.textContent = (element.node || 'div').toUpperCase() + ' \u00b7 ' + element.id;
@@ -335,30 +292,23 @@
 			event.stopPropagation();
 			selectElement(element.id);
 		});
-
-		addButton.type = 'button';
-		addButton.className = 'wp-builder-node-action';
-		addButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>';
-		addButton.setAttribute('aria-label', text.addContainer || 'Add container');
-		addButton.addEventListener('click', function (event) {
-			event.stopPropagation();
-			state.selectedId = element.id;
-			addContainerToSelection();
-		});
-
 		bar.appendChild(title);
 
+		if (!isVoid) {
+			bar.appendChild(makeIconButton(
+				'wp-builder-node-action',
+				text.addContainer || 'Add container',
+				ICON_ADD,
+				function (event) { event.stopPropagation(); state.selectedId = element.id; addElementToSelection('container'); }
+			));
+		}
 		if (isDeletable) {
-			var removeButton = document.createElement('button');
-			removeButton.type = 'button';
-			removeButton.className = 'wp-builder-node-action wp-builder-node-action-danger';
-			removeButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.3 5.71a.996.996 0 0 0-1.41 0L12 10.59 7.11 5.7A.996.996 0 1 0 5.7 7.11L10.59 12l-4.88 4.88a.996.996 0 1 0 1.41 1.41L12 13.41l4.88 4.88a.996.996 0 1 0 1.41-1.41L13.41 12l4.88-4.88a.996.996 0 0 0-.01-1.41z"></path></svg>';
-			removeButton.setAttribute('aria-label', text.delete || 'Delete');
-			removeButton.addEventListener('click', function (event) {
-				event.stopPropagation();
-				state.selectedId = element.id;
-				deleteSelection();
-			});
+			bar.appendChild(makeIconButton(
+				'wp-builder-node-action wp-builder-node-action-danger',
+				text.delete || 'Delete',
+				ICON_REMOVE,
+				function (event) { event.stopPropagation(); state.selectedId = element.id; deleteSelection(); }
+			));
 		}
 
 		body.className = 'wp-builder-node-body';
@@ -378,17 +328,11 @@
 				body.appendChild(renderEmpty(text.emptyContainer || 'Empty container'));
 			} else {
 				children.forEach(function (child) {
-					body.appendChild(renderElement(child, depth + 1));
+					body.appendChild(renderNode(child, depth + 1, true));
 				});
 			}
 		}
 
-		if (!isVoid) {
-			bar.appendChild(addButton);
-		}
-		if (isDeletable) {
-			bar.appendChild(removeButton);
-		}
 		node.appendChild(bar);
 		node.appendChild(body);
 
@@ -405,6 +349,16 @@
 		empty.className = 'wp-builder-empty-state';
 		empty.textContent = label;
 		return empty;
+	}
+
+	function makeIconButton(className, label, icon, onClick) {
+		var btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = className;
+		btn.innerHTML = icon;
+		btn.setAttribute('aria-label', label);
+		btn.addEventListener('click', onClick);
+		return btn;
 	}
 
 	function renderInspector() {
@@ -516,27 +470,32 @@
 		styleEl.textContent = scoped;
 	}
 
-	function cleanupAllContainerStyles() {
-		var styles = document.head.querySelectorAll('style[id^="wpb-style-"]');
-		var i;
-		for (i = 0; i < styles.length; i += 1) {
-			document.head.removeChild(styles[i]);
-		}
+	function rebuildContainerStyles(elements) {
+		document.head.querySelectorAll('style[id^="wpb-style-"]').forEach(function (s) {
+			document.head.removeChild(s);
+		});
+		(function walk(els) {
+			els.forEach(function (el) {
+				updateContainerStyle(el.id, el.style || '');
+				walk(el.children || []);
+			});
+		}(elements));
 	}
 
-	function syncAllContainerStyles(elements) {
-		elements.forEach(function (element) {
-			updateContainerStyle(element.id, element.style || '');
-			syncAllContainerStyles(element.children || []);
-		});
+	function mutateSelected(fn) {
+		var element = findElement(state.layout.children, state.selectedId);
+		if (!element) { return null; }
+		fn(element);
+		markDirty();
+		return element;
 	}
 
 	function updateSelectedContainerProp(prop, value) {
-		var element = findElement(state.layout.children, state.selectedId);
+		var element = mutateSelected(function (el) {
+			el.props = el.props || {};
+			el.props[prop] = value;
+		});
 		if (!element) { return; }
-		element.props = element.props || {};
-		element.props[prop] = value;
-		markDirty();
 		var node = stage.querySelector('[data-wp-builder-id="' + state.selectedId + '"]');
 		if (node) {
 			var body = node.querySelector('.wp-builder-node-body');
@@ -545,19 +504,15 @@
 	}
 
 	function updateSelectedContainerStyle(style) {
-		var element = findElement(state.layout.children, state.selectedId);
-		if (!element) { return; }
-		element.style = style;
-		markDirty();
+		mutateSelected(function (el) { el.style = style; });
 		updateContainerStyle(state.selectedId, style);
 	}
 
 	function updateSelectedNodeAttr(name, value) {
-		var element = findElement(state.layout.children, state.selectedId);
-		if (!element) { return; }
-		element.attrs = element.attrs || {};
-		element.attrs[name] = value;
-		markDirty();
+		mutateSelected(function (el) {
+			el.attrs = el.attrs || {};
+			el.attrs[name] = value;
+		});
 	}
 
 	function updateSelectedId(rawValue) {
@@ -583,6 +538,30 @@
 		render();
 	}
 
+	function createAttrControl(desc, value, inputId, onChange) {
+		var control;
+		if (desc.type === 'select') {
+			control = document.createElement('select');
+			control.className = 'wp-builder-select';
+			(desc.options || []).forEach(function (opt) {
+				var option = document.createElement('option');
+				option.value = opt;
+				option.textContent = opt || '\u2014 None \u2014';
+				control.appendChild(option);
+			});
+			control.addEventListener('change', function () { onChange(control.value); });
+		} else {
+			control = document.createElement('input');
+			control.className = 'wp-builder-input';
+			control.type = desc.type === 'number' ? 'number' : (desc.type === 'url' ? 'url' : 'text');
+			if (desc.placeholder) { control.placeholder = desc.placeholder; }
+			control.addEventListener('input', function () { onChange(control.value); });
+		}
+		control.value = value;
+		control.id = inputId;
+		return control;
+	}
+
 	function renderNodeAttrsPanel(selected) {
 		var panel = document.getElementById('wp-builder-inspector-node-attrs');
 		if (!panel) { return; }
@@ -597,37 +576,15 @@
 		descriptors.forEach(function (desc) {
 			var group = document.createElement('div');
 			group.className = 'wp-builder-field-group';
+			var inputId = 'wp-builder-node-attr-' + desc.name;
 			var labelEl = document.createElement('label');
 			labelEl.className = 'wp-builder-inspector-label';
-			var inputId = 'wp-builder-node-attr-' + desc.name;
 			labelEl.htmlFor = inputId;
 			labelEl.textContent = desc.label + (desc.required ? ' *' : '');
+			var control = createAttrControl(desc, attrs[desc.name] || '', inputId, function (value) {
+				updateSelectedNodeAttr(desc.name, value);
+			});
 			group.appendChild(labelEl);
-			var control;
-			if (desc.type === 'select') {
-				control = document.createElement('select');
-				control.className = 'wp-builder-select';
-				(desc.options || []).forEach(function (opt) {
-					var option = document.createElement('option');
-					option.value = opt;
-					option.textContent = opt || '\u2014 None \u2014';
-					control.appendChild(option);
-				});
-				control.value = attrs[desc.name] || '';
-				control.addEventListener('change', (function (n) {
-					return function () { updateSelectedNodeAttr(n, control.value); };
-				}(desc.name)));
-			} else {
-				control = document.createElement('input');
-				control.className = 'wp-builder-input';
-				control.type = desc.type === 'number' ? 'number' : (desc.type === 'url' ? 'url' : 'text');
-				control.value = attrs[desc.name] || '';
-				if (desc.placeholder) { control.placeholder = desc.placeholder; }
-				control.addEventListener('input', (function (n) {
-					return function () { updateSelectedNodeAttr(n, control.value); };
-				}(desc.name)));
-			}
-			control.id = inputId;
 			group.appendChild(control);
 			panel.appendChild(group);
 		});
@@ -766,44 +723,32 @@
 		});
 	}
 
-	// Status badge — click to navigate to the status dropdown
-	if (postStatusBadge) {
-		postStatusBadge.addEventListener('click', function () {
-			navigate('main', 'settings', 'wp-builder-post-status');
+	// Navigate-on-click bindings — each entry opens a tab, accordion, and focuses a field
+	var NAV_BINDINGS = [
+		{ el: postStatusBadge,  tab: 'main',    section: 'settings', field: 'wp-builder-post-status' },
+		{ el: selectionNodeBtn, tab: 'element', section: 'identity', field: 'wp-builder-node'        },
+		{ el: selectionIdBtn,   tab: 'element', section: 'identity', field: 'wp-builder-node-id'     },
+		{ el: titleInput,       tab: 'main',    section: 'settings', field: 'wp-builder-post-title'  }
+	];
+	NAV_BINDINGS.forEach(function (binding) {
+		if (!binding.el) { return; }
+		binding.el.addEventListener('click', function () {
+			navigate(binding.tab, binding.section, binding.field);
 		});
-	}
+	});
 
-	// Selection identity buttons — click to navigate to Element tab → Identity accordion
-	if (selectionNodeBtn) {
-		selectionNodeBtn.addEventListener('click', function () {
-			navigate('element', 'identity', 'wp-builder-node');
+	// Container layout prop bindings — data-driven wiring of inspector inputs
+	var PROP_BINDINGS = [
+		{ el: flexDirectionSelect, event: 'change', prop: 'flexDirection' },
+		{ el: flexGrowInput,       event: 'input',  prop: 'flexGrow'     },
+		{ el: gapInput,            event: 'input',  prop: 'gap'          }
+	];
+	PROP_BINDINGS.forEach(function (binding) {
+		if (!binding.el) { return; }
+		binding.el.addEventListener(binding.event, function () {
+			updateSelectedContainerProp(binding.prop, binding.el.value);
 		});
-	}
-
-	if (selectionIdBtn) {
-		selectionIdBtn.addEventListener('click', function () {
-			navigate('element', 'identity', 'wp-builder-node-id');
-		});
-	}
-
-	// Container inspector inputs
-	if (flexDirectionSelect) {
-		flexDirectionSelect.addEventListener('change', function () {
-			updateSelectedContainerProp('flexDirection', flexDirectionSelect.value);
-		});
-	}
-
-	if (flexGrowInput) {
-		flexGrowInput.addEventListener('input', function () {
-			updateSelectedContainerProp('flexGrow', flexGrowInput.value);
-		});
-	}
-
-	if (gapInput) {
-		gapInput.addEventListener('input', function () {
-			updateSelectedContainerProp('gap', gapInput.value);
-		});
-	}
+	});
 
 	if (customStyleTextarea) {
 		if (window.wp && window.wp.codeEditor) {
@@ -858,12 +803,6 @@
 		});
 	}
 
-	// Title button — click to navigate to the title field in the Settings panel
-	if (titleInput) {
-		titleInput.addEventListener('click', function () {
-			navigate('main', 'settings', 'wp-builder-post-title');
-		});
-	}
 
 	window.addEventListener('beforeunload', function (event) {
 		if (!state.dirty) {
