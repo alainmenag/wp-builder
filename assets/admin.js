@@ -866,6 +866,33 @@
 		});
 	});
 
+	// Panel navigation utility — navigate( tab, section )
+	// tab:     'main'     | 'element'
+	// section: 'settings' | 'shortcode' | 'data'                           (main tab)
+	//          'identity' | 'content'   | 'layout' | 'style' | 'attrs'    (element tab)
+	function navigate(tab, section) {
+		var tabMap = { main: 'wp-builder-tab-page', element: 'wp-builder-tab-element' };
+		var tabId = tabMap[tab];
+		if (!tabId) { return; }
+
+		// Activate the tab if it is not already active.
+		var tabBtn = document.querySelector('[aria-controls="' + tabId + '"]');
+		if (tabBtn && !tabBtn.classList.contains('is-active')) {
+			tabBtn.click();
+		}
+
+		// Open the requested accordion if it is not already open.
+		if (section) {
+			var accordion = document.getElementById('wp-builder-accordion-' + section);
+			if (accordion && !accordion.classList.contains('is-open')) {
+				var header = accordion.querySelector('.wp-builder-accordion-header');
+				if (header) { header.click(); }
+			}
+		}
+	}
+
+	(window.wpBuilder || (window.wpBuilder = {})).navigate = navigate;
+
 	render();
 	focusElementIdentity();
 }());
