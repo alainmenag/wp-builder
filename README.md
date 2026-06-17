@@ -21,14 +21,14 @@ A lightweight, Elementor-inspired page builder plugin for WordPress. Build infin
 - **Container** element — the single, composable building block. Containers nest inside each other without a depth limit.
 - Each container exposes:
   - **ID** — editable element identifier; auto-regenerated if left blank.
-  - **Node** — choose any semantic HTML tag (`div`, `section`, `article`, `main`, `header`, `footer`, `nav`, `p`, `span`, `h1`–`h6`, `a`, `button`, `figure`, `figcaption`, `img`, `input`, `label`, `audio`, `video`, `source`, `iframe`).
+  - **Node** — choose any semantic HTML tag (`div`, `section`, `article`, `main`, `aside`, `header`, `footer`, `nav`, `p`, `span`, `h1`–`h6`, `a`, `button`, `figure`, `figcaption`, `img`, `input`, `label`, `audio`, `video`, `source`, `iframe`).
   - **Content** — rich-text inner HTML (filtered through `wp_kses_post`).
   - **Direction** — flexbox row or column layout.
   - **Flex Grow** — numeric `flex-grow` value.
   - **Gap** — CSS gap value (e.g. `16px`, `1rem`).
   - **Custom CSS** — per-element scoped styles; use `self` to target the container.
   - **Node attributes** — tag-specific attributes (`src`, `href`, `alt`, `width`, `height`, etc.) for media and interactive elements.
-- **Export** — download the raw layout JSON from the browser.
+- **Export** — opens `?view=json` in a new tab to download the raw layout JSON.
 - **Post status** control (Published, Draft, Pending Review, Private) inside the editor.
 - **Page template** selector (when editing posts/pages).
 - Admin bar **Builder** menu with quick links to all templates.
@@ -110,8 +110,10 @@ wp-builder/
 ├── templates/
 │   ├── wp-builder-canvas.php       # Blank canvas page template
 │   └── wp-builder-full-width.php   # Full-width page template (theme header/footer)
-└── widgets/
-    └── widget-builder-template.php # Elementor Builder Template widget
+├── widgets/
+│   └── widget-builder-template.php # Elementor Builder Template widget
+└── docs/
+    └── http-api.md                 # HTTP / AJAX API reference
 ```
 
 ---

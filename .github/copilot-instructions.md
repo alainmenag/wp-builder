@@ -39,8 +39,10 @@ wp-builder/
 ├── templates/
 │   ├── wp-builder-canvas.php       # Blank canvas page template (no theme chrome)
 │   └── wp-builder-full-width.php   # Full-width page template (theme header/footer)
-└── widgets/
-    └── widget-builder-template.php # Elementor Builder Template widget
+├── widgets/
+│   └── widget-builder-template.php # Elementor Builder Template widget
+└── docs/
+    └── http-api.md                 # HTTP / AJAX API reference
 ```
 
 ---
@@ -56,7 +58,7 @@ wp-builder/
 - **No new PHP dependencies** — do not suggest Composer packages.
 - **Traits only** — new logic belongs in a trait in `includes/class-*.php`. Register its hooks in `WP_Builder::__construct()`. Never put logic directly in the bootstrap.
 - **Constants** (`VERSION`, `META_KEY`, `MENU_SLUG`, `ACTION`, `NONCE_ACTION`, `TITLE_NONCE_ACTION`, `TEMPLATE_CPT`, `REWRITE_VERSION`, `REWRITE_VERSION_OPTION`) are declared `private const` in `class-wp-builder.php` and accessed as `self::CONSTANT_NAME` within the class/traits.
-- **Helper methods** shared across traits (`is_builder_request`, `get_builder_url`, `supported_post_types`, `is_supported_post_type`) live in `class-wp-builder.php`.
+- **Helper methods** shared across traits (`is_builder_request`, `get_builder_url`, `get_preview_url`, `get_builder_doc_title`, `supported_post_types`, `is_supported_post_type`) live in `class-wp-builder.php`.
 - **Internationalisation:** wrap every user-facing string in `__()`, `_e()`, `esc_html__()`, `esc_html_e()`, etc. Use the text domain `wp-builder`.
 
 ---
@@ -66,7 +68,20 @@ wp-builder/
 - **ES5 only** — no arrow functions, `const`/`let`, template literals, destructuring, or any ES6+ syntax.
 - **Single IIFE** wrapping the entire file — `(function () { 'use strict'; ... })();`
 - **No framework, no build step** — plain DOM APIs (`document.getElementById`, `addEventListener`, `classList`, etc.).
-- **Global config** is injected by `wp_localize_script` as `window.wpBuilder` (see `class-builder-page.php` → `enqueue_builder_assets`). Access it as `var config = window.wpBuilder || {};`.
+- **Global config** is injected by `wp_localize_script` as `window.wpBuilder` (see `class-builder-page.php` → `enqueue_builder_assets`). Access it as `var config = window.wpBuilder || {};`. The object exposes:
+  - `ajaxUrl` — WordPress admin-ajax URL.
+  - `nonce` — nonce for `wp_builder_save_layout`.
+  - `titleNonce` — nonce for `wp_builder_update_title`.
+  - `postId` — integer post ID being edited.
+  - `postTitle` — current post title string.
+  - `isTemplate` — boolean; `true` when editing a `wp_builder_template` CPT.
+  - `postStatus` — current post status string (`publish`, `draft`, etc.).
+  - `layout` — full layout object (version 2 schema).
+  - `editUrl` — standard WordPress edit URL for the post.
+  - `previewUrl` — front-end preview/permalink URL.
+  - `pageTemplate` — active page-template slug (e.g. `wp-builder-canvas`).
+  - `pageTemplates` — object mapping template slugs to display names.
+  - `i18n` — translated UI strings object.
 - **AJAX calls** must send `action`, `nonce`, `post_id`, and the relevant payload to `config.ajaxUrl` using `XMLHttpRequest` or `fetch`.
 - **No new external libraries.**
 
@@ -86,15 +101,18 @@ The layout is stored as JSON in post meta under the key `_wp_builder_layout`. Th
 
 ```json
 {
-  "version": 1,
-  "id": "wpb-lxyz12-abc456",
-  "node": "div",
-  "content": "",
-  "elements": [ /* array of elements */ ]
+  "version": 2,
+  "createdAt": 1718000000,
+  "updatedAt": 1718000000,
+  "children": [ /* exactly one root element */ ]
 }
 ```
 
-Each **element**:
+- `version` is always `2`.
+- `createdAt` / `updatedAt` are Unix timestamps (seconds).
+- `children` always contains exactly **one** root element. The sanitiser enforces this — only `children[0]` is kept.
+
+Each **element** (root and nested alike):
 
 ```json
 {
@@ -108,15 +126,16 @@ Each **element**:
   "style": "self { background: red; }",
   "content": "<p>Hello</p>",
   "attrs": { "src": "https://…" },
-  "children": [ /* nested elements */ ]
+  "children": [ /* nested elements — unlimited depth */ ]
 }
 ```
 
-- `node` must be one of the allowed tags defined in `sanitize_node_tag()` (see `class-layout.php`).
+- `node` must be one of the allowed tags defined in `sanitize_node_tag()` (see `class-layout.php`): `div`, `section`, `article`, `main`, `aside`, `header`, `footer`, `nav`, `p`, `span`, `h1`–`h6`, `a`, `button`, `figure`, `figcaption`, `img`, `input`, `label`, `audio`, `video`, `source`, `iframe`. Unrecognised values fall back to `div`.
 - `props` supports `flexDirection` (`"row"` | `"column"` | `""`), `flexGrow` (numeric string or `""`), and `gap` (CSS value string).
 - `style` is scoped: `self` is replaced with `[data-wp-builder-id="<id>"]` at render time.
 - `content` is stored and rendered as raw HTML (sanitised through `wp_kses_post`).
 - `attrs` is a flat object of node-specific HTML attributes (see `get_node_glossary()` in `class-layout.php` for the allowed set per tag).
+- `id` values are generated as `wpb-<base36-timestamp>-<base36-random>` via `generate_element_id()`.
 
 ---
 
@@ -127,19 +146,47 @@ Each **element**:
 | `init` | `register_meta`, `register_template_post_type`, `register_shortcodes`, `maybe_flush_rewrite_rules` | post-types, frontend |
 | `add_meta_boxes` | `add_builder_meta_box` | admin |
 | `admin_menu` | `register_builder_page`, `register_template_menu` | admin |
-| `load-post.php` | `maybe_redirect_template_edit`, `maybe_render_builder_request` | admin, builder-page |
 | `load-post-new.php` | `maybe_redirect_new_template` | admin |
+| `load-post.php` | `maybe_redirect_template_edit`, `maybe_render_builder_request` | admin, builder-page |
 | `wp_ajax_wp_builder_save_layout` | `ajax_save_layout` | ajax |
 | `wp_ajax_wp_builder_update_title` | `ajax_update_title` | ajax |
 | `wp_enqueue_scripts` | `enqueue_frontend_assets` | frontend |
 | `admin_bar_menu` | `add_admin_bar_nodes` | admin |
+| `post_row_actions` / `page_row_actions` / `wp_builder_template_row_actions` | `add_row_action` | admin |
+| `post_type_link` | `template_post_type_link` | post-types |
 | `the_content` | `render_builder_content` | frontend |
+| `theme_page_templates` / `theme_post_templates` | `register_page_templates` | page-templates |
 | `template_include` | `maybe_use_builder_template` | page-templates |
 | `elementor/widgets/register` | `register_elementor_widget` | elementor |
+| `elementor/editor/after_enqueue_styles` | `enqueue_elementor_editor_styles` | elementor |
 
 ---
 
-## Shortcodes
+## HTTP / AJAX API
+
+All AJAX endpoints are registered on the standard WordPress admin-ajax handler (`wp-admin/admin-ajax.php`). They are **authenticated** (logged-in users only, via `wp_ajax_*`). See `docs/http-api.md` for the full reference.
+
+### Read-only JSON export
+
+`GET wp-admin/post.php?post={id}&action=builder&view=json`
+
+Returns the sanitised layout object for the post as pretty-printed JSON (no nonce required beyond normal authentication). Useful for inspecting or exporting the stored layout.
+
+### AJAX: save layout
+
+`POST wp-admin/admin-ajax.php` with `action=wp_builder_save_layout`
+
+Saves the layout, optionally updates the post status, post title, and page template.
+
+### AJAX: update title
+
+`POST wp-admin/admin-ajax.php` with `action=wp_builder_update_title`
+
+Updates only the post title in real time.
+
+---
+
+
 
 | Shortcode | Attribute | Description |
 |-----------|-----------|-------------|
