@@ -52,7 +52,8 @@
 	var saveButton = document.getElementById('wp-builder-save');
 	var embedPanel = document.getElementById('wp-builder-embed-panel');
 	var addNestedButton = document.getElementById('wp-builder-add-nested');
-	var selectionName = document.getElementById('wp-builder-selection-name');
+	var selectionNodeBtn = document.getElementById('wp-builder-selection-node');
+	var selectionIdBtn = document.getElementById('wp-builder-selection-id');
 	var saveStatus = document.getElementById('wp-builder-save-status');
 	var addButtons = document.querySelectorAll('[data-wp-builder-add]');
 	var htmlTextarea = document.getElementById('wp-builder-html-content');
@@ -411,8 +412,11 @@
 		var isContainer = !!(selected && selected.node !== undefined);
 		var isVoid = isContainer && VOID_NODES[selected.node];
 
-		if (selectionName) {
-			selectionName.textContent = getElementName(state.selectedId);
+		if (selectionNodeBtn) {
+			selectionNodeBtn.textContent = (selected.node || 'div').toUpperCase();
+		}
+		if (selectionIdBtn) {
+			selectionIdBtn.textContent = selected.id || state.selectedId || '';
 		}
 
 		if (addNestedButton) {
@@ -766,6 +770,19 @@
 	if (postStatusBadge) {
 		postStatusBadge.addEventListener('click', function () {
 			navigate('main', 'settings', 'wp-builder-post-status');
+		});
+	}
+
+	// Selection identity buttons — click to navigate to Element tab → Identity accordion
+	if (selectionNodeBtn) {
+		selectionNodeBtn.addEventListener('click', function () {
+			navigate('element', 'identity', 'wp-builder-node');
+		});
+	}
+
+	if (selectionIdBtn) {
+		selectionIdBtn.addEventListener('click', function () {
+			navigate('element', 'identity', 'wp-builder-node-id');
 		});
 	}
 

@@ -171,8 +171,10 @@ trait WP_Builder_Editor {
 						$status_label  = isset( $status_labels[ $post->post_status ] ) ? $status_labels[ $post->post_status ] : ucfirst( $post->post_status );
 						?>
 						<button type="button" id="wp-builder-post-status-badge" class="wp-builder-status-badge" aria-label="<?php esc_attr_e( 'Edit post status', 'wp-builder' ); ?>"><?php echo esc_html( $status_label ); ?></button>
-						<div>
-							<strong id="wp-builder-selection-name" class="color-wpb-accent"></strong>
+						<div class="wp-builder-selection-identity">
+							<button type="button" id="wp-builder-selection-node" class="wp-builder-selection-part" aria-label="<?php esc_attr_e( 'Edit node type', 'wp-builder' ); ?>"></button>
+							<span class="wp-builder-selection-sep" aria-hidden="true">·</span>
+							<button type="button" id="wp-builder-selection-id" class="wp-builder-selection-part" aria-label="<?php esc_attr_e( 'Edit element ID', 'wp-builder' ); ?>"></button>
 						</div>
 					</div>
 

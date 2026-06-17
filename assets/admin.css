@@ -105,7 +105,43 @@ body.wp-builder-body {
 	color: var(--wpb-text-primary);
 }
 
-.wp-builder-actions,
+.wp-builder-selection-identity {
+	align-items: baseline;
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 4px;
+	margin: 2px 0 4px;
+	min-width: 0;
+}
+
+.wp-builder-selection-part {
+	background: transparent;
+	border: none;
+	color: var(--wpb-accent-hover);
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.4;
+	overflow: hidden;
+	padding: 0;
+	text-align: left;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wp-builder-selection-part:hover {
+	color: var(--wpb-text-primary);
+	text-decoration: underline;
+}
+
+.wp-builder-selection-sep {
+	color: var(--wpb-accent-hover);
+	flex-shrink: 0;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
 .wp-builder-inspector-actions {
 	align-items: center;
 	display: flex;
