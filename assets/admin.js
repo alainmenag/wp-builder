@@ -51,6 +51,13 @@
 
 	var config = window.wpBuilder || {};
 	var text = config.i18n || {};
+
+	var STATUS_LABELS = {
+		'publish': text.statusPublished || 'Published',
+		'draft':   text.statusDraft     || 'Draft',
+		'pending': text.statusPending   || 'Pending Review',
+		'private': text.statusPrivate   || 'Private'
+	};
 	var stage = document.getElementById('wp-builder-stage');
 	var saveButton = document.getElementById('wp-builder-save');
 	var embedPanel = document.getElementById('wp-builder-embed-panel');
@@ -96,9 +103,22 @@
 		return (typeof tag === 'string' && allowed[tag]) ? tag : 'div';
 	}
 
+	function normalizeElement(data) {
+		var node = normalizeNodeTag(data.node);
+		return {
+			id: data.id || createId(),
+			node: node,
+			props: normalizeContainerProps(data.props),
+			style: typeof data.style === 'string' ? data.style : null,
+			content: typeof data.content === 'string' ? data.content : '',
+			attrs: normalizeNodeAttrs(node, data.attrs),
+			children: Array.isArray(data.children) ? normalizeElements(data.children) : []
+		};
+	}
+
 	function normalizeLayout(layout) {
 		var now = Date.now();
-		var rootData, rootNode, rootEl;
+		var rootData;
 
 		// No layout at all → fresh v2 envelope.
 		if (!layout || typeof layout !== 'object') {
@@ -110,17 +130,7 @@
 		if (!rootData) {
 			return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [createContainer()] };
 		}
-		rootNode = normalizeNodeTag(rootData.node);
-		rootEl = {
-			id: rootData.id ? rootData.id : createId(),
-			node: rootNode,
-			props: normalizeContainerProps(rootData.props),
-			style: typeof rootData.style === 'string' ? rootData.style : null,
-			content: typeof rootData.content === 'string' ? rootData.content : '',
-			attrs: normalizeNodeAttrs(rootNode, rootData.attrs),
-			children: Array.isArray(rootData.children) ? normalizeElements(rootData.children) : []
-		};
-		return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [rootEl] };
+		return { version: 2, createdAt: layout.createdAt || now, updatedAt: now, children: [normalizeElement(rootData)] };
 	}
 
 	function normalizeContainerProps(props) {
@@ -145,25 +155,10 @@
 
 	function normalizeElements(elements) {
 		return elements.reduce(function (clean, element) {
-			if (!element || typeof element !== 'object') {
+			if (!element || typeof element !== 'object' || typeof element.node !== 'string') {
 				return clean;
 			}
-
-			if (typeof element.node !== 'string') {
-				return clean;
-			}
-
-			var node = normalizeNodeTag(element.node);
-			clean.push({
-				id: element.id || createId(),
-				node: node,
-				props: normalizeContainerProps(element.props),
-				style: typeof element.style === 'string' ? element.style : null,
-				content: typeof element.content === 'string' ? element.content : '',
-				attrs: normalizeNodeAttrs(node, element.attrs),
-				children: Array.isArray(element.children) ? normalizeElements(element.children) : []
-			});
-
+			clean.push(normalizeElement(element));
 			return clean;
 		}, []);
 	}
@@ -174,11 +169,6 @@
 
 	function createContainer() {
 		return { id: createId(), node: 'div', props: { flexDirection: '', flexGrow: '', gap: '' }, style: '', content: '', attrs: {}, children: [] };
-	}
-
-	function getElementName(id) {
-		var element = findElement(state.layout.children, id);
-		return element ? (element.node || 'div').toUpperCase() + ' \u00b7 ' + (element.id || id) : (id || '');
 	}
 
 	function findElement(elements, id) {
@@ -235,13 +225,7 @@
 
 	function updateStatusBadge(status) {
 		if (postStatusBadge) {
-			var labels = {
-				'publish':  (config.i18n && config.i18n.statusPublished)    || 'Published',
-				'draft':    (config.i18n && config.i18n.statusDraft)         || 'Draft',
-				'pending':  (config.i18n && config.i18n.statusPending)       || 'Pending Review',
-				'private':  (config.i18n && config.i18n.statusPrivate)       || 'Private'
-			};
-			postStatusBadge.textContent = (status && labels[status]) ? labels[status] : (status || '');
+			postStatusBadge.textContent = (status && STATUS_LABELS[status]) ? STATUS_LABELS[status] : (status || '');
 		}
 	}
 
@@ -265,10 +249,6 @@
 		render();
 	}
 
-	function addContainerToSelection() {
-		addElementToSelection('container');
-	}
-
 	function deleteSelection() {
 		if (!state.selectedId || state.selectedId === state.layout.children[0].id) {
 			return;
@@ -287,14 +267,8 @@
 
 	function renderCanvas() {
 		stage.innerHTML = '';
-		var firstChild = renderNode(state.layout.children[0], 0, false);
-		stage.appendChild(firstChild);
-		cleanupAllContainerStyles();
-		syncAllContainerStyles(state.layout.children);
-	}
-
-	function renderElement(element, depth) {
-		return renderNode(element, depth, true);
+		stage.appendChild(renderNode(state.layout.children[0], 0, false));
+		rebuildContainerStyles(state.layout.children);
 	}
 
 	function renderNode(element, depth, isDeletable) {
@@ -325,7 +299,7 @@
 				'wp-builder-node-action',
 				text.addContainer || 'Add container',
 				ICON_ADD,
-				function (event) { event.stopPropagation(); state.selectedId = element.id; addContainerToSelection(); }
+				function (event) { event.stopPropagation(); state.selectedId = element.id; addElementToSelection('container'); }
 			));
 		}
 		if (isDeletable) {
@@ -354,7 +328,7 @@
 				body.appendChild(renderEmpty(text.emptyContainer || 'Empty container'));
 			} else {
 				children.forEach(function (child) {
-					body.appendChild(renderElement(child, depth + 1));
+					body.appendChild(renderNode(child, depth + 1, true));
 				});
 			}
 		}
@@ -496,27 +470,32 @@
 		styleEl.textContent = scoped;
 	}
 
-	function cleanupAllContainerStyles() {
-		var styles = document.head.querySelectorAll('style[id^="wpb-style-"]');
-		var i;
-		for (i = 0; i < styles.length; i += 1) {
-			document.head.removeChild(styles[i]);
-		}
+	function rebuildContainerStyles(elements) {
+		document.head.querySelectorAll('style[id^="wpb-style-"]').forEach(function (s) {
+			document.head.removeChild(s);
+		});
+		(function walk(els) {
+			els.forEach(function (el) {
+				updateContainerStyle(el.id, el.style || '');
+				walk(el.children || []);
+			});
+		}(elements));
 	}
 
-	function syncAllContainerStyles(elements) {
-		elements.forEach(function (element) {
-			updateContainerStyle(element.id, element.style || '');
-			syncAllContainerStyles(element.children || []);
-		});
+	function mutateSelected(fn) {
+		var element = findElement(state.layout.children, state.selectedId);
+		if (!element) { return null; }
+		fn(element);
+		markDirty();
+		return element;
 	}
 
 	function updateSelectedContainerProp(prop, value) {
-		var element = findElement(state.layout.children, state.selectedId);
+		var element = mutateSelected(function (el) {
+			el.props = el.props || {};
+			el.props[prop] = value;
+		});
 		if (!element) { return; }
-		element.props = element.props || {};
-		element.props[prop] = value;
-		markDirty();
 		var node = stage.querySelector('[data-wp-builder-id="' + state.selectedId + '"]');
 		if (node) {
 			var body = node.querySelector('.wp-builder-node-body');
@@ -525,19 +504,15 @@
 	}
 
 	function updateSelectedContainerStyle(style) {
-		var element = findElement(state.layout.children, state.selectedId);
-		if (!element) { return; }
-		element.style = style;
-		markDirty();
+		mutateSelected(function (el) { el.style = style; });
 		updateContainerStyle(state.selectedId, style);
 	}
 
 	function updateSelectedNodeAttr(name, value) {
-		var element = findElement(state.layout.children, state.selectedId);
-		if (!element) { return; }
-		element.attrs = element.attrs || {};
-		element.attrs[name] = value;
-		markDirty();
+		mutateSelected(function (el) {
+			el.attrs = el.attrs || {};
+			el.attrs[name] = value;
+		});
 	}
 
 	function updateSelectedId(rawValue) {
