@@ -11,7 +11,7 @@ WP Builder is a lightweight WordPress page-builder plugin. It lets users build i
 - **Plugin entry point:** `wp-builder.php` — a slim bootstrap that defines two constants and glob-loads every `includes/class-*.php` file, then instantiates `WP_Builder`.
 - **Main class:** `includes/class-wp-builder.php` — a `final class WP_Builder` that composes all functionality via PHP traits and registers every WordPress hook in its constructor.
 - **All business logic** lives in trait files under `includes/`. Each file declares exactly one trait.
-- **Assets:** plain CSS and ES5 vanilla JavaScript in `assets/`. No bundler, no transpiler, no TypeScript.
+- **Assets:** plain CSS in `assets/` and ES6 native-module JavaScript in `assets/js/`. No bundler, no transpiler, no TypeScript.
 - **Plugin version:** `0.1.0` (defined as `private const VERSION` in `class-wp-builder.php`).
 
 ---
@@ -33,7 +33,15 @@ wp-builder/
 │   └── class-post-types.php        # Trait: post meta, snippet CPT, rewrite rules
 ├── assets/
 │   ├── admin.css                   # Builder editor CSS (dark theme, CSS custom properties)
-│   ├── admin.js                    # Builder editor JS (ES5, IIFE, no framework)
+│   ├── js/
+│   │   ├── editor.js               # Entry point — composes all modules and boots the editor
+│   │   ├── constants.js            # Node glossary, void-node set, icon SVG strings
+│   │   ├── layout.js               # Layout data helpers (create, find, add, delete elements)
+│   │   ├── state.js                # Single mutable state object + state-mutation functions
+│   │   ├── canvas.js               # Stage rendering and DOM-level canvas interactions
+│   │   ├── inspector.js            # Inspector panel rendering and style editor
+│   │   ├── api.js                  # AJAX save-layout request and post-save reconciliation
+│   │   └── navigation.js           # Tab switching and accordion open/close
 │   ├── elementor-editor.css        # Elementor panel overrides
 │   └── frontend.css                # Front-end container layout styles
 ├── templates/
@@ -65,10 +73,10 @@ wp-builder/
 
 ## JavaScript conventions
 
-- **ES5 only** — no arrow functions, `const`/`let`, template literals, destructuring, or any ES6+ syntax.
-- **Single IIFE** wrapping the entire file — `(function () { 'use strict'; ... })();`
+- **ES6 native modules** — the editor is split across `assets/js/` as native `import`/`export` ES modules. `assets/js/editor.js` is the entry point; PHP loads it with `type="module"` via `add_module_type_to_script_tag()`.
 - **No framework, no build step** — plain DOM APIs (`document.getElementById`, `addEventListener`, `classList`, etc.).
-- **Global config** is injected by `wp_localize_script` as `window.wpBuilder` (see `class-editor.php` → `enqueue_builder_assets`). Access it as `var config = window.wpBuilder || {};`. The object exposes:
+- **Module dependencies:** `constants` and `layout` are leaf modules; `state` imports from `layout`; `canvas` and `inspector` import from `state` and `layout`; `api` imports from `state` and `layout`; `navigation` has no local imports; `editor.js` imports from all other modules.
+- **Global config** is injected by `wp_localize_script` as `window.wpBuilder` (see `class-editor.php` → `enqueue_builder_assets`). Because `wp_localize_script` emits a plain `var` declaration (no `type="module"`), `window.wpBuilder` is available globally when the deferred module executes. Access it as `const config = window.wpBuilder || {};`. The object exposes:
   - `ajaxUrl` — WordPress admin-ajax URL.
   - `nonce` — nonce for `wp_builder_save_layout`.
   - `titleNonce` — nonce for `wp_builder_update_title`.
@@ -82,7 +90,7 @@ wp-builder/
   - `pageTemplate` — active page-layout slug (e.g. `wp-builder-canvas`).
   - `pageTemplates` — object mapping page-layout slugs to display names.
   - `i18n` — translated UI strings object.
-- **AJAX calls** must send `action`, `nonce`, `post_id`, and the relevant payload to `config.ajaxUrl` using `XMLHttpRequest` or `fetch`.
+- **AJAX calls** must send `action`, `nonce`, `post_id`, and the relevant payload to `config.ajaxUrl` using `fetch`.
 - **No new external libraries.**
 
 ---
@@ -206,7 +214,7 @@ There is no automated test suite. Validate syntax before committing:
 
 ```bash
 php -l wp-builder.php
-node --check assets/admin.js
+for f in assets/js/*.js; do node --check "$f"; done
 ```
 
 ---
@@ -214,9 +222,9 @@ node --check assets/admin.js
 ## What to avoid
 
 - Do **not** add `composer.json`, `package.json`, or any build tooling.
-- Do **not** introduce ES6+ syntax in `assets/admin.js`.
 - Do **not** use direct `$wpdb` queries — use the WordPress API instead.
 - Do **not** output unescaped values in PHP templates.
 - Do **not** add logic to `wp-builder.php` beyond loading files and instantiating `WP_Builder`.
 - Do **not** register new hooks outside `WP_Builder::__construct()`.
 - Do **not** create new top-level PHP files — all new PHP code goes in a trait under `includes/`.
+- Do **not** add new JavaScript files outside `assets/js/` — new JS modules go there and must be imported by `editor.js`.

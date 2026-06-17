@@ -104,7 +104,15 @@ wp-builder/
 │   └── class-post-types.php        # Post meta registration, snippet CPT, rewrite rules
 ├── assets/
 │   ├── admin.css                   # Builder editor styles
-│   ├── admin.js                    # Builder editor JavaScript
+│   ├── js/
+│   │   ├── editor.js               # Entry point — composes all modules and boots the editor
+│   │   ├── constants.js            # Node glossary, void-node set, icon SVG strings
+│   │   ├── layout.js               # Layout data helpers (create, find, add, delete elements)
+│   │   ├── state.js                # Single mutable state object + state-mutation functions
+│   │   ├── canvas.js               # Stage rendering and DOM-level canvas interactions
+│   │   ├── inspector.js            # Inspector panel rendering and style editor
+│   │   ├── api.js                  # AJAX save-layout request and post-save reconciliation
+│   │   └── navigation.js           # Tab switching and accordion open/close
 │   ├── elementor-editor.css        # Elementor panel styles
 │   └── frontend.css                # Front-end layout styles
 ├── templates/
@@ -124,7 +132,7 @@ No automated test suite is included. Validate PHP and JS syntax with:
 
 ```bash
 php -l wp-builder.php
-node --check assets/admin.js
+for f in assets/js/*.js; do node --check "$f"; done
 ```
 
 ---
