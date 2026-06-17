@@ -78,7 +78,7 @@ trait WP_Builder_Editor {
 
 		wp_enqueue_script(
 			'wp-builder-admin',
-			$asset_url . 'admin.js',
+			$asset_url . 'js/editor.js',
 			array( 'code-editor' ),
 			self::VERSION,
 			true
@@ -426,5 +426,28 @@ trait WP_Builder_Editor {
 			'current_template' => $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
 			'page_templates'   => $is_template ? array() : $this->get_available_page_templates( $post_id ),
 		);
+	}
+
+	/**
+	 * Add type="module" to the wp-builder-admin script tag so the browser
+	 * treats assets/js/editor.js as a native ES module.
+	 *
+	 * wp_localize_script emits a separate inline <script> block (no type
+	 * attribute) that sets var wpBuilder = {...} before this tag, so
+	 * window.wpBuilder is available when the deferred module executes.
+	 *
+	 * @param string $tag    The full <script> tag HTML.
+	 * @param string $handle The registered script handle.
+	 * @return string
+	 */
+	public function add_module_type_to_script_tag( string $tag, string $handle ): string {
+		if ( 'wp-builder-admin' !== $handle ) {
+			return $tag;
+		}
+		// Strip any legacy type="text/javascript" attribute WordPress may add.
+		$tag = str_replace( " type='text/javascript'", '', $tag );
+		$tag = str_replace( ' type="text/javascript"', '', $tag );
+		// Inject type="module" immediately after the opening <script token.
+		return str_replace( '<script ', '<script type="module" ', $tag );
 	}
 }

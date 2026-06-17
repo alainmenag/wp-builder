@@ -56,6 +56,7 @@ final class WP_Builder {
 		add_filter( 'template_include', array( $this, 'maybe_use_builder_template' ) );
 		add_action( 'elementor/widgets/register', array( $this, 'register_elementor_widget' ) );
 		add_action( 'elementor/editor/after_enqueue_styles', array( $this, 'enqueue_elementor_editor_styles' ) );
+		add_filter( 'script_loader_tag', array( $this, 'add_module_type_to_script_tag' ), 10, 2 );
 	}
 
 	// -------------------------------------------------------------------------
