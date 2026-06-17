@@ -89,17 +89,16 @@ body.wp-builder-body {
 .wp-builder-status-badge {
 	background: transparent;
 	border: none;
-	color: var(--wpb-text-secondary, #8a9bb0);
+	color: var(--wpb-text-muted);
 	cursor: pointer;
 	display: block;
 	font-size: 11px;
-	font-weight: 600;
-	letter-spacing: 0.04em;
+	font-weight: 400;
+	letter-spacing: 0.02em;
 	line-height: 1.4;
 	margin: 2px 0 4px;
 	padding: 0;
 	text-align: left;
-	text-transform: uppercase;
 }
 
 .wp-builder-status-badge:hover {

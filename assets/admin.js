@@ -231,7 +231,13 @@
 
 	function updateStatusBadge(status) {
 		if (postStatusBadge) {
-			postStatusBadge.textContent = status || '';
+			var labels = {
+				'publish':  (config.i18n && config.i18n.statusPublished)    || 'Published',
+				'draft':    (config.i18n && config.i18n.statusDraft)         || 'Draft',
+				'pending':  (config.i18n && config.i18n.statusPending)       || 'Pending Review',
+				'private':  (config.i18n && config.i18n.statusPrivate)       || 'Private'
+			};
+			postStatusBadge.textContent = (status && labels[status]) ? labels[status] : (status || '');
 		}
 	}
 

@@ -101,13 +101,17 @@ trait WP_Builder_Editor {
 				'pageTemplate'  => $ctx['current_template'],
 				'pageTemplates' => $ctx['page_templates'],
 				'i18n'       => array(
-					'addContainer'   => __( 'Container', 'wp-builder' ),
-					'delete'         => __( 'Delete', 'wp-builder' ),
-					'emptyContainer' => __( 'Empty container', 'wp-builder' ),
-					'saved'          => __( 'Saved', 'wp-builder' ),
-					'saving'         => __( 'Saving...', 'wp-builder' ),
-					'selected'       => __( 'Selected', 'wp-builder' ),
-					'unsaved'        => __( 'Unsaved changes', 'wp-builder' ),
+					'addContainer'    => __( 'Container', 'wp-builder' ),
+					'delete'          => __( 'Delete', 'wp-builder' ),
+					'emptyContainer'  => __( 'Empty container', 'wp-builder' ),
+					'saved'           => __( 'Saved', 'wp-builder' ),
+					'saving'          => __( 'Saving...', 'wp-builder' ),
+					'selected'        => __( 'Selected', 'wp-builder' ),
+					'unsaved'         => __( 'Unsaved changes', 'wp-builder' ),
+					'statusPublished' => __( 'Published', 'wp-builder' ),
+					'statusDraft'     => __( 'Draft', 'wp-builder' ),
+					'statusPending'   => __( 'Pending Review', 'wp-builder' ),
+					'statusPrivate'   => __( 'Private', 'wp-builder' ),
 				),
 			)
 		);
@@ -157,7 +161,16 @@ trait WP_Builder_Editor {
 
 					<div>
 						<button type="button" id="wp-builder-title" class="wp-builder-title-button" aria-label="<?php esc_attr_e( 'Edit post title', 'wp-builder' ); ?>"><?php echo esc_html( get_the_title( $post_id ) ); ?></button>
-						<button type="button" id="wp-builder-post-status-badge" class="wp-builder-status-badge" aria-label="<?php esc_attr_e( 'Edit post status', 'wp-builder' ); ?>"><?php echo esc_html( $post->post_status ); ?></button>
+						<?php
+						$status_labels = array(
+							'publish'  => __( 'Published', 'wp-builder' ),
+							'draft'    => __( 'Draft', 'wp-builder' ),
+							'pending'  => __( 'Pending Review', 'wp-builder' ),
+							'private'  => __( 'Private', 'wp-builder' ),
+						);
+						$status_label  = isset( $status_labels[ $post->post_status ] ) ? $status_labels[ $post->post_status ] : ucfirst( $post->post_status );
+						?>
+						<button type="button" id="wp-builder-post-status-badge" class="wp-builder-status-badge" aria-label="<?php esc_attr_e( 'Edit post status', 'wp-builder' ); ?>"><?php echo esc_html( $status_label ); ?></button>
 						<div>
 							<strong id="wp-builder-selection-name" class="color-wpb-accent"></strong>
 						</div>
