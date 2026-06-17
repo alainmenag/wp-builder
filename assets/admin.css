@@ -131,7 +131,6 @@ body.wp-builder-body {
 
 .wp-builder-selection-part:hover {
 	color: var(--wpb-text-primary);
-	text-decoration: underline;
 }
 
 .wp-builder-selection-sep {
