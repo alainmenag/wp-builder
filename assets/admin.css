@@ -86,6 +86,26 @@ body.wp-builder-body {
 	outline: none !important;
 }
 
+.wp-builder-status-badge {
+	background: transparent;
+	border: none;
+	color: var(--wpb-text-secondary, #8a9bb0);
+	cursor: pointer;
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	line-height: 1.4;
+	margin: 2px 0 4px;
+	padding: 0;
+	text-align: left;
+	text-transform: uppercase;
+}
+
+.wp-builder-status-badge:hover {
+	color: var(--wpb-text-primary);
+}
+
 .wp-builder-actions,
 .wp-builder-inspector-actions {
 	align-items: center;

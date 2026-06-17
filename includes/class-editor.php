@@ -157,6 +157,7 @@ trait WP_Builder_Editor {
 
 					<div>
 						<button type="button" id="wp-builder-title" class="wp-builder-title-button" aria-label="<?php esc_attr_e( 'Edit post title', 'wp-builder' ); ?>"><?php echo esc_html( get_the_title( $post_id ) ); ?></button>
+						<button type="button" id="wp-builder-post-status-badge" class="wp-builder-status-badge" aria-label="<?php esc_attr_e( 'Edit post status', 'wp-builder' ); ?>"><?php echo esc_html( $post->post_status ); ?></button>
 						<div>
 							<strong id="wp-builder-selection-name" class="color-wpb-accent"></strong>
 						</div>

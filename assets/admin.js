@@ -68,6 +68,7 @@
 	var idInput = document.getElementById('wp-builder-node-id');
 	var idInputGroup = document.getElementById('wp-builder-inspector-id');
 	var postStatusSelect = document.getElementById('wp-builder-post-status');
+	var postStatusBadge = document.getElementById('wp-builder-post-status-badge');
 	var postTitleInput = document.getElementById('wp-builder-post-title');
 	var titleInput = document.getElementById('wp-builder-title');
 	var viewLink = document.getElementById('wp-builder-view-link');
@@ -225,6 +226,12 @@
 	function updateStatus(message) {
 		if (saveStatus) {
 			saveStatus.textContent = message || '';
+		}
+	}
+
+	function updateStatusBadge(status) {
+		if (postStatusBadge) {
+			postStatusBadge.textContent = status || '';
 		}
 	}
 
@@ -436,6 +443,7 @@
 
 		if (postStatusSelect) {
 			postStatusSelect.value = config.postStatus || 'draft';
+			updateStatusBadge(postStatusSelect.value);
 		}
 
 		if (pageTemplateSelect) {
@@ -675,6 +683,7 @@
 			if (payload.data.postStatus) {
 				config.postStatus = payload.data.postStatus;
 				if (postStatusSelect) { postStatusSelect.value = config.postStatus; }
+				updateStatusBadge(config.postStatus);
 			}
 			if (payload.data.postTitle) {
 				config.postTitle = payload.data.postTitle;
@@ -737,6 +746,20 @@
 			var value = postTitleInput.value.trim();
 			if (titleInput) { titleInput.textContent = value || config.postTitle || ''; }
 			markDirty();
+		});
+	}
+
+	// Settings status select — keep the header badge in sync
+	if (postStatusSelect) {
+		postStatusSelect.addEventListener('change', function () {
+			updateStatusBadge(postStatusSelect.value);
+		});
+	}
+
+	// Status badge — click to navigate to the status dropdown
+	if (postStatusBadge) {
+		postStatusBadge.addEventListener('click', function () {
+			navigate('main', 'settings', 'wp-builder-post-status');
 		});
 	}
 
