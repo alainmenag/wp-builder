@@ -128,7 +128,7 @@ trait WP_Builder_Ajax {
 				'postTitle'    => get_the_title( $post_id ),
 				'docTitle'     => $this->get_builder_doc_title( $post_id ),
 				'previewUrl'   => $this->get_preview_url( $post_id ),
-				'pageTemplate' => get_post_meta( $post_id, '_wp_page_template', true ) ?: 'default',
+				'pageTemplate' => $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
 				'message'      => __( 'Layout saved.', 'wp-builder' ),
 			)
 		);
