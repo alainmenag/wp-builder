@@ -30,27 +30,27 @@ A lightweight, Elementor-inspired page builder plugin for WordPress. Build infin
   - **Node attributes** — tag-specific attributes (`src`, `href`, `alt`, `width`, `height`, etc.) for media and interactive elements.
 - **Export** — opens `?view=json` in a new tab to download the raw layout JSON.
 - **Post status** control (Published, Draft, Pending Review, Private) inside the editor.
-- **Page template** selector (when editing posts/pages).
-- Admin bar **Builder** menu with quick links to all templates.
+- **Page layout** selector (when editing posts/pages).
+- Admin bar **Builder** menu with quick links to all snippets.
 
-### Templates (`wp_builder_template` CPT)
-- Create reusable layouts as Builder Templates (custom post type, hidden from the front end by default).
-- Templates are always rendered with the **Builder Canvas** page template (blank HTML, no theme chrome).
-- Embed templates anywhere via shortcode or the Elementor widget.
+### Snippets (`wp_builder_template` CPT)
+- Create reusable layouts as Builder Snippets (custom post type, hidden from the front end by default).
+- Snippets are always rendered with the **Canvas Layout** page layout (blank HTML, no theme chrome).
+- Embed snippets anywhere via shortcode or the Elementor widget.
 
 ### Shortcodes
 | Shortcode | Description |
 |-----------|-------------|
-| `[wp_builder id="42"]` | Renders the builder layout of any published post, page, or template. |
+| `[wp_builder id="42"]` | Renders the builder layout of any published post, page, or snippet. |
 
-### Page templates
+### Page layouts
 | Template slug | Description |
 |---------------|-------------|
 | `wp-builder-canvas` | Blank HTML document — no theme header/footer. |
 | `wp-builder-full-width` | Theme header/footer included, no sidebar. |
 
 ### Elementor integration *(optional)*
-When Elementor is active, a **Builder Template** widget appears in the Elementor panel. Select any published Builder Template from a dropdown (or enter its ID manually) and it will be rendered inline inside the Elementor layout.
+When Elementor is active, a **Builder Snippet** widget appears in the Elementor panel. Select any published Builder Snippet from a dropdown (or enter its ID manually) and it will be rendered inline inside the Elementor layout.
 
 ---
 
@@ -70,20 +70,20 @@ When Elementor is active, a **Builder Template** widget appears in the Elementor
 - Direct URL: `wp-admin/post.php?post={id}&action=builder`
 - From the admin bar: **Builder → Edit** (when viewing a post on the front end).
 
-### Creating a template
+### Creating a snippet
 1. Go to **Builder → Add New** in the admin sidebar.
-2. The builder opens automatically for the new template.
+2. The editor opens automatically for the new snippet.
 3. Build your layout, set the title, set the status to **Published**, then **Save**.
-4. Copy the shortcode shown in the **Template** panel to embed it elsewhere.
+4. Copy the shortcode shown in the **Shortcode** panel to embed it elsewhere.
 
-### Embedding a template
+### Embedding a snippet
 **Shortcode:**
 ```
 [wp_builder id="42"]
 ```
 
 **Elementor widget:**
-Add the **Builder Template** widget to any Elementor section and select the template from the dropdown.
+Add the **Builder Snippet** widget to any Elementor section and select the snippet from the dropdown.
 
 ---
 
@@ -96,22 +96,22 @@ wp-builder/
 │   ├── class-wp-builder.php        # Main class — uses all traits, registers all hooks
 │   ├── class-admin.php             # Admin menus, meta boxes, row actions, admin bar
 │   ├── class-ajax.php              # AJAX handlers: save layout, update title
-│   ├── class-builder-page.php      # Full-screen builder: routing, asset enqueue, HTML shell
+│   ├── class-editor.php            # Full-screen builder editor: routing, asset enqueue, HTML shell
 │   ├── class-elementor.php         # Elementor widget registration + editor styles
 │   ├── class-frontend.php          # Shortcodes, front-end asset enqueue, content filter
 │   ├── class-layout.php            # Layout load/save/sanitise/render helpers
-│   ├── class-page-templates.php    # Custom page template registration + routing
-│   └── class-post-types.php        # Post meta registration, template CPT, rewrite rules
+│   ├── class-page-chrome.php       # Page layout registration + routing
+│   └── class-post-types.php        # Post meta registration, snippet CPT, rewrite rules
 ├── assets/
 │   ├── admin.css                   # Builder editor styles
 │   ├── admin.js                    # Builder editor JavaScript
 │   ├── elementor-editor.css        # Elementor panel styles
 │   └── frontend.css                # Front-end layout styles
 ├── templates/
-│   ├── wp-builder-canvas.php       # Blank canvas page template
-│   └── wp-builder-full-width.php   # Full-width page template (theme header/footer)
+│   ├── wp-builder-canvas.php       # Canvas page layout (blank HTML, no theme chrome)
+│   └── wp-builder-full-width.php   # Full-width page layout (theme header/footer)
 ├── widgets/
-│   └── widget-builder-template.php # Elementor Builder Template widget
+│   └── widget-builder-template.php # Elementor Builder Snippet widget
 └── docs/
     └── http-api.md                 # HTTP / AJAX API reference
 ```

@@ -1,8 +1,8 @@
 <?php
 /**
- * Elementor widget: Builder Template
+ * Elementor widget: Builder Snippet
  *
- * Lets Elementor users embed any published Builder template inline.
+ * Lets Elementor users embed any published Builder snippet inline.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,7 +16,7 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 	}
 
 	public function get_title(): string {
-		return __( 'Builder Template', 'wp-builder' );
+		return __( 'Builder Snippet', 'wp-builder' );
 	}
 
 	public function get_icon(): string {
@@ -37,7 +37,7 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 		);
 
 		$admin_url = admin_url();
-		$templates = array( '' => __( '— Select a template —', 'wp-builder' ) );
+		$templates = array( '' => __( '— Select a snippet —', 'wp-builder' ) );
 
 		$query = new WP_Query(
 			array(
@@ -74,7 +74,7 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'template_id',
 			array(
-				'label'       => __( 'Template', 'wp-builder' ),
+				'label'       => __( 'Snippet', 'wp-builder' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $templates,
 				'default'     => '',
@@ -86,7 +86,7 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'custom_id',
 			array(
-				'label'       => __( 'Template ID', 'wp-builder' ),
+				'label'       => __( 'Snippet ID', 'wp-builder' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
 				'placeholder' => __( 'e.g. 42', 'wp-builder' ),
 				'label_block' => false,
@@ -100,7 +100,7 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			array(
 				'type'      => \Elementor\Controls_Manager::RAW_HTML,
 				/* translators: link to open the selected template in the builder */
-				'raw'       => '<a href="#" style="font-size:11px" onclick="var p=document.querySelector(\'#elementor-panel\'),s=p&&p.querySelector(\'select[data-setting=template_id]\'),t=p&&p.querySelector(\'input[data-setting=custom_id]\'),id=(s&&s.value)||(t&&t.value);if(id)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+encodeURIComponent(id)+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Template', 'wp-builder' ) . '</a>',
+				'raw'       => '<a href="#" style="font-size:11px" onclick="var p=document.querySelector(\'#elementor-panel\'),s=p&&p.querySelector(\'select[data-setting=template_id]\'),t=p&&p.querySelector(\'input[data-setting=custom_id]\'),id=(s&&s.value)||(t&&t.value);if(id)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+encodeURIComponent(id)+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Snippet', 'wp-builder' ) . '</a>',
 				'separator' => 'none',
 				'condition'   => array( 'use_custom_id' => '', 'template_id!' => '' ),
 			)
@@ -111,7 +111,7 @@ class WP_Builder_Template_Widget extends \Elementor\Widget_Base {
 			array(
 				'type'      => \Elementor\Controls_Manager::RAW_HTML,
 				/* translators: link to open the selected template in the builder */
-				'raw'       => '<a href="#" style="font-size:11px" onclick="var p=document.querySelector(\'#elementor-panel\'),s=p&&p.querySelector(\'select[data-setting=custom_id]\'),t=p&&p.querySelector(\'input[data-setting=custom_id]\'),id=(s&&s.value)||(t&&t.value);if(id)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+encodeURIComponent(id)+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Template', 'wp-builder' ) . '</a>',
+				'raw'       => '<a href="#" style="font-size:11px" onclick="var p=document.querySelector(\'#elementor-panel\'),s=p&&p.querySelector(\'select[data-setting=custom_id]\'),t=p&&p.querySelector(\'input[data-setting=custom_id]\'),id=(s&&s.value)||(t&&t.value);if(id)window.open(\'' . esc_js( $admin_url ) . 'post.php?post=\'+encodeURIComponent(id)+\'&action=builder\');return false;">✎ ' . esc_html__( 'Edit Snippet', 'wp-builder' ) . '</a>',
 				'separator' => 'none',
 				'condition'   => array( 'use_custom_id' => 'yes', 'custom_id!' => '' ),
 			)

@@ -4,12 +4,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Trait WP_Builder_Builder_Page
+ * Trait WP_Builder_Editor
  *
  * Handles the full-screen builder editor: routing, asset enqueueing,
  * and rendering the HTML document + shell.
  */
-trait WP_Builder_Builder_Page {
+trait WP_Builder_Editor {
 
 	public function maybe_render_builder_request(): void {
 		if ( ! $this->is_builder_request() ) {
@@ -102,7 +102,6 @@ trait WP_Builder_Builder_Page {
 				'pageTemplates' => $ctx['page_templates'],
 				'i18n'       => array(
 					'addContainer'   => __( 'Container', 'wp-builder' ),
-					'canvas'         => __( 'Canvas', 'wp-builder' ),
 					'delete'         => __( 'Delete', 'wp-builder' ),
 					'emptyContainer' => __( 'Empty container', 'wp-builder' ),
 					'renameTitle'    => __( 'Post title', 'wp-builder' ),
@@ -151,8 +150,8 @@ trait WP_Builder_Builder_Page {
 
 			<div class="wp-builder-workspace">
 
-				<main class="wp-builder-canvas-panel" aria-label="<?php esc_attr_e( 'Builder canvas', 'wp-builder' ); ?>">
-					<div id="wp-builder-canvas" class="wp-builder-canvas"></div>
+				<main class="wp-builder-stage-panel" aria-label="<?php esc_attr_e( 'Builder canvas', 'wp-builder' ); ?>">
+					<div id="wp-builder-stage" class="wp-builder-stage"></div>
 				</main>
 
 				<aside class="wp-builder-panel wp-builder-left-panel" aria-label="<?php esc_attr_e( 'Builder panels', 'wp-builder' ); ?>">
@@ -164,7 +163,7 @@ trait WP_Builder_Builder_Page {
 						</div>
 					</div>
 
-					<div class="wp-builder-template-actions">
+					<div class="wp-builder-editor-actions">
 						<a id="wp-builder-view-link" class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noreferrer" style="flex: 0;">
 							<?php esc_html_e( 'View', 'wp-builder' ); ?>
 						</a>
@@ -206,15 +205,15 @@ trait WP_Builder_Builder_Page {
 									</div>
 									<?php if ( $is_template ) : ?>
 									<div class="wp-builder-field-group">
-										<label class="wp-builder-inspector-label" for="wp-builder-page-template"><?php esc_html_e( 'Template', 'wp-builder' ); ?></label>
-										<select id="wp-builder-page-template" class="wp-builder-select" disabled>
-											<option value="wp-builder-canvas" selected><?php esc_html_e( 'Builder Canvas', 'wp-builder' ); ?></option>
+										<label class="wp-builder-inspector-label" for="wp-builder-chrome-template"><?php esc_html_e( 'Page Layout', 'wp-builder' ); ?></label>
+										<select id="wp-builder-chrome-template" class="wp-builder-select" disabled>
+											<option value="wp-builder-canvas" selected><?php esc_html_e( 'Canvas Layout', 'wp-builder' ); ?></option>
 										</select>
 									</div>
 									<?php elseif ( ! empty( $page_templates ) ) : ?>
 									<div class="wp-builder-field-group">
-										<label class="wp-builder-inspector-label" for="wp-builder-page-template"><?php esc_html_e( 'Template', 'wp-builder' ); ?></label>
-										<select id="wp-builder-page-template" class="wp-builder-select">
+										<label class="wp-builder-inspector-label" for="wp-builder-chrome-template"><?php esc_html_e( 'Page Layout', 'wp-builder' ); ?></label>
+										<select id="wp-builder-chrome-template" class="wp-builder-select">
 											<?php foreach ( $page_templates as $slug => $name ) : ?>
 											<option value="<?php echo esc_attr( $slug ); ?>"<?php selected( $current_template, $slug ); ?>><?php echo esc_html( $name ); ?></option>
 											<?php endforeach; ?>
@@ -233,9 +232,9 @@ trait WP_Builder_Builder_Page {
 							</button>
 							<div class="wp-builder-accordion-body" id="wp-builder-accordion-shortcode-body" role="region">
 								<div class="wp-builder-accordion-body-inner">
-									<div id="wp-builder-shortcode-panel" class="wp-builder-field-group">
+									<div id="wp-builder-embed-panel" class="wp-builder-field-group">
 										<label class="wp-builder-inspector-label"><?php esc_html_e( 'Shortcode', 'wp-builder' ); ?></label>
-										<pre class="wp-builder-shortcode-pre"><?php echo esc_html( $shortcode ); ?></pre>
+										<pre class="wp-builder-embed-code"><?php echo esc_html( $shortcode ); ?></pre>
 									</div>
 								</div>
 							</div>

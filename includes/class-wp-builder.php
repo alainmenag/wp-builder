@@ -15,10 +15,10 @@ final class WP_Builder {
 	use WP_Builder_Layout;
 	use WP_Builder_Post_Types;
 	use WP_Builder_Admin;
-	use WP_Builder_Builder_Page;
+	use WP_Builder_Editor;
 	use WP_Builder_Ajax;
 	use WP_Builder_Frontend;
-	use WP_Builder_Page_Templates;
+	use WP_Builder_Page_Chrome;
 	use WP_Builder_Elementor;
 
 	private const VERSION                = '0.1.0';

@@ -313,18 +313,18 @@ body.wp-builder-body {
 	gap: 10px;
 }
 
-.wp-builder-template-actions {
+.wp-builder-editor-actions {
 	align-items: center;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 5px;
 }
 
-.wp-builder-template-actions .wp-builder-button {
+.wp-builder-editor-actions .wp-builder-button {
 	flex: 1;
 }
 
-.wp-builder-canvas-panel {
+.wp-builder-stage-panel {
 	min-width: 0;
 	overflow: auto;
 	padding: 0;
@@ -346,7 +346,7 @@ body.wp-builder-body {
 	display: block;
 }
 
-.wp-builder-canvas {
+.wp-builder-stage {
 	margin: auto;
 	max-width: 1080px;
 	min-width: 320px;
@@ -586,7 +586,7 @@ body.wp-builder-body {
 
 /* ── Shortcode pre ──────────────────────────────────────────────────────── */
 
-.wp-builder-shortcode-pre {
+.wp-builder-embed-code {
 	background: var(--wpb-bg-sunken);
 	border: 1px solid var(--wpb-border-default);
 	border-radius: 0px;

@@ -6,7 +6,7 @@ This file gives GitHub Copilot context about the project so suggestions stay con
 
 ## Project overview
 
-WP Builder is a lightweight WordPress page-builder plugin. It lets users build infinitely nestable container layouts on posts, pages, and reusable templates through a full-screen admin editor. It has **no external PHP dependencies** and **no JavaScript build step**.
+WP Builder is a lightweight WordPress page-builder plugin. It lets users build infinitely nestable container layouts on posts, pages, and reusable snippets through a full-screen admin editor. It has **no external PHP dependencies** and **no JavaScript build step**.
 
 - **Plugin entry point:** `wp-builder.php` — a slim bootstrap that defines two constants and glob-loads every `includes/class-*.php` file, then instantiates `WP_Builder`.
 - **Main class:** `includes/class-wp-builder.php` — a `final class WP_Builder` that composes all functionality via PHP traits and registers every WordPress hook in its constructor.
@@ -25,22 +25,22 @@ wp-builder/
 │   ├── class-wp-builder.php        # Main class + hook registration
 │   ├── class-admin.php             # Trait: menus, meta boxes, row actions, admin bar
 │   ├── class-ajax.php              # Trait: AJAX save layout + update title
-│   ├── class-builder-page.php      # Trait: full-screen editor routing, assets, HTML shell
+│   ├── class-editor.php            # Trait: full-screen editor routing, assets, HTML shell
 │   ├── class-elementor.php         # Trait: Elementor widget + editor styles
 │   ├── class-frontend.php          # Trait: shortcodes, front-end assets, content filter
 │   ├── class-layout.php            # Trait: load/save/sanitise/render layout data
-│   ├── class-page-templates.php    # Trait: custom page templates + routing
-│   └── class-post-types.php        # Trait: post meta, template CPT, rewrite rules
+│   ├── class-page-chrome.php       # Trait: custom page layouts + routing
+│   └── class-post-types.php        # Trait: post meta, snippet CPT, rewrite rules
 ├── assets/
 │   ├── admin.css                   # Builder editor CSS (dark theme, CSS custom properties)
 │   ├── admin.js                    # Builder editor JS (ES5, IIFE, no framework)
 │   ├── elementor-editor.css        # Elementor panel overrides
 │   └── frontend.css                # Front-end container layout styles
 ├── templates/
-│   ├── wp-builder-canvas.php       # Blank canvas page template (no theme chrome)
-│   └── wp-builder-full-width.php   # Full-width page template (theme header/footer)
+│   ├── wp-builder-canvas.php       # Canvas page layout (no theme chrome)
+│   └── wp-builder-full-width.php   # Full-width page layout (theme header/footer)
 ├── widgets/
-│   └── widget-builder-template.php # Elementor Builder Template widget
+│   └── widget-builder-template.php # Elementor Builder Snippet widget
 └── docs/
     └── http-api.md                 # HTTP / AJAX API reference
 ```
@@ -68,19 +68,19 @@ wp-builder/
 - **ES5 only** — no arrow functions, `const`/`let`, template literals, destructuring, or any ES6+ syntax.
 - **Single IIFE** wrapping the entire file — `(function () { 'use strict'; ... })();`
 - **No framework, no build step** — plain DOM APIs (`document.getElementById`, `addEventListener`, `classList`, etc.).
-- **Global config** is injected by `wp_localize_script` as `window.wpBuilder` (see `class-builder-page.php` → `enqueue_builder_assets`). Access it as `var config = window.wpBuilder || {};`. The object exposes:
+- **Global config** is injected by `wp_localize_script` as `window.wpBuilder` (see `class-editor.php` → `enqueue_builder_assets`). Access it as `var config = window.wpBuilder || {};`. The object exposes:
   - `ajaxUrl` — WordPress admin-ajax URL.
   - `nonce` — nonce for `wp_builder_save_layout`.
   - `titleNonce` — nonce for `wp_builder_update_title`.
   - `postId` — integer post ID being edited.
   - `postTitle` — current post title string.
-  - `isTemplate` — boolean; `true` when editing a `wp_builder_template` CPT.
+  - `isTemplate` — boolean; `true` when editing a `wp_builder_template` CPT (snippet).
   - `postStatus` — current post status string (`publish`, `draft`, etc.).
   - `layout` — full layout object (version 2 schema).
   - `editUrl` — standard WordPress edit URL for the post.
   - `previewUrl` — front-end preview/permalink URL.
-  - `pageTemplate` — active page-template slug (e.g. `wp-builder-canvas`).
-  - `pageTemplates` — object mapping template slugs to display names.
+  - `pageTemplate` — active page-layout slug (e.g. `wp-builder-canvas`).
+  - `pageTemplates` — object mapping page-layout slugs to display names.
   - `i18n` — translated UI strings object.
 - **AJAX calls** must send `action`, `nonce`, `post_id`, and the relevant payload to `config.ajaxUrl` using `XMLHttpRequest` or `fetch`.
 - **No new external libraries.**
@@ -91,7 +91,7 @@ wp-builder/
 
 - All class names are prefixed with `wp-builder-` (e.g. `.wp-builder-container`, `.wp-builder-panel`).
 - The editor stylesheet uses CSS custom properties declared on `:root` (see `assets/admin.css`). Reuse existing tokens (`--wpb-bg-*`, `--wpb-text-*`, `--wpb-accent`, etc.) rather than hard-coding colour values.
-- The frontend stylesheet (`assets/frontend.css`) is minimal — only layout rules for `.wp-builder-page` and `.wp-builder-container`.
+- The frontend stylesheet (`assets/frontend.css`) is minimal — only layout rules for `.wp-builder-layout` and `.wp-builder-container`.
 
 ---
 
@@ -147,7 +147,7 @@ Each **element** (root and nested alike):
 | `add_meta_boxes` | `add_builder_meta_box` | admin |
 | `admin_menu` | `register_builder_page`, `register_template_menu` | admin |
 | `load-post-new.php` | `maybe_redirect_new_template` | admin |
-| `load-post.php` | `maybe_redirect_template_edit`, `maybe_render_builder_request` | admin, builder-page |
+| `load-post.php` | `maybe_redirect_template_edit`, `maybe_render_builder_request` | admin, editor |
 | `wp_ajax_wp_builder_save_layout` | `ajax_save_layout` | ajax |
 | `wp_ajax_wp_builder_update_title` | `ajax_update_title` | ajax |
 | `wp_enqueue_scripts` | `enqueue_frontend_assets` | frontend |
@@ -155,8 +155,8 @@ Each **element** (root and nested alike):
 | `post_row_actions` / `page_row_actions` / `wp_builder_template_row_actions` | `add_row_action` | admin |
 | `post_type_link` | `template_post_type_link` | post-types |
 | `the_content` | `render_builder_content` | frontend |
-| `theme_page_templates` / `theme_post_templates` | `register_page_templates` | page-templates |
-| `template_include` | `maybe_use_builder_template` | page-templates |
+| `theme_page_templates` / `theme_post_templates` | `register_page_templates` | page-chrome |
+| `template_include` | `maybe_use_builder_template` | page-chrome |
 | `elementor/widgets/register` | `register_elementor_widget` | elementor |
 | `elementor/editor/after_enqueue_styles` | `enqueue_elementor_editor_styles` | elementor |
 
@@ -176,7 +176,7 @@ Returns the sanitised layout object for the post as pretty-printed JSON (no nonc
 
 `POST wp-admin/admin-ajax.php` with `action=wp_builder_save_layout`
 
-Saves the layout, optionally updates the post status, post title, and page template.
+Saves the layout, optionally updates the post status, post title, and page layout.
 
 ### AJAX: update title
 
@@ -190,7 +190,7 @@ Updates only the post title in real time.
 
 | Shortcode | Attribute | Description |
 |-----------|-----------|-------------|
-| `[wp_builder id="N"]` | `id` (post ID) | Renders the builder layout of any published post, page, or template. |
+| `[wp_builder id="N"]` | `id` (post ID) | Renders the builder layout of any published post, page, or snippet. |
 
 ---
 
