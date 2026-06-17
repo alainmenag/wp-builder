@@ -252,11 +252,168 @@ trait WP_Builder_Editor {
 			</button>
 			<div class="wp-builder-accordion-body" id="<?php echo esc_attr( $body_id ); ?>" role="region">
 				<div class="wp-builder-accordion-body-inner">
-					<?php ( $accordion['render'] )(); ?>
+					<?php foreach ( $accordion['fields'] as $field ) : ?>
+					<?php $this->render_field_group( $field ); ?>
+				<?php endforeach; ?>
 				</div>
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render a single field group within an accordion body.
+	 *
+	 * Supported types:
+	 *   text        id, label, label_tag, value, placeholder, attrs, wrapper_id, wrapper_hidden
+	 *   number      id, label, label_tag, value, placeholder, attrs, wrapper_id, wrapper_hidden
+	 *   select      id, label, label_tag, options, attrs, wrapper_id, wrapper_hidden
+	 *   textarea    id, label, label_tag, hint, attrs, wrapper_id, wrapper_class, wrapper_hidden
+	 *   pre         label, content, wrapper_id
+	 *   link        label, href, id (on <a>), attrs, wrapper_id
+	 *   container   id, class, hidden, fields (nested array; no field-group chrome)
+	 *
+	 * Shared optional keys (all non-container types):
+	 *   wrapper_id     string  id attribute on the field-group wrapper <div>
+	 *   wrapper_class  string  class override on the wrapper <div> (default wp-builder-field-group)
+	 *   wrapper_hidden bool    add hidden attribute to the wrapper <div>
+	 *   hint           string  HTML hint paragraph below the label (<code> tags allowed)
+	 *   label_tag      string  'label' (default) or 'p'
+	 *
+	 * @param array $field Field descriptor.
+	 */
+	private function render_field_group( array $field ): void {
+		$type = $field['type'] ?? '';
+
+		// Container — a wrapper div with optional nested fields, no field-group chrome.
+		if ( 'container' === $type ) {
+			$cont_id     = ! empty( $field['id'] )    ? ' id="' . esc_attr( $field['id'] ) . '"'       : '';
+			$cont_class  = ! empty( $field['class'] ) ? ' class="' . esc_attr( $field['class'] ) . '"' : '';
+			$cont_hidden = ! empty( $field['hidden'] ) ? ' hidden' : '';
+			echo '<div' . $cont_id . $cont_class . $cont_hidden . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			foreach ( ( $field['fields'] ?? array() ) as $nested ) {
+				$this->render_field_group( $nested );
+			}
+			echo '</div>';
+			return;
+		}
+
+		// Field-group wrapper for all other types.
+		$wrapper_class  = ! empty( $field['wrapper_class'] ) ? esc_attr( $field['wrapper_class'] ) : 'wp-builder-field-group';
+		$wrapper_id     = ! empty( $field['wrapper_id'] ) ? ' id="' . esc_attr( $field['wrapper_id'] ) . '"' : '';
+		$wrapper_hidden = ! empty( $field['wrapper_hidden'] ) ? ' hidden' : '';
+		$extra          = $this->build_extra_attrs( $field['attrs'] ?? array() );
+		?>
+		<div class="<?php echo $wrapper_class; ?>"<?php echo $wrapper_id; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php echo $wrapper_hidden; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+			<?php $this->render_field_label( $field ); ?>
+			<?php if ( ! empty( $field['hint'] ) ) : ?>
+			<p class="wp-builder-inspector-hint"><?php echo wp_kses( $field['hint'], array( 'code' => array() ) ); ?></p>
+			<?php endif; ?>
+			<?php
+			switch ( $type ) {
+				case 'text':
+				case 'number':
+					printf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						'<input type="%s" class="wp-builder-input"%s%s%s%s>',
+						esc_attr( 'number' === $type ? 'number' : 'text' ),
+						! empty( $field['id'] )          ? ' id="' . esc_attr( $field['id'] ) . '"'                  : '',
+						isset( $field['value'] )         ? ' value="' . esc_attr( $field['value'] ) . '"'            : '',
+						! empty( $field['placeholder'] ) ? ' placeholder="' . esc_attr( $field['placeholder'] ) . '"' : '',
+						$extra
+					);
+					break;
+
+				case 'select':
+					printf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						'<select class="wp-builder-select"%s%s>',
+						! empty( $field['id'] ) ? ' id="' . esc_attr( $field['id'] ) . '"' : '',
+						$extra
+					);
+					foreach ( ( $field['options'] ?? array() ) as $opt ) {
+						printf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+							'<option value="%s"%s>%s</option>',
+							esc_attr( $opt['value'] ),
+							! empty( $opt['selected'] ) ? ' selected' : '',
+							esc_html( $opt['label'] )
+						);
+					}
+					echo '</select>';
+					break;
+
+				case 'textarea':
+					printf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						'<textarea class="wp-builder-html-editor"%s%s></textarea>',
+						! empty( $field['id'] ) ? ' id="' . esc_attr( $field['id'] ) . '"' : '',
+						$extra
+					);
+					break;
+
+				case 'pre':
+					echo '<pre class="wp-builder-embed-code">' . esc_html( $field['content'] ?? '' ) . '</pre>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					break;
+
+				case 'link':
+					printf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						'<a class="wp-builder-button wp-builder-button-secondary"%s href="%s"%s>%s</a>',
+						! empty( $field['id'] ) ? ' id="' . esc_attr( $field['id'] ) . '"' : '',
+						! empty( $field['href'] ) ? esc_url( $field['href'] ) : '#',
+						$extra,
+						esc_html( $field['label'] ?? '' )
+					);
+					break;
+			}
+			?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render a label element for a field descriptor.
+	 *
+	 * Uses <label for="..."> when a field id is present and label_tag is 'label',
+	 * or <p> when label_tag is 'p'. Outputs nothing if label is empty.
+	 *
+	 * @param array $field Field descriptor.
+	 */
+	private function render_field_label( array $field ): void {
+		if ( empty( $field['label'] ) ) {
+			return;
+		}
+		$use_p = ! empty( $field['label_tag'] ) && 'p' === $field['label_tag'];
+		if ( $use_p ) {
+			?>
+			<p class="wp-builder-inspector-label"><?php echo esc_html( $field['label'] ); ?></p>
+			<?php
+		} elseif ( ! empty( $field['id'] ) ) {
+			?>
+			<label class="wp-builder-inspector-label" for="<?php echo esc_attr( $field['id'] ); ?>"><?php echo esc_html( $field['label'] ); ?></label>
+			<?php
+		} else {
+			?>
+			<label class="wp-builder-inspector-label"><?php echo esc_html( $field['label'] ); ?></label>
+			<?php
+		}
+	}
+
+	/**
+	 * Build a string of extra HTML attributes from a key/value map.
+	 *
+	 * Boolean true emits a standalone attribute (e.g. disabled).
+	 * False or empty string skips the attribute entirely.
+	 *
+	 * @param array $attrs Key/value pairs.
+	 * @return string Space-prefixed attribute string, already escaped, safe to echo.
+	 */
+	private function build_extra_attrs( array $attrs ): string {
+		$str = '';
+		foreach ( $attrs as $key => $value ) {
+			if ( true === $value ) {
+				$str .= ' ' . esc_attr( $key );
+			} elseif ( false !== $value && '' !== (string) $value ) {
+				$str .= ' ' . esc_attr( $key ) . '="' . esc_attr( (string) $value ) . '"';
+			}
+		}
+		return $str;
 	}
 
 	/**
@@ -272,7 +429,7 @@ trait WP_Builder_Editor {
 	 *   'slug'   string    Appended to 'wp-builder-accordion-' to form the DOM id.
 	 *   'label'  string    Translated display label.
 	 *   'open'   bool      Whether the accordion starts expanded.
-	 *   'render' callable  Outputs the accordion body inner HTML (no wrapping div needed).
+	 *   'fields' array     Ordered list of field descriptors (see render_field_group()).
 	 *
 	 * @param int $post_id Post being edited.
 	 * @return array
@@ -285,6 +442,62 @@ trait WP_Builder_Editor {
 		$shortcode        = '[wp_builder id=\'' . absint( $post_id ) . '\']';
 		$export_url       = add_query_arg( 'view', 'json', $this->get_builder_url( $post_id ) );
 
+		// Build the Settings accordion fields; Page Layout is conditional.
+		$settings_fields = array(
+			array(
+				'type'  => 'text',
+				'id'    => 'wp-builder-post-title',
+				'label' => __( 'Title', 'wp-builder' ),
+				'value' => get_the_title( $post_id ),
+			),
+			array(
+				'type'    => 'select',
+				'id'      => 'wp-builder-post-status',
+				'label'   => __( 'Status', 'wp-builder' ),
+				'options' => array(
+					array( 'value' => 'publish', 'label' => __( 'Published', 'wp-builder' ) ),
+					array( 'value' => 'draft',   'label' => __( 'Draft', 'wp-builder' ) ),
+					array( 'value' => 'pending', 'label' => __( 'Pending Review', 'wp-builder' ) ),
+					array( 'value' => 'private', 'label' => __( 'Private', 'wp-builder' ) ),
+				),
+			),
+		);
+		if ( $is_template ) {
+			$settings_fields[] = array(
+				'type'    => 'select',
+				'id'      => 'wp-builder-chrome-template',
+				'label'   => __( 'Page Layout', 'wp-builder' ),
+				'attrs'   => array( 'disabled' => true ),
+				'options' => array(
+					array( 'value' => 'wp-builder-canvas', 'label' => __( 'Canvas Layout', 'wp-builder' ), 'selected' => true ),
+				),
+			);
+		} elseif ( ! empty( $page_templates ) ) {
+			$tmpl_options = array();
+			foreach ( $page_templates as $tmpl_slug => $tmpl_name ) {
+				$tmpl_options[] = array(
+					'value'    => $tmpl_slug,
+					'label'    => $tmpl_name,
+					'selected' => $current_template === $tmpl_slug,
+				);
+			}
+			$settings_fields[] = array(
+				'type'    => 'select',
+				'id'      => 'wp-builder-chrome-template',
+				'label'   => __( 'Page Layout', 'wp-builder' ),
+				'options' => $tmpl_options,
+			);
+		}
+
+		// Node tag options for the Identity accordion select.
+		$node_tags    = array( 'div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav',
+			'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'button', 'figure', 'figcaption',
+			'img', 'input', 'label', 'audio', 'video', 'source', 'iframe' );
+		$node_options = array_map(
+			static function ( $tag ) { return array( 'value' => $tag, 'label' => $tag ); },
+			$node_tags
+		);
+
 		return array(
 			array(
 				'key'   => 'main',
@@ -292,70 +505,37 @@ trait WP_Builder_Editor {
 				'label' => __( 'Main', 'wp-builder' ),
 				'accordions' => array(
 					array(
-						'slug'  => 'settings',
-						'label' => __( 'Settings', 'wp-builder' ),
-						'open'  => true,
-						'render' => function () use ( $post_id, $is_template, $page_templates, $current_template ) {
-							?>
-							<div class="wp-builder-field-group">
-								<label class="wp-builder-inspector-label" for="wp-builder-post-title"><?php esc_html_e( 'Title', 'wp-builder' ); ?></label>
-								<input type="text" id="wp-builder-post-title" class="wp-builder-input" value="<?php echo esc_attr( get_the_title( $post_id ) ); ?>" />
-							</div>
-							<div class="wp-builder-field-group">
-								<label class="wp-builder-inspector-label" for="wp-builder-post-status"><?php esc_html_e( 'Status', 'wp-builder' ); ?></label>
-								<select id="wp-builder-post-status" class="wp-builder-select">
-									<option value="publish"><?php esc_html_e( 'Published', 'wp-builder' ); ?></option>
-									<option value="draft"><?php esc_html_e( 'Draft', 'wp-builder' ); ?></option>
-									<option value="pending"><?php esc_html_e( 'Pending Review', 'wp-builder' ); ?></option>
-									<option value="private"><?php esc_html_e( 'Private', 'wp-builder' ); ?></option>
-								</select>
-							</div>
-							<?php if ( $is_template ) : ?>
-							<div class="wp-builder-field-group">
-								<label class="wp-builder-inspector-label" for="wp-builder-chrome-template"><?php esc_html_e( 'Page Layout', 'wp-builder' ); ?></label>
-								<select id="wp-builder-chrome-template" class="wp-builder-select" disabled>
-									<option value="wp-builder-canvas" selected><?php esc_html_e( 'Canvas Layout', 'wp-builder' ); ?></option>
-								</select>
-							</div>
-							<?php elseif ( ! empty( $page_templates ) ) : ?>
-							<div class="wp-builder-field-group">
-								<label class="wp-builder-inspector-label" for="wp-builder-chrome-template"><?php esc_html_e( 'Page Layout', 'wp-builder' ); ?></label>
-								<select id="wp-builder-chrome-template" class="wp-builder-select">
-									<?php foreach ( $page_templates as $slug => $name ) : ?>
-									<option value="<?php echo esc_attr( $slug ); ?>"<?php selected( $current_template, $slug ); ?>><?php echo esc_html( $name ); ?></option>
-									<?php endforeach; ?>
-								</select>
-							</div>
-							<?php endif; ?>
-							<?php
-						},
+						'slug'   => 'settings',
+						'label'  => __( 'Settings', 'wp-builder' ),
+						'open'   => true,
+						'fields' => $settings_fields,
 					),
 					array(
-						'slug'  => 'shortcode',
-						'label' => __( 'Shortcode', 'wp-builder' ),
-						'open'  => false,
-						'render' => function () use ( $shortcode ) {
-							?>
-							<div id="wp-builder-embed-panel" class="wp-builder-field-group">
-								<label class="wp-builder-inspector-label"><?php esc_html_e( 'Shortcode', 'wp-builder' ); ?></label>
-								<pre class="wp-builder-embed-code"><?php echo esc_html( $shortcode ); ?></pre>
-							</div>
-							<?php
-						},
+						'slug'   => 'shortcode',
+						'label'  => __( 'Shortcode', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'       => 'pre',
+								'wrapper_id' => 'wp-builder-embed-panel',
+								'label'      => __( 'Shortcode', 'wp-builder' ),
+								'content'    => $shortcode,
+							),
+						),
 					),
 					array(
-						'slug'  => 'data',
-						'label' => __( 'Data', 'wp-builder' ),
-						'open'  => false,
-						'render' => function () use ( $export_url ) {
-							?>
-							<div id="wp-builder-data-panel" class="wp-builder-field-group">
-								<a class="wp-builder-button wp-builder-button-secondary" href="<?php echo esc_url( $export_url ); ?>" target="_blank" rel="noreferrer" style="width: 100%;">
-									<?php esc_html_e( 'Export', 'wp-builder' ); ?>
-								</a>
-							</div>
-							<?php
-						},
+						'slug'   => 'data',
+						'label'  => __( 'Data', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'       => 'link',
+								'wrapper_id' => 'wp-builder-data-panel',
+								'label'      => __( 'Export', 'wp-builder' ),
+								'href'       => $export_url,
+								'attrs'      => array( 'target' => '_blank', 'rel' => 'noreferrer', 'style' => 'width: 100%;' ),
+							),
+						),
 					),
 				),
 			),
@@ -365,104 +545,108 @@ trait WP_Builder_Editor {
 				'label' => __( 'Element', 'wp-builder' ),
 				'accordions' => array(
 					array(
-						'slug'  => 'identity',
-						'label' => __( 'Identity', 'wp-builder' ),
-						'open'  => true,
-						'render' => function () {
-							?>
-							<div id="wp-builder-inspector-node" class="wp-builder-field-group" hidden>
-								<label class="wp-builder-inspector-label" for="wp-builder-node"><?php esc_html_e( 'Node', 'wp-builder' ); ?></label>
-								<select id="wp-builder-node" class="wp-builder-select">
-									<option value="div">div</option>
-									<option value="section">section</option>
-									<option value="article">article</option>
-									<option value="main">main</option>
-									<option value="aside">aside</option>
-									<option value="header">header</option>
-									<option value="footer">footer</option>
-									<option value="nav">nav</option>
-									<option value="p">p</option>
-									<option value="span">span</option>
-									<option value="h1">h1</option>
-									<option value="h2">h2</option>
-									<option value="h3">h3</option>
-									<option value="h4">h4</option>
-									<option value="h5">h5</option>
-									<option value="h6">h6</option>
-									<option value="a">a</option>
-									<option value="button">button</option>
-									<option value="figure">figure</option>
-									<option value="figcaption">figcaption</option>
-									<option value="img">img</option>
-									<option value="input">input</option>
-									<option value="label">label</option>
-									<option value="audio">audio</option>
-									<option value="video">video</option>
-									<option value="source">source</option>
-									<option value="iframe">iframe</option>
-								</select>
-							</div>
-							<div class="wp-builder-field-group" id="wp-builder-inspector-id" hidden>
-								<label class="wp-builder-inspector-label" for="wp-builder-node-id"><?php esc_html_e( 'ID', 'wp-builder' ); ?></label>
-								<input type="text" id="wp-builder-node-id" class="wp-builder-input" placeholder="<?php esc_attr_e( 'e.g. my-element', 'wp-builder' ); ?>">
-							</div>
-							<?php
-						},
+						'slug'   => 'identity',
+						'label'  => __( 'Identity', 'wp-builder' ),
+						'open'   => true,
+						'fields' => array(
+							array(
+								'type'           => 'select',
+								'id'             => 'wp-builder-node',
+								'label'          => __( 'Node', 'wp-builder' ),
+								'wrapper_id'     => 'wp-builder-inspector-node',
+								'wrapper_hidden' => true,
+								'options'        => $node_options,
+							),
+							array(
+								'type'           => 'text',
+								'id'             => 'wp-builder-node-id',
+								'label'          => __( 'ID', 'wp-builder' ),
+								'wrapper_id'     => 'wp-builder-inspector-id',
+								'wrapper_hidden' => true,
+								'placeholder'    => __( 'e.g. my-element', 'wp-builder' ),
+							),
+						),
 					),
 					array(
-						'slug'  => 'content',
-						'label' => __( 'Content', 'wp-builder' ),
-						'open'  => false,
-						'render' => function () {
-							?>
-							<div id="wp-builder-inspector-editor" class="wp-builder-inspector-editor" hidden>
-								<label class="wp-builder-inspector-label" for="wp-builder-html-content">
-									<?php esc_html_e( 'Content', 'wp-builder' ); ?>
-								</label>
-								<textarea id="wp-builder-html-content" class="wp-builder-html-editor" rows="12" spellcheck="false" placeholder="<?php esc_attr_e( 'Enter your here…', 'wp-builder' ); ?>"></textarea>
-							</div>
-							<div id="wp-builder-inspector-node-attrs" class="wp-builder-inspector-body-list" hidden></div>
-							<?php
-						},
+						'slug'   => 'content',
+						'label'  => __( 'Content', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'           => 'textarea',
+								'id'             => 'wp-builder-html-content',
+								'label'          => __( 'Content', 'wp-builder' ),
+								'wrapper_id'     => 'wp-builder-inspector-editor',
+								'wrapper_class'  => 'wp-builder-inspector-editor',
+								'wrapper_hidden' => true,
+								'attrs'          => array(
+									'rows'        => '12',
+									'spellcheck'  => 'false',
+									'placeholder' => __( 'Enter your here…', 'wp-builder' ),
+								),
+							),
+							array(
+								'type'   => 'container',
+								'id'     => 'wp-builder-inspector-node-attrs',
+								'class'  => 'wp-builder-inspector-body-list',
+								'hidden' => true,
+								'fields' => array(),
+							),
+						),
 					),
 					array(
-						'slug'  => 'layout',
-						'label' => __( 'Layout', 'wp-builder' ),
-						'open'  => false,
-						'render' => function () {
-							?>
-							<div class="wp-builder-field-group">
-								<label class="wp-builder-inspector-label" for="wp-builder-flex-direction"><?php esc_html_e( 'Direction', 'wp-builder' ); ?></label>
-								<select id="wp-builder-flex-direction" class="wp-builder-select">
-									<option value=""><?php esc_html_e( '— None —', 'wp-builder' ); ?></option>
-									<option value="row"><?php esc_html_e( 'Row', 'wp-builder' ); ?></option>
-									<option value="column"><?php esc_html_e( 'Column', 'wp-builder' ); ?></option>
-								</select>
-							</div>
-							<div class="wp-builder-field-group">
-								<label class="wp-builder-inspector-label" for="wp-builder-flex-grow"><?php esc_html_e( 'Flex Grow', 'wp-builder' ); ?></label>
-								<input type="number" id="wp-builder-flex-grow" class="wp-builder-input" min="0" step="1" placeholder="0">
-							</div>
-							<div class="wp-builder-field-group">
-								<label class="wp-builder-inspector-label" for="wp-builder-gap"><?php esc_html_e( 'Gap', 'wp-builder' ); ?></label>
-								<input type="text" id="wp-builder-gap" class="wp-builder-input" placeholder="<?php esc_attr_e( 'e.g. 16px', 'wp-builder' ); ?>">
-							</div>
-							<?php
-						},
+						'slug'   => 'layout',
+						'label'  => __( 'Layout', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'    => 'select',
+								'id'      => 'wp-builder-flex-direction',
+								'label'   => __( 'Direction', 'wp-builder' ),
+								'options' => array(
+									array( 'value' => '',       'label' => __( '— None —', 'wp-builder' ) ),
+									array( 'value' => 'row',    'label' => __( 'Row', 'wp-builder' ) ),
+									array( 'value' => 'column', 'label' => __( 'Column', 'wp-builder' ) ),
+								),
+							),
+							array(
+								'type'        => 'number',
+								'id'          => 'wp-builder-flex-grow',
+								'label'       => __( 'Flex Grow', 'wp-builder' ),
+								'placeholder' => '0',
+								'attrs'       => array( 'min' => '0', 'step' => '1' ),
+							),
+							array(
+								'type'        => 'text',
+								'id'          => 'wp-builder-gap',
+								'label'       => __( 'Gap', 'wp-builder' ),
+								'placeholder' => __( 'e.g. 16px', 'wp-builder' ),
+							),
+						),
 					),
 					array(
-						'slug'  => 'style',
-						'label' => __( 'Style', 'wp-builder' ),
-						'open'  => false,
-						'render' => function () {
-							?>
-							<div class="wp-builder-field-group">
-								<p class="wp-builder-inspector-label"><?php esc_html_e( 'Custom CSS', 'wp-builder' ); ?></p>
-								<p class="wp-builder-inspector-hint"><?php esc_html_e( 'Use', 'wp-builder' ); ?> <code>self</code> <?php esc_html_e( 'to target this element.', 'wp-builder' ); ?></p>
-								<textarea id="wp-builder-custom-style" class="wp-builder-html-editor" rows="8" spellcheck="false" placeholder="self {&#10;  background-color: red;&#10;}"></textarea>
-							</div>
-							<?php
-						},
+						'slug'   => 'style',
+						'label'  => __( 'Style', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'      => 'textarea',
+								'id'        => 'wp-builder-custom-style',
+								'label'     => __( 'Custom CSS', 'wp-builder' ),
+								'label_tag' => 'p',
+								'hint'      => sprintf(
+									/* translators: %1$s: opening code tag, %2$s: closing code tag */
+									__( 'Use %1$sself%2$s to target this element.', 'wp-builder' ),
+									'<code>',
+									'</code>'
+								),
+								'attrs'     => array(
+									'rows'        => '8',
+									'spellcheck'  => 'false',
+									'placeholder' => "self {\n  background-color: red;\n}",
+								),
+							),
+						),
 					),
 				),
 			),
