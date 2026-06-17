@@ -87,8 +87,8 @@ body.wp-builder-body {
 }
 
 .wp-builder-status-badge {
-	background: transparent;
-	border: none;
+	background: transparent !important;
+	border: none !important;
 	color: var(--wpb-text-muted);
 	cursor: pointer;
 	display: block;
@@ -115,8 +115,8 @@ body.wp-builder-body {
 }
 
 .wp-builder-selection-part {
-	background: transparent;
-	border: none;
+	background: transparent !important;
+	border: none !important;
 	color: var(--wpb-accent-hover);
 	cursor: pointer;
 	font-size: 13px;
