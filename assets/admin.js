@@ -48,9 +48,9 @@
 
 	var config = window.wpBuilder || {};
 	var text = config.i18n || {};
-	var canvas = document.getElementById('wp-builder-canvas');
+	var stage = document.getElementById('wp-builder-stage');
 	var saveButton = document.getElementById('wp-builder-save');
-	var shortcodePanel = document.getElementById('wp-builder-shortcode-panel');
+	var embedPanel = document.getElementById('wp-builder-embed-panel');
 	var addNestedButton = document.getElementById('wp-builder-add-nested');
 	var selectionName = document.getElementById('wp-builder-selection-name');
 	var saveStatus = document.getElementById('wp-builder-save-status');
@@ -70,9 +70,9 @@
 	var postStatusSelect = document.getElementById('wp-builder-post-status');
 	var titleInput = document.getElementById('wp-builder-title');
 	var viewLink = document.getElementById('wp-builder-view-link');
-	var pageTemplateSelect = document.getElementById('wp-builder-page-template');
+	var pageTemplateSelect = document.getElementById('wp-builder-chrome-template');
 
-	if (!canvas || !saveButton) {
+	if (!stage || !saveButton) {
 		return;
 	}
 
@@ -287,9 +287,9 @@
 	}
 
 	function renderCanvas() {
-		canvas.innerHTML = '';
+		stage.innerHTML = '';
 		var firstChild = renderNode(state.layout.children[0], 0, false);
-		canvas.appendChild(firstChild);
+		stage.appendChild(firstChild);
 		cleanupAllContainerStyles();
 		syncAllContainerStyles(state.layout.children);
 	}
@@ -429,8 +429,8 @@
 			htmlTextarea.value = selected.content || '';
 		}
 
-		if (shortcodePanel) {
-			shortcodePanel.hidden = false;
+		if (embedPanel) {
+			embedPanel.hidden = false;
 		}
 
 		if (postStatusSelect) {
@@ -518,7 +518,7 @@
 		element.props = element.props || {};
 		element.props[prop] = value;
 		markDirty();
-		var node = canvas.querySelector('[data-wp-builder-id="' + state.selectedId + '"]');
+		var node = stage.querySelector('[data-wp-builder-id="' + state.selectedId + '"]');
 		if (node) {
 			var body = node.querySelector('.wp-builder-node-body');
 			if (body) { applyContainerFlexStyles(element.props, node, body); }
@@ -615,7 +615,7 @@
 	}
 
 	function updateHtmlPreview(id, content) {
-		var node = canvas.querySelector('[data-wp-builder-id="' + id + '"]');
+		var node = stage.querySelector('[data-wp-builder-id="' + id + '"]');
 		if (!node) {
 			return;
 		}

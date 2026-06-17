@@ -29,9 +29,9 @@ trait WP_Builder_Frontend {
 		}
 
 		if ( self::TEMPLATE_CPT === $post->post_type ) {
-			$css_classes = 'wp-builder-page wp-builder-template';
+			$css_classes = 'wp-builder-layout wp-builder-layout--snippet';
 		} elseif ( $this->is_supported_post_type( $post->post_type ) ) {
-			$css_classes = 'wp-builder-page wp-builder-shortcode';
+			$css_classes = 'wp-builder-layout wp-builder-layout--embed';
 		} else {
 			return '';
 		}
@@ -76,7 +76,7 @@ trait WP_Builder_Frontend {
 			return $content;
 		}
 
-		return $this->render_element( $this->get_layout_root_element( $post_id ), 'wp-builder-page' );
+		return $this->render_element( $this->get_layout_root_element( $post_id ), 'wp-builder-layout' );
 	}
 
 	private function enqueue_frontend_style(): void {

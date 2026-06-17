@@ -16,30 +16,30 @@ trait WP_Builder_Admin {
 			__( 'Builder', 'wp-builder' ),
 			__( 'Builder', 'wp-builder' ),
 			'edit_posts',
-			'wp-builder-templates',
+			'wp-builder-snippets',
 			'__return_null',
 			'dashicons-layout',
 			59
 		);
 
 		add_submenu_page(
-			'wp-builder-templates',
-			__( 'Builder Templates', 'wp-builder' ),
-			__( 'Templates', 'wp-builder' ),
+			'wp-builder-snippets',
+			__( 'Builder Snippets', 'wp-builder' ),
+			__( 'Snippets', 'wp-builder' ),
 			'edit_posts',
 			'edit.php?post_type=' . self::TEMPLATE_CPT
 		);
 
 		add_submenu_page(
-			'wp-builder-templates',
-			__( 'Add New Template', 'wp-builder' ),
+			'wp-builder-snippets',
+			__( 'Add New Snippet', 'wp-builder' ),
 			__( 'Add New', 'wp-builder' ),
 			'edit_posts',
 			'post-new.php?post_type=' . self::TEMPLATE_CPT
 		);
 
 		// Remove the auto-generated duplicate top-level submenu entry.
-		remove_submenu_page( 'wp-builder-templates', 'wp-builder-templates' );
+		remove_submenu_page( 'wp-builder-snippets', 'wp-builder-snippets' );
 	}
 
 	public function maybe_redirect_new_template(): void {
@@ -50,19 +50,19 @@ trait WP_Builder_Admin {
 		}
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_die( esc_html__( 'You do not have permission to create templates.', 'wp-builder' ) );
+			wp_die( esc_html__( 'You do not have permission to create snippets.', 'wp-builder' ) );
 		}
 
 		$post_id = wp_insert_post(
 			array(
 				'post_type'   => self::TEMPLATE_CPT,
-				'post_title'  => __( 'New Template', 'wp-builder' ),
+				'post_title'  => __( 'New Snippet', 'wp-builder' ),
 				'post_status' => 'draft',
 			)
 		);
 
 		if ( is_wp_error( $post_id ) || ! $post_id ) {
-			wp_die( esc_html__( 'Could not create template.', 'wp-builder' ) );
+			wp_die( esc_html__( 'Could not create snippet.', 'wp-builder' ) );
 		}
 
 		wp_safe_redirect( $this->get_builder_url( $post_id ) );
@@ -209,7 +209,7 @@ trait WP_Builder_Admin {
 			}
 			$admin_bar->add_node(
 				array(
-					'id'     => 'wp-builder-template-' . $template_id,
+					'id'     => 'wp-builder-snippet-' . $template_id,
 					'parent' => 'wp-builder',
 					'title'  => get_the_title( $template_id ),
 					'href'   => $this->get_builder_url( $template_id ),

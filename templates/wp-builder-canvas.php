@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 </head>
 <body <?php body_class( 'wp-builder-canvas-body' ); ?>>
 <?php wp_body_open(); ?>
-<div class="wp-builder-canvas-template">
+<div class="wp-builder-canvas-page">
 	<?php
 	while ( have_posts() ) :
 		the_post();

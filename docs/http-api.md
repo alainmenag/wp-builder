@@ -70,7 +70,7 @@ The response body is the full layout object, pretty-printed with `JSON_PRETTY_PR
 
 ## AJAX: save layout
 
-Saves the layout JSON, and optionally updates the post status, post title, and page template in a single request.
+Saves the layout JSON, and optionally updates the post status, post title, and page layout in a single request.
 
 **URL**
 
@@ -90,7 +90,7 @@ POST wp-admin/admin-ajax.php
 | `layout`        | string  | Yes      | JSON-encoded layout object (version 2 schema). |
 | `post_status`   | string  | No       | New post status. Accepted values: `publish`, `draft`, `pending`, `private`. Ignored if the user does not have `publish_post` capability when changing to `publish` or `private`. |
 | `title`         | string  | No       | New post title. Applied after the layout is saved. |
-| `page_template` | string  | No       | Page-template slug to store in `_wp_page_template` meta. Not applied when saving a `wp_builder_template` CPT. |
+| `page_template` | string  | No       | Page-layout slug to store in `_wp_page_template` meta. Not applied when saving a `wp_builder_template` CPT. |
 
 **Success response** — `200 OK`
 
@@ -115,8 +115,8 @@ POST wp-admin/admin-ajax.php
 | `postStatus`   | string | The post's status after the save. |
 | `postTitle`    | string | The post's title after the save. |
 | `docTitle`     | string | Browser `<title>` string — `"Builder: {post title}"`. |
-| `previewUrl`   | string | Front-end URL to preview the post. For templates this is the WordPress preview link; for other post types it is the permalink. |
-| `pageTemplate` | string | Active page-template slug after the save, or `default` if none is set. |
+| `previewUrl`   | string | Front-end URL to preview the post. For snippets this is the WordPress preview link; for other post types it is the permalink. |
+| `pageTemplate` | string | Active page-layout slug after the save, or `default` if none is set. |
 | `message`      | string | Localised confirmation string. |
 
 **Error responses** — see [Error responses](#error-responses).
