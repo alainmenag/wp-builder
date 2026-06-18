@@ -499,10 +499,6 @@ body.wp-builder-body {
 	border-radius: 0px;
 }
 
-.wp-builder-field-group .CodeMirror-placeholder {
-	opacity: .25;
-}
-
 /* ── Shortcode pre ──────────────────────────────────────────────────────── */
 
 .wp-builder-embed-code {

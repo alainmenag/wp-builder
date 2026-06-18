@@ -92,6 +92,11 @@ import { ICON_OPEN } from './constants.js';
 	let _styleTextareaCtrl = null;
 	let _attrsSection      = null;
 
+	// CodeMirror wrapper instance (null when wp.codeEditor is unavailable).
+	let _styleEditor              = null;
+	// True while setValue() is being called programmatically to suppress onChange.
+	let _styleEditorSuppressChange = false;
+
 	// CSS class names used by this panel (wpbfe- prefix to avoid conflicts
 	// with the admin editor stylesheet loaded inside the builder iframe).
 	const CSS = {
@@ -165,6 +170,28 @@ import { ICON_OPEN } from './constants.js';
 	// -----------------------------------------------------------------------
 	// Panel construction (runs once on first open)
 	// -----------------------------------------------------------------------
+
+	/**
+	 * Initialise CodeMirror on the style textarea if wp.codeEditor is available.
+	 * Falls back to a plain input listener so the textarea value stays in sync.
+	 * Must be called after _styleTextareaCtrl has been set.
+	 */
+	function initStyleEditor() {
+		if ( ! _styleTextareaCtrl ) { return; }
+
+		if ( window.wp && window.wp.codeEditor ) {
+			_styleEditor = window.wp.codeEditor.initialize( _styleTextareaCtrl, {
+				codemirror: {
+					mode:              'css',
+					autoCloseBrackets: true,
+					matchBrackets:     true,
+					placeholder:       _styleTextareaCtrl.placeholder || '',
+				},
+			} );
+		}
+		// When CodeMirror is absent the textarea value is read directly, so no
+		// additional listener is needed.
+	}
 
 	function createPanel() {
 		// Panel shell
@@ -287,13 +314,22 @@ import { ICON_OPEN } from './constants.js';
 		// Style section
 		const styleAcc   = createAccordion( text.style || 'Style', false );
 		const styleInner = styleAcc.querySelector( '.wpbfe-accordion-body-inner' );
+		const STYLE_PLACEHOLDER = "self {\n  background-color: red;\n}";
 		const styleField = createFieldGroup( text.customStyle || 'Custom CSS', () => {
 			const ta = document.createElement( 'textarea' );
-			ta.className = 'wpbfe-textarea';
-			ta.rows      = 6;
+			ta.className   = 'wpbfe-textarea';
+			ta.rows        = 6;
+			ta.placeholder = STYLE_PLACEHOLDER;
 			return ta;
 		} );
 		_styleTextareaCtrl = styleField.control;
+		// Insert the hint paragraph between the label and the textarea.
+		if ( text.customStyleHint ) {
+			const hint = document.createElement( 'p' );
+			hint.className = 'wpbfe-inspector-hint';
+			hint.innerHTML = text.customStyleHint;
+			styleField.group.insertBefore( hint, _styleTextareaCtrl );
+		}
 		styleInner.appendChild( styleField.group );
 		body.appendChild( styleAcc );
 
@@ -336,6 +372,7 @@ import { ICON_OPEN } from './constants.js';
 		document.body.appendChild( _panel );
 		initDrag();
 		initLeftResize();
+		initStyleEditor();
 	}
 
 	// -----------------------------------------------------------------------
@@ -572,6 +609,11 @@ import { ICON_OPEN } from './constants.js';
 		_gapCtrl.value      = props.gap || '';
 
 		_styleTextareaCtrl.value = element.style || '';
+		if ( _styleEditor ) {
+			_styleEditorSuppressChange = true;
+			_styleEditor.codemirror.setValue( element.style || '' );
+			_styleEditorSuppressChange = false;
+		}
 
 		// Render node-specific attribute fields via the shared helper.
 		renderNodeAttrs(
@@ -620,7 +662,7 @@ import { ICON_OPEN } from './constants.js';
 			flexGrow:      _flexGrowCtrl.value,
 			gap:           _gapCtrl.value
 		} ) );
-		form.append( 'style',   _styleTextareaCtrl.value );
+		form.append( 'style',   _styleEditor ? _styleEditor.codemirror.getValue() : _styleTextareaCtrl.value );
 		form.append( 'content', _htmlTextareaCtrl.value );
 		form.append( 'attrs',   JSON.stringify( attrsObj ) );
 
