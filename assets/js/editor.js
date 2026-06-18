@@ -73,7 +73,17 @@ const viewLink           = document.getElementById( 'wp-builder-view-link' );
 const pageTemplateSelect = document.getElementById( 'wp-builder-chrome-template' );
 
 // Guard — abort silently if the editor shell was not rendered on this page.
-if ( stage && saveButton ) {
+if ( config.view === 'live' && stage ) {
+
+	// Live-preview mode: render the front-end shortcode output in an iframe.
+	const iframe       = document.createElement( 'iframe' );
+	iframe.src         = config.previewUrl || '';
+	iframe.className   = 'wp-builder-live-preview';
+	iframe.title       = text.livePreview || 'Live preview';
+	iframe.setAttribute( 'allowfullscreen', '' );
+	stage.appendChild( iframe );
+
+} else if ( stage && saveButton ) {
 
 	// -----------------------------------------------------------------------
 	// Initialise state

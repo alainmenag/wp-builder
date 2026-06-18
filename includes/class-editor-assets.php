@@ -14,6 +14,7 @@ trait WP_Builder_Editor_Assets {
 	private function enqueue_builder_assets( int $post_id ): void {
 		$asset_url = WP_BUILDER_URL . 'assets/';
 		$ctx       = $this->get_post_context( $post_id );
+		$view      = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		// Load WordPress's bundled CodeMirror for the CSS editor (available since WP 4.9).
 		// wp_enqueue_code_editor() loads all CSS-specific addons (hints, linting, etc.)
@@ -50,6 +51,7 @@ trait WP_Builder_Editor_Assets {
 				'nonce'      => wp_create_nonce( self::NONCE_ACTION ),
 				'titleNonce' => wp_create_nonce( self::TITLE_NONCE_ACTION ),
 				'postId'     => $post_id,
+				'view'       => $view,
 				'postTitle'  => get_the_title( $post_id ),
 				'isTemplate' => $ctx['is_template'],
 				'postStatus' => $ctx['post_status'],
@@ -70,6 +72,7 @@ trait WP_Builder_Editor_Assets {
 					'statusDraft'     => __( 'Draft', 'wp-builder' ),
 					'statusPending'   => __( 'Pending Review', 'wp-builder' ),
 					'statusPrivate'   => __( 'Private', 'wp-builder' ),
+					'livePreview'     => __( 'Live preview', 'wp-builder' ),
 				),
 			)
 		);

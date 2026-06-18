@@ -294,6 +294,20 @@ body.wp-builder-body {
 	padding: 0;
 }
 
+.wp-builder-stage-panel:has( .wp-builder-live-preview ) {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.wp-builder-live-preview {
+	border: 0;
+	display: block;
+	flex: 1 1 auto;
+	min-height: 0;
+	width: 100%;
+}
+
 #wp-builder-save-status {
 	color: var(--wpb-text-secondary);
 	flex: 1;
