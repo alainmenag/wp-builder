@@ -5,10 +5,11 @@
  * Import graph: constants, layout, state, canvas ← inspector  (no cycles)
  */
 
-import { NODE_GLOSSARY, VOID_NODES } from './constants.js';
+import { VOID_NODES } from './constants.js';
 import { state, updateStatusBadge, updateSelectedNodeAttr } from './state.js';
 import { findElement } from './layout.js';
 import { renderEmpty, updateSelectedContainerStyle } from './canvas.js';
+import { createAttrControl, renderNodeAttrs } from './dom-helpers.js';
 
 // ---------------------------------------------------------------------------
 // Module-level DOM references set by initInspector().
@@ -188,51 +189,10 @@ export function renderInspector() {
 export function renderNodeAttrsPanel( selected ) {
 	const panel = document.getElementById( 'wp-builder-inspector-node-attrs' );
 	if ( ! panel ) { return; }
-	panel.innerHTML = '';
-	const descriptors = selected ? ( NODE_GLOSSARY[ selected.node ] || [] ) : [];
-	if ( ! descriptors.length ) {
-		panel.hidden = true;
-		return;
-	}
-	panel.hidden = false;
-	const attrs = selected.attrs || {};
-	for ( const desc of descriptors ) {
-		const group   = document.createElement( 'div' );
-		group.className = 'wp-builder-field-group';
-		const inputId = 'wp-builder-node-attr-' + desc.name;
-		const labelEl = document.createElement( 'label' );
-		labelEl.className = 'wp-builder-inspector-label';
-		labelEl.htmlFor   = inputId;
-		labelEl.textContent = desc.label + ( desc.required ? ' *' : '' );
-		const control = createAttrControl( desc, attrs[ desc.name ] || '', inputId, ( value ) => {
-			updateSelectedNodeAttr( desc.name, value );
-		} );
-		group.appendChild( labelEl );
-		group.appendChild( control );
-		panel.appendChild( group );
-	}
-}
-
-export function createAttrControl( desc, value, inputId, onChange ) {
-	let control;
-	if ( desc.type === 'select' ) {
-		control = document.createElement( 'select' );
-		control.className = 'wp-builder-select';
-		for ( const opt of ( desc.options || [] ) ) {
-			const option = document.createElement( 'option' );
-			option.value       = opt;
-			option.textContent = opt || '\u2014 None \u2014';
-			control.appendChild( option );
-		}
-		control.addEventListener( 'change', () => { onChange( control.value ); } );
-	} else {
-		control = document.createElement( 'input' );
-		control.className = 'wp-builder-input';
-		control.type = desc.type === 'number' ? 'number' : ( desc.type === 'url' ? 'url' : 'text' );
-		if ( desc.placeholder ) { control.placeholder = desc.placeholder; }
-		control.addEventListener( 'input', () => { onChange( control.value ); } );
-	}
-	control.value = value;
-	control.id    = inputId;
-	return control;
+	renderNodeAttrs(
+		panel,
+		selected ? selected.node : '',
+		selected ? ( selected.attrs || {} ) : {},
+		( name, value ) => { updateSelectedNodeAttr( name, value ); }
+	);
 }

@@ -101,7 +101,7 @@ return array(
  * @return string
  */
 public function add_module_type_to_script_tag( string $tag, string $handle ): string {
-if ( 'wp-builder-admin' !== $handle ) {
+if ( 'wp-builder-admin' !== $handle && 'wp-builder-frontend-editor' !== $handle ) {
 return $tag;
 }
 // Strip any legacy type="text/javascript" attribute WordPress may add.
