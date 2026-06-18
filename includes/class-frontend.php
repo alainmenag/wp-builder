@@ -100,6 +100,10 @@ trait WP_Builder_Frontend {
 			return;
 		}
 
+		// Load WordPress's bundled CodeMirror for the CSS style editor (available since WP 4.9).
+		wp_enqueue_style( 'code-editor' );
+		wp_enqueue_script( 'code-editor' );
+
 		wp_enqueue_style(
 			'wp-builder-shared',
 			WP_BUILDER_URL . 'assets/shared.css',
@@ -110,14 +114,14 @@ trait WP_Builder_Frontend {
 		wp_enqueue_style(
 			'wp-builder-frontend-editor',
 			WP_BUILDER_URL . 'assets/frontend-editor.css',
-			array( 'wp-builder-shared' ),
+			array( 'code-editor', 'wp-builder-shared' ),
 			self::VERSION
 		);
 
 		wp_enqueue_script(
 			'wp-builder-frontend-editor',
 			WP_BUILDER_URL . 'assets/js/frontend-editor.js',
-			array(),
+			array( 'code-editor' ),
 			self::VERSION,
 			true
 		);
