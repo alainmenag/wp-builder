@@ -185,12 +185,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		headerLeft.appendChild( _nodeChip );
 		headerLeft.appendChild( _idChip );
 
-		_editLink = document.createElement( 'a' );
-		_editLink.className = 'wpbfe-edit-link';
-		_editLink.target    = '_blank';
-		_editLink.rel       = 'noopener noreferrer';
-		_editLink.textContent = text.editInBuilder || 'Edit in Builder';
-
 		const closeBtn = document.createElement( 'button' );
 		closeBtn.className = 'wpbfe-close-btn';
 		closeBtn.type      = 'button';
@@ -199,7 +193,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		closeBtn.addEventListener( 'click', closePanel );
 
 		header.appendChild( headerLeft );
-		header.appendChild( _editLink );
 		header.appendChild( closeBtn );
 		_panel.appendChild( header );
 
@@ -311,6 +304,13 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		const footer = document.createElement( 'div' );
 		footer.className = 'wpbfe-panel-footer';
 
+		_editLink = document.createElement( 'a' );
+		_editLink.className = 'wpbfe-edit-link';
+		_editLink.target    = '_blank';
+		_editLink.rel       = 'noopener noreferrer';
+		_editLink.setAttribute( 'aria-label', text.editInBuilder || 'Edit in Builder' );
+		_editLink.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+
 		_statusMsg = document.createElement( 'span' );
 		_statusMsg.className = 'wpbfe-status';
 
@@ -320,6 +320,7 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		_saveBtn.textContent = text.save || 'Save';
 		_saveBtn.addEventListener( 'click', saveElement );
 
+		footer.appendChild( _editLink );
 		footer.appendChild( _statusMsg );
 		footer.appendChild( _saveBtn );
 

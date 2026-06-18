@@ -140,16 +140,24 @@ body.admin-bar .wpbfe-panel.is-docked {
 }
 
 .wpbfe-edit-link {
+	align-items: center;
+	background: transparent;
+	border: 1px solid var(--wpb-border-subtle);
+	border-radius: 3px;
 	color: var(--wpb-text-muted);
+	cursor: pointer;
+	display: inline-flex;
 	flex-shrink: 0;
-	font-size: 11px;
+	height: 34px;
+	justify-content: center;
 	text-decoration: none;
-	white-space: nowrap;
+	width: 34px;
 }
 
 .wpbfe-edit-link:hover,
 .wpbfe-edit-link:focus {
-	color: var(--wpb-blue);
+	background: var(--wpb-bg-control);
+	color: var(--wpb-text-primary);
 	outline: none;
 }
 
