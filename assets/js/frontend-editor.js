@@ -349,17 +349,23 @@ import { ICON_OPEN } from './constants.js';
 		_editLink.innerHTML = ICON_OPEN;
 		_editLink.style.fill = '#ffffff';
 
-		_statusMsg = document.createElement( 'span' );
-		_statusMsg.className = 'wpbfe-status';
-
 		_saveBtn = document.createElement( 'button' );
 		_saveBtn.type      = 'button';
 		_saveBtn.className = 'wpbfe-save-btn';
-		_saveBtn.textContent = text.save || 'Save';
+
+		_statusMsg = document.createElement( 'span' );
+		_statusMsg.className = 'wpbfe-save-status';
+		_statusMsg.setAttribute( 'role', 'status' );
+		_statusMsg.setAttribute( 'aria-live', 'polite' );
+
+		const saveLbl = document.createElement( 'span' );
+		saveLbl.textContent = text.save || 'Save';
+
+		_saveBtn.appendChild( _statusMsg );
+		_saveBtn.appendChild( saveLbl );
 		_saveBtn.addEventListener( 'click', saveElement );
 
 		footer.appendChild( _editLink );
-		footer.appendChild( _statusMsg );
 		footer.appendChild( _saveBtn );
 
 		// Left-edge resize handle (used when docked).
@@ -556,7 +562,9 @@ import { ICON_OPEN } from './constants.js';
 	function setStatus( msg, isError ) {
 		if ( ! _statusMsg ) { return; }
 		_statusMsg.textContent = msg;
-		_statusMsg.className   = 'wpbfe-status' + ( isError ? ' wpbfe-status--error' : '' );
+		if ( _saveBtn ) {
+			_saveBtn.classList.toggle( 'is-error', !! isError );
+		}
 	}
 
 	// -----------------------------------------------------------------------
