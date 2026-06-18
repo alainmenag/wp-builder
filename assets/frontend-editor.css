@@ -6,58 +6,78 @@
  * This file contains only the front-end panel-specific styles.
  */
 
-/* ── Backdrop ───────────────────────────────────────────────────────────── */
-
-.wpbfe-backdrop {
-	background: rgba(0, 0, 0, .45);
-	bottom: 0;
-	display: none;
-	left: 0;
-	position: fixed;
-	right: 0;
-	top: 0;
-	z-index: 99998;
-}
-
-.wpbfe-backdrop.is-visible {
-	display: block;
-}
-
 /* ── Panel shell ────────────────────────────────────────────────────────── */
 
 .wpbfe-panel {
 	background: var(--wpb-bg-page);
-	bottom: 0;
-	box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
+	box-shadow: 0 4px 32px rgba(0, 0, 0, .55);
 	color: var(--wpb-text-primary);
-	display: flex;
+	display: none;
 	flex-direction: column;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	font-size: 13px;
 	line-height: 1.5;
-	overflow: hidden;
+	max-height: 100vh;
+	max-width: 600px;
+	min-height: 200px;
+	min-width: 280px;
+	overflow: auto;
 	position: fixed;
-	right: 0;
-	top: 0;
-	transform: translateX(100%);
-	transition: transform 240ms ease;
+	resize: both;
 	width: 340px;
 	z-index: 99999;
 }
 
-/* Admin-bar offset */
-body.admin-bar .wpbfe-panel {
+.wpbfe-panel.is-open {
+	display: flex;
+}
+
+/* ── Docked (snapped full-height to right edge) ─────────────────────────── */
+
+.wpbfe-panel.is-docked {
+	bottom: 0;
+	box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
+	height: 100vh;
+	left: auto;
+	max-height: 100vh;
+	max-width: none;
+	resize: none;
+	right: 0;
+	top: 0;
+}
+
+body.admin-bar .wpbfe-panel.is-docked {
+	height: calc(100vh - 32px);
 	top: 32px;
 }
 
 @media (max-width: 782px) {
-	body.admin-bar .wpbfe-panel {
+	body.admin-bar .wpbfe-panel.is-docked {
+		height: calc(100vh - 46px);
 		top: 46px;
 	}
 }
 
-.wpbfe-panel.is-open {
-	transform: translateX(0);
+/* ── Left-edge resize handle (docked mode only) ─────────────────────────── */
+
+.wpbfe-resize-handle-left {
+	display: none;
+}
+
+.wpbfe-panel.is-docked .wpbfe-resize-handle-left {
+	bottom: 0;
+	cursor: ew-resize;
+	display: block;
+	left: 0;
+	position: absolute;
+	top: 0;
+	width: 5px;
+}
+
+.wpbfe-panel.is-docked .wpbfe-resize-handle-left:hover,
+.wpbfe-panel.is-resizing .wpbfe-resize-handle-left {
+	background: var(--wpb-accent);
+	opacity: 0.4;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -66,11 +86,26 @@ body.admin-bar .wpbfe-panel {
 	align-items: center;
 	background: var(--wpb-bg-elevated);
 	border-bottom: 1px solid var(--wpb-border-subtle);
+	cursor: grab;
 	display: flex;
 	flex-shrink: 0;
 	gap: 8px;
 	min-height: 48px;
 	padding: 8px 12px;
+	user-select: none;
+}
+
+.wpbfe-panel.is-dragging {
+	user-select: none;
+}
+
+.wpbfe-panel button,
+.wpbfe-panel a {
+	user-select: none;
+}
+
+.wpbfe-panel.is-dragging .wpbfe-panel-header {
+	cursor: grabbing;
 }
 
 .wpbfe-panel-header-left {
@@ -111,16 +146,24 @@ body.admin-bar .wpbfe-panel {
 }
 
 .wpbfe-edit-link {
+	align-items: center;
+	background: transparent;
+	border: 1px solid var(--wpb-border-subtle);
+	border-radius: 3px;
 	color: var(--wpb-text-muted);
+	cursor: pointer;
+	display: inline-flex;
 	flex-shrink: 0;
-	font-size: 11px;
+	height: 34px;
+	justify-content: center;
 	text-decoration: none;
-	white-space: nowrap;
+	width: 34px;
 }
 
 .wpbfe-edit-link:hover,
 .wpbfe-edit-link:focus {
-	color: var(--wpb-blue);
+	background: var(--wpb-bg-control);
+	color: var(--wpb-text-primary);
 	outline: none;
 }
 
@@ -201,6 +244,7 @@ body.admin-bar .wpbfe-panel {
 	border-top: 1px solid var(--wpb-border-subtle);
 	display: flex;
 	flex-shrink: 0;
+	user-select: none;
 	gap: 10px;
 	padding: 10px 14px;
 }

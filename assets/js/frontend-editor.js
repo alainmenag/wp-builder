@@ -14,6 +14,7 @@
 import { VOID_NODES, ALLOWED_NODES } from './constants.js';
 import { normalizeNodeTag } from './layout.js';
 import { renderNodeAttrs } from './dom-helpers.js';
+import { ICON_OPEN } from './constants.js';
 
 ( () => {
 	'use strict';
@@ -29,14 +30,51 @@ import { renderNodeAttrs } from './dom-helpers.js';
 
 	/** @type {HTMLElement|null} */
 	let _panel     = null;
-	/** @type {HTMLElement|null} */
-	let _backdrop  = null;
 	/** @type {string|null} */
 	let _postId    = null;
 	/** @type {string|null} */
 	let _elementId = null;
 	/** @type {HTMLElement|null} The live [data-wp-builder-post-id] root element. */
 	let _liveRoot  = null;
+	/** @type {number|null} Persisted panel left position (px). */
+	let _panelLeft  = null;
+	/** @type {number|null} Persisted panel top position (px). */
+	let _panelTop   = null;
+	/** @type {boolean} Whether the panel is docked (snapped full-height to right). */
+	let _isDocked   = false;
+	/** @type {number|null} Persisted docked panel width (px). */
+	let _panelWidth = null;
+
+	// -----------------------------------------------------------------------
+	// localStorage persistence
+	// -----------------------------------------------------------------------
+
+	const STORAGE_KEY = 'wpbfe_panel_prefs';
+
+	function loadPrefs() {
+		try {
+			const raw = localStorage.getItem( STORAGE_KEY );
+			if ( ! raw ) { return; }
+			const prefs = JSON.parse( raw );
+			if ( typeof prefs.isDocked  === 'boolean' ) { _isDocked   = prefs.isDocked; }
+			if ( typeof prefs.left      === 'number'  ) { _panelLeft  = prefs.left; }
+			if ( typeof prefs.top       === 'number'  ) { _panelTop   = prefs.top; }
+			if ( typeof prefs.width     === 'number'  ) { _panelWidth = prefs.width; }
+		} catch ( e ) { /* silently ignore corrupt data */ }
+	}
+
+	function savePrefs() {
+		try {
+			localStorage.setItem( STORAGE_KEY, JSON.stringify( {
+				isDocked: _isDocked,
+				left:     _panelLeft,
+				top:      _panelTop,
+				width:    _panelWidth,
+			} ) );
+		} catch ( e ) { /* silently ignore quota / private-mode errors */ }
+	}
+
+	loadPrefs();
 
 	// Panel field references (populated once by createPanel).
 	let _nodeChip          = null;
@@ -77,6 +115,15 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		btn.setAttribute( 'aria-expanded', startOpen ? 'true' : 'false' );
 		btn.addEventListener( 'click', () => {
 			const isOpen = section.classList.contains( 'is-open' );
+			// Collapse all other open accordions in the panel (one-at-a-time).
+			if ( _panel && ! isOpen ) {
+				_panel.querySelectorAll( '.wpbfe-accordion.is-open' ).forEach( ( other ) => {
+					if ( other === section ) { return; }
+					other.classList.remove( 'is-open' );
+					const otherBtn = other.querySelector( '.wpbfe-accordion-header' );
+					if ( otherBtn ) { otherBtn.setAttribute( 'aria-expanded', 'false' ); }
+				} );
+			}
 			section.classList.toggle( 'is-open', ! isOpen );
 			btn.setAttribute( 'aria-expanded', ( ! isOpen ).toString() );
 		} );
@@ -120,12 +167,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 	// -----------------------------------------------------------------------
 
 	function createPanel() {
-		// Backdrop
-		_backdrop = document.createElement( 'div' );
-		_backdrop.className = 'wpbfe-backdrop';
-		_backdrop.addEventListener( 'click', closePanel );
-		document.body.appendChild( _backdrop );
-
 		// Panel shell
 		_panel = document.createElement( 'div' );
 		_panel.className = 'wpbfe-panel';
@@ -145,12 +186,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		headerLeft.appendChild( _nodeChip );
 		headerLeft.appendChild( _idChip );
 
-		_editLink = document.createElement( 'a' );
-		_editLink.className = 'wpbfe-edit-link';
-		_editLink.target    = '_blank';
-		_editLink.rel       = 'noopener noreferrer';
-		_editLink.textContent = text.editInBuilder || 'Edit in Builder';
-
 		const closeBtn = document.createElement( 'button' );
 		closeBtn.className = 'wpbfe-close-btn';
 		closeBtn.type      = 'button';
@@ -159,7 +194,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		closeBtn.addEventListener( 'click', closePanel );
 
 		header.appendChild( headerLeft );
-		header.appendChild( _editLink );
 		header.appendChild( closeBtn );
 		_panel.appendChild( header );
 
@@ -271,6 +305,14 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		const footer = document.createElement( 'div' );
 		footer.className = 'wpbfe-panel-footer';
 
+		_editLink = document.createElement( 'a' );
+		_editLink.className = 'wpbfe-edit-link';
+		_editLink.target    = '_blank';
+		_editLink.rel       = 'noopener noreferrer';
+		_editLink.setAttribute( 'aria-label', text.editInBuilder || 'Edit in Builder' );
+		_editLink.innerHTML = ICON_OPEN;
+		_editLink.style.fill = '#ffffff';
+
 		_statusMsg = document.createElement( 'span' );
 		_statusMsg.className = 'wpbfe-status';
 
@@ -280,12 +322,146 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		_saveBtn.textContent = text.save || 'Save';
 		_saveBtn.addEventListener( 'click', saveElement );
 
+		footer.appendChild( _editLink );
 		footer.appendChild( _statusMsg );
 		footer.appendChild( _saveBtn );
 
+		// Left-edge resize handle (used when docked).
+		const resizeHandle = document.createElement( 'div' );
+		resizeHandle.className = 'wpbfe-resize-handle-left';
+
 		_panel.appendChild( body );
 		_panel.appendChild( footer );
+		_panel.appendChild( resizeHandle );
 		document.body.appendChild( _panel );
+		initDrag();
+		initLeftResize();
+	}
+
+	// -----------------------------------------------------------------------
+	// Drag logic + viewport clamping
+	// -----------------------------------------------------------------------
+
+	function clampToViewport() {
+		if ( _isDocked || ! _panel || ! _panel.classList.contains( 'is-open' ) ) { return; }
+		if ( _panelLeft === null ) { return; }
+		const maxLeft = window.innerWidth  - _panel.offsetWidth;
+		const maxTop  = window.innerHeight - _panel.offsetHeight;
+		_panelLeft = Math.max( 0, Math.min( maxLeft, _panelLeft ) );
+		_panelTop  = Math.max( 0, Math.min( maxTop,  _panelTop ) );
+		_panel.style.left = _panelLeft + 'px';
+		_panel.style.top  = _panelTop  + 'px';
+	}
+
+	function initDrag() {
+		const header = _panel.querySelector( '.wpbfe-panel-header' );
+		let dragging = false;
+		let startX, startY, startLeft, startTop;
+
+		header.addEventListener( 'mousedown', ( e ) => {
+			// Ignore clicks on interactive children (button, link) and docked mode.
+			if ( _isDocked ) { return; }
+			if ( e.target.closest( 'button, a' ) ) { return; }
+			dragging  = true;
+			startX    = e.clientX;
+			startY    = e.clientY;
+			const rect = _panel.getBoundingClientRect();
+			startLeft = rect.left;
+			startTop  = rect.top;
+			_panel.classList.add( 'is-dragging' );
+			e.preventDefault();
+		} );
+
+		header.addEventListener( 'dblclick', ( e ) => {
+			if ( e.target.closest( 'button, a' ) ) { return; }
+			toggleDock();
+		} );
+
+		document.addEventListener( 'mousemove', ( e ) => {
+			if ( ! dragging ) { return; }
+			const dx      = e.clientX - startX;
+			const dy      = e.clientY - startY;
+			const maxLeft = window.innerWidth  - _panel.offsetWidth;
+			const maxTop  = window.innerHeight - _panel.offsetHeight;
+			_panelLeft = Math.max( 0, Math.min( maxLeft, startLeft + dx ) );
+			_panelTop  = Math.max( 0, Math.min( maxTop,  startTop  + dy ) );
+			_panel.style.left = _panelLeft + 'px';
+			_panel.style.top  = _panelTop  + 'px';
+		} );
+
+		document.addEventListener( 'mouseup', () => {
+			if ( ! dragging ) { return; }
+			dragging = false;
+			_panel.classList.remove( 'is-dragging' );
+			savePrefs();
+		} );
+
+		window.addEventListener( 'resize', clampToViewport );
+	}
+
+	// -----------------------------------------------------------------------
+	// Left-edge resize (docked mode only)
+	// -----------------------------------------------------------------------
+
+	function initLeftResize() {
+		const handle = _panel.querySelector( '.wpbfe-resize-handle-left' );
+		let resizing = false;
+		let startX, startWidth;
+
+		handle.addEventListener( 'mousedown', ( e ) => {
+			if ( ! _isDocked ) { return; }
+			resizing   = true;
+			startX     = e.clientX;
+			startWidth = _panel.offsetWidth;
+			_panel.classList.add( 'is-resizing' );
+			e.preventDefault();
+			e.stopPropagation();
+		} );
+
+		document.addEventListener( 'mousemove', ( e ) => {
+			if ( ! resizing ) { return; }
+			const dx       = startX - e.clientX;
+			const minWidth = 280;
+			const maxWidth = Math.floor( window.innerWidth * 0.9 );
+			const newWidth = Math.max( minWidth, Math.min( maxWidth, startWidth + dx ) );
+			_panel.style.width = newWidth + 'px';
+		} );
+
+		document.addEventListener( 'mouseup', () => {
+			if ( ! resizing ) { return; }
+			resizing = false;
+			_panel.classList.remove( 'is-resizing' );
+			_panelWidth = _panel.offsetWidth;
+			savePrefs();
+		} );
+	}
+
+	// -----------------------------------------------------------------------
+	// Dock / undock toggle
+	// -----------------------------------------------------------------------
+
+	function toggleDock() {
+		_isDocked = ! _isDocked;
+		if ( _isDocked ) {
+			_panel.classList.add( 'is-docked' );
+			_panel.style.left   = '';
+			_panel.style.top    = '';
+			_panel.style.width  = '';
+			_panel.style.height = '';
+		} else {
+			_panel.classList.remove( 'is-docked' );
+			// Restore last floating position (default to top-right if not yet set).
+			if ( _panelLeft === null ) {
+				const adminBarOffset = document.body.classList.contains( 'admin-bar' )
+					? ( window.innerWidth <= 782 ? 46 : 32 )
+					: 0;
+				_panelLeft = Math.max( 0, window.innerWidth - 340 );
+				_panelTop  = adminBarOffset;
+			}
+			_panel.style.left = _panelLeft + 'px';
+			_panel.style.top  = _panelTop  + 'px';
+		}
+		savePrefs();
 	}
 
 	// -----------------------------------------------------------------------
@@ -299,12 +475,35 @@ import { renderNodeAttrs } from './dom-helpers.js';
 
 		if ( ! _panel ) { createPanel(); }
 
+		if ( _isDocked ) {
+			// Apply docked state (CSS handles position; restore any saved width).
+			_panel.classList.add( 'is-docked' );
+			_panel.style.left   = '';
+			_panel.style.top    = '';
+			_panel.style.height = '';
+			if ( _panelWidth !== null ) {
+				_panel.style.width = _panelWidth + 'px';
+			}
+		} else {
+			// Position the panel: use persisted position or default to top-right corner.
+			_panel.classList.remove( 'is-docked' );
+			if ( _panelLeft === null ) {
+				const adminBarOffset = document.body.classList.contains( 'admin-bar' )
+					? ( window.innerWidth <= 782 ? 46 : 32 )
+					: 0;
+				_panelLeft = Math.max( 0, window.innerWidth - 340 );
+				_panelTop  = adminBarOffset;
+			}
+			_panel.style.left  = _panelLeft + 'px';
+			_panel.style.top   = _panelTop  + 'px';
+			_panel.style.width = '';
+		}
+
 		_editLink.href    = config.builderBaseUrl + '?post=' + encodeURIComponent( postId ) + '&action=builder';
 		_saveBtn.disabled = true;
 		setStatus( text.loading || 'Loading\u2026', false );
 
 		_panel.classList.add( 'is-open' );
-		_backdrop.classList.add( 'is-visible' );
 
 		fetchElement( postId, elementId );
 	}
@@ -312,7 +511,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 	function closePanel() {
 		if ( ! _panel ) { return; }
 		_panel.classList.remove( 'is-open' );
-		_backdrop.classList.remove( 'is-visible' );
 		_postId    = null;
 		_elementId = null;
 		_liveRoot  = null;
