@@ -184,3 +184,10 @@
 .wpbfe-field-group .CodeMirror-placeholder {
 	opacity: .25;
 }
+
+/* The autocomplete hint dropdown is appended directly to <body> by CodeMirror.
+ * Its default z-index is low (10), so it appears behind the builder panel
+ * (z-index: 99999). Raise it to sit above both the panel and the admin bar. */
+.CodeMirror-hints {
+	z-index: 100000;
+}
