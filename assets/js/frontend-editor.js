@@ -290,10 +290,16 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		footer.appendChild( _statusMsg );
 		footer.appendChild( _saveBtn );
 
+		// Left-edge resize handle (used when docked).
+		const resizeHandle = document.createElement( 'div' );
+		resizeHandle.className = 'wpbfe-resize-handle-left';
+
 		_panel.appendChild( body );
 		_panel.appendChild( footer );
+		_panel.appendChild( resizeHandle );
 		document.body.appendChild( _panel );
 		initDrag();
+		initLeftResize();
 	}
 
 	// -----------------------------------------------------------------------
@@ -357,6 +363,41 @@ import { renderNodeAttrs } from './dom-helpers.js';
 	}
 
 	// -----------------------------------------------------------------------
+	// Left-edge resize (docked mode only)
+	// -----------------------------------------------------------------------
+
+	function initLeftResize() {
+		const handle = _panel.querySelector( '.wpbfe-resize-handle-left' );
+		let resizing = false;
+		let startX, startWidth;
+
+		handle.addEventListener( 'mousedown', ( e ) => {
+			if ( ! _isDocked ) { return; }
+			resizing   = true;
+			startX     = e.clientX;
+			startWidth = _panel.offsetWidth;
+			_panel.classList.add( 'is-resizing' );
+			e.preventDefault();
+			e.stopPropagation();
+		} );
+
+		document.addEventListener( 'mousemove', ( e ) => {
+			if ( ! resizing ) { return; }
+			const dx       = startX - e.clientX;
+			const minWidth = 280;
+			const maxWidth = Math.floor( window.innerWidth * 0.9 );
+			const newWidth = Math.max( minWidth, Math.min( maxWidth, startWidth + dx ) );
+			_panel.style.width = newWidth + 'px';
+		} );
+
+		document.addEventListener( 'mouseup', () => {
+			if ( ! resizing ) { return; }
+			resizing = false;
+			_panel.classList.remove( 'is-resizing' );
+		} );
+	}
+
+	// -----------------------------------------------------------------------
 	// Dock / undock toggle
 	// -----------------------------------------------------------------------
 
@@ -364,8 +405,10 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		_isDocked = ! _isDocked;
 		if ( _isDocked ) {
 			_panel.classList.add( 'is-docked' );
-			_panel.style.left = '';
-			_panel.style.top  = '';
+			_panel.style.left   = '';
+			_panel.style.top    = '';
+			_panel.style.width  = '';
+			_panel.style.height = '';
 		} else {
 			_panel.classList.remove( 'is-docked' );
 			// Restore last floating position (default to top-right if not yet set).

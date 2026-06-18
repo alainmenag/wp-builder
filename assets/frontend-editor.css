@@ -40,6 +40,7 @@
 	height: 100vh;
 	left: auto;
 	max-height: 100vh;
+	max-width: none;
 	resize: none;
 	right: 0;
 	top: 0;
@@ -55,6 +56,28 @@ body.admin-bar .wpbfe-panel.is-docked {
 		height: calc(100vh - 46px);
 		top: 46px;
 	}
+}
+
+/* ── Left-edge resize handle (docked mode only) ─────────────────────────── */
+
+.wpbfe-resize-handle-left {
+	display: none;
+}
+
+.wpbfe-panel.is-docked .wpbfe-resize-handle-left {
+	bottom: 0;
+	cursor: ew-resize;
+	display: block;
+	left: 0;
+	position: absolute;
+	top: 0;
+	width: 5px;
+}
+
+.wpbfe-panel.is-docked .wpbfe-resize-handle-left:hover,
+.wpbfe-panel.is-resizing .wpbfe-resize-handle-left {
+	background: var(--wpb-accent);
+	opacity: 0.4;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
