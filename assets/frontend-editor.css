@@ -1,33 +1,10 @@
 /**
  * WP Builder — Front-end Element Quick-Editor styles
  *
- * Scoped under the wpbfe- prefix to avoid colliding with the admin editor
- * stylesheet (admin.css), which is only loaded inside the builder iframe.
- *
- * Design tokens mirror the admin editor's CSS custom properties so the
- * panel looks visually consistent with the full Builder UI.
+ * Design tokens and shared component rules (accordion, form controls,
+ * textarea) live in shared.css, which is loaded as a dependency.
+ * This file contains only the front-end panel-specific styles.
  */
-
-/* ── Design tokens ──────────────────────────────────────────────────────── */
-
-.wpbfe-panel {
-	--wpbfe-bg:           #1d2327;
-	--wpbfe-bg-surface:   #252c33;
-	--wpbfe-bg-control:   #2a2f36;
-	--wpbfe-bg-control-h: #313840;
-	--wpbfe-bg-sunken:    #161b22;
-	--wpbfe-border:       #3a3f45;
-	--wpbfe-border-s:     #2e3338;
-	--wpbfe-text:         #e2e4e7;
-	--wpbfe-text-sec:     #c9d1d9;
-	--wpbfe-text-muted:   #8b949e;
-	--wpbfe-text-off:     #555b63;
-	--wpbfe-accent:       #1f6f5c;
-	--wpbfe-accent-h:     #28937b;
-	--wpbfe-accent-dim:   #164e40;
-	--wpbfe-blue:         #58a6ff;
-	--wpbfe-danger:       #f87171;
-}
 
 /* ── Backdrop ───────────────────────────────────────────────────────────── */
 
@@ -49,10 +26,10 @@
 /* ── Panel shell ────────────────────────────────────────────────────────── */
 
 .wpbfe-panel {
-	background: var(--wpbfe-bg);
+	background: var(--wpb-bg-page);
 	bottom: 0;
 	box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
-	color: var(--wpbfe-text);
+	color: var(--wpb-text-primary);
 	display: flex;
 	flex-direction: column;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -87,8 +64,8 @@ body.admin-bar .wpbfe-panel {
 
 .wpbfe-panel-header {
 	align-items: center;
-	background: var(--wpbfe-bg-surface);
-	border-bottom: 1px solid var(--wpbfe-border-s);
+	background: var(--wpb-bg-elevated);
+	border-bottom: 1px solid var(--wpb-border-subtle);
 	display: flex;
 	flex-shrink: 0;
 	gap: 8px;
@@ -120,12 +97,12 @@ body.admin-bar .wpbfe-panel {
 }
 
 .wpbfe-chip--node {
-	background: var(--wpbfe-accent-dim);
-	color: var(--wpbfe-accent-h);
+	background: var(--wpb-accent-dim);
+	color: var(--wpb-accent-hover);
 }
 
 .wpbfe-chip--id {
-	color: var(--wpbfe-text-muted);
+	color: var(--wpb-text-muted);
 	font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 	font-size: 10px;
 	font-weight: 400;
@@ -134,7 +111,7 @@ body.admin-bar .wpbfe-panel {
 }
 
 .wpbfe-edit-link {
-	color: var(--wpbfe-text-muted);
+	color: var(--wpb-text-muted);
 	flex-shrink: 0;
 	font-size: 11px;
 	text-decoration: none;
@@ -143,7 +120,7 @@ body.admin-bar .wpbfe-panel {
 
 .wpbfe-edit-link:hover,
 .wpbfe-edit-link:focus {
-	color: var(--wpbfe-blue);
+	color: var(--wpb-blue);
 	outline: none;
 }
 
@@ -151,7 +128,7 @@ body.admin-bar .wpbfe-panel {
 	background: transparent;
 	border: none;
 	border-radius: 3px;
-	color: var(--wpbfe-text-muted);
+	color: var(--wpb-text-muted);
 	cursor: pointer;
 	flex-shrink: 0;
 	font-size: 18px;
@@ -163,8 +140,8 @@ body.admin-bar .wpbfe-panel {
 
 .wpbfe-close-btn:hover,
 .wpbfe-close-btn:focus {
-	background: var(--wpbfe-bg-control);
-	color: var(--wpbfe-text);
+	background: var(--wpb-bg-control);
+	color: var(--wpb-text-primary);
 	outline: none;
 }
 
@@ -179,67 +156,14 @@ body.admin-bar .wpbfe-panel {
 }
 
 /* ── Accordion ──────────────────────────────────────────────────────────── */
-
-.wpbfe-accordion-header {
-	align-items: center;
-	background: var(--wpbfe-accent-dim);
-	border: 0;
-	color: var(--wpbfe-text-sec);
-	cursor: pointer;
-	display: flex;
-	font: inherit;
-	font-size: 11px;
-	font-weight: 700;
-	justify-content: space-between;
-	letter-spacing: .06em;
-	min-height: 40px;
-	padding: 8px 14px;
-	text-transform: uppercase;
-	width: 100%;
-}
-
-.wpbfe-accordion-header:hover,
-.wpbfe-accordion-header:focus {
-	background: var(--wpbfe-accent);
-	color: #fff;
-	outline: none;
-}
-
-.wpbfe-accordion.is-open .wpbfe-accordion-header {
-	background: var(--wpbfe-accent);
-	color: #fff;
-}
-
-.wpbfe-accordion-chevron {
-	border-right: 2px solid currentColor;
-	border-top: 2px solid currentColor;
-	display: block;
-	flex-shrink: 0;
-	height: 8px;
-	transform: rotate(135deg);
-	width: 8px;
-}
-
-.wpbfe-accordion.is-open .wpbfe-accordion-chevron {
-	transform: rotate(-45deg);
-}
-
-.wpbfe-accordion-body {
-	display: none;
-}
-
-.wpbfe-accordion.is-open .wpbfe-accordion-body {
-	display: block;
-}
+/* Base accordion rules live in shared.css; only panel-specific override here. */
 
 .wpbfe-accordion-body-inner {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
 	padding: 12px 14px;
 }
 
 /* ── Field groups ───────────────────────────────────────────────────────── */
+/* Base input/select rules live in shared.css; only panel-specific rules here. */
 
 .wpbfe-field-group {
 	display: flex;
@@ -248,7 +172,7 @@ body.admin-bar .wpbfe-panel {
 }
 
 .wpbfe-label {
-	color: var(--wpbfe-text-muted);
+	color: var(--wpb-text-muted);
 	display: block;
 	font-size: 11px;
 	font-weight: 700;
@@ -256,69 +180,25 @@ body.admin-bar .wpbfe-panel {
 	text-transform: uppercase;
 }
 
-.wpbfe-input,
-.wpbfe-select {
-	background: var(--wpbfe-bg-control);
-	border: 1px solid var(--wpbfe-border);
-	border-radius: 0;
-	box-sizing: border-box;
-	color: var(--wpbfe-text);
-	font: inherit;
-	font-size: 13px;
-	min-height: 32px;
-	padding: 4px 8px;
-	width: 100%;
-}
-
-.wpbfe-input:focus,
-.wpbfe-select:focus {
-	border-color: var(--wpbfe-blue);
-	outline: none;
-}
-
 .wpbfe-input[readonly] {
-	color: var(--wpbfe-text-muted);
+	color: var(--wpb-text-muted);
 	cursor: default;
 }
 
-.wpbfe-select option {
-	background: var(--wpbfe-bg-control);
-}
-
-.wpbfe-textarea {
-	background: var(--wpbfe-bg-sunken);
-	border: 1px solid var(--wpbfe-border);
-	border-radius: 0;
-	box-sizing: border-box;
-	color: var(--wpbfe-text);
-	font: inherit;
-	font-size: 13px;
-	line-height: 1.6;
-	padding: 8px;
-	resize: vertical;
-	width: 100%;
-}
+/* ── Textarea / code editor ─────────────────────────────────────────────── */
+/* Base textarea rules live in shared.css; only panel-specific rules here. */
 
 .wpbfe-textarea--code {
 	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
 	font-size: 12px;
 }
 
-.wpbfe-textarea:focus {
-	border-color: var(--wpbfe-blue);
-	outline: none;
-}
-
-.wpbfe-textarea::placeholder {
-	color: var(--wpbfe-text-off);
-}
-
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 
 .wpbfe-panel-footer {
 	align-items: center;
-	background: var(--wpbfe-bg-surface);
-	border-top: 1px solid var(--wpbfe-border-s);
+	background: var(--wpb-bg-elevated);
+	border-top: 1px solid var(--wpb-border-subtle);
 	display: flex;
 	flex-shrink: 0;
 	gap: 10px;
@@ -326,8 +206,8 @@ body.admin-bar .wpbfe-panel {
 }
 
 .wpbfe-save-btn {
-	background: var(--wpbfe-accent);
-	border: 1px solid var(--wpbfe-accent);
+	background: var(--wpb-accent);
+	border: 1px solid var(--wpb-accent);
 	border-radius: 0;
 	color: #fff;
 	cursor: pointer;
@@ -341,8 +221,8 @@ body.admin-bar .wpbfe-panel {
 
 .wpbfe-save-btn:hover,
 .wpbfe-save-btn:focus {
-	background: var(--wpbfe-accent-h);
-	border-color: var(--wpbfe-accent-h);
+	background: var(--wpb-accent-hover);
+	border-color: var(--wpb-accent-hover);
 	outline: none;
 }
 
@@ -352,14 +232,14 @@ body.admin-bar .wpbfe-panel {
 }
 
 .wpbfe-status {
-	color: var(--wpbfe-text-muted);
+	color: var(--wpb-text-muted);
 	flex: 1;
 	font-size: 12px;
 	font-weight: 600;
 }
 
 .wpbfe-status--error {
-	color: var(--wpbfe-danger);
+	color: var(--wpb-danger-text);
 }
 
 /* ── Hover highlight on editable elements ───────────────────────────────── */

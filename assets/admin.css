@@ -1,41 +1,4 @@
-:root {
-	/* backgrounds */
-	--wpb-bg-page:        #1d2327;
-	--wpb-bg-surface:     #1d2327;
-	--wpb-bg-sunken:      #161b22;
-	--wpb-bg-raised:      #2c3338;
-	--wpb-bg-control:     #2a2f36;
-	--wpb-bg-control-hover: #313840;
-	--wpb-bg-node-title-hover: #2d333b;
-
-	/* borders */
-	--wpb-border-subtle:  #2e3338;
-	--wpb-border-muted:   #30363d;
-	--wpb-border-default: #3a3f45;
-	--wpb-border-strong:  #454c54;
-
-	/* text */
-	--wpb-text-primary:   #e2e4e7;
-	--wpb-text-secondary: #c9d1d9;
-	--wpb-text-muted:     #8b949e;
-	--wpb-text-disabled:  #555b63;
-	--wpb-text-inverse:   #ffffff;
-
-	/* accent – green */
-	--wpb-accent:         #1f6f5c;
-	--wpb-accent-hover:   #28937b;
-	--wpb-accent-dim:     #164e40;
-	--wpb-accent-rgb:     40, 147, 123;
-
-	/* accent – blue (focus / link) */
-	--wpb-blue:           #58a6ff;
-
-	/* danger */
-	--wpb-danger:         #b91c1c;
-	--wpb-danger-hover:   #dc2626;
-	--wpb-danger-border:  #b91c1c;
-	--wpb-danger-text:    #f87171;
-}
+/* Design tokens live in shared.css */
 
 .color-wpb-accent {
 	color: var(--wpb-accent) !important;
@@ -301,60 +264,7 @@ body.wp-builder-body {
 }
 
 /* ── Accordion ──────────────────────────────────────────────────────────── */
-
-.wp-builder-accordion-header {
-	align-items: center;
-	background: var(--wpb-accent-dim);
-	border-radius: 0px;
-	border: 0;
-	color: var(--wpb-text-secondary);
-	cursor: pointer;
-	display: flex;
-	font: inherit;
-	font-size: 11px;
-	font-weight: 700;
-	gap: 8px;
-	justify-content: space-between;
-	letter-spacing: 0.06em;
-	min-height: 40px;
-	padding: 8px 14px;
-	text-transform: uppercase;
-	width: 100%;
-}
-
-.wp-builder-accordion-header:hover,
-.wp-builder-accordion-header:focus {
-	background: var(--wpb-accent);
-	color: var(--wpb-text-inverse);
-	outline: none;
-}
-
-.wp-builder-accordion.is-open .wp-builder-accordion-header {
-	background: var(--wpb-accent);
-	color: var(--wpb-text-inverse);
-}
-
-.wp-builder-accordion-chevron {
-	border-right: 2px solid currentColor;
-	border-top: 2px solid currentColor;
-	display: block;
-	flex: 0 0 8px;
-	height: 8px;
-	transform: rotate(135deg);
-	width: 8px;
-}
-
-.wp-builder-accordion.is-open .wp-builder-accordion-chevron {
-	transform: rotate(-45deg);
-}
-
-.wp-builder-accordion-body {
-	display: none;
-}
-
-.wp-builder-accordion.is-open .wp-builder-accordion-body {
-	display: block;
-}
+/* Base accordion rules live in shared.css; only admin-specific rules here. */
 
 .wp-builder-accordion-body-inner {
 	padding: 10px 5px;
@@ -550,36 +460,15 @@ body.wp-builder-body {
 }
 
 /* ── Inspector HTML editor ──────────────────────────────────────────────── */
+/* Base textarea rules live in shared.css; only admin-specific rules here. */
 
 .wp-builder-inspector-editor .wp-builder-inspector-label {
 	display: block;
 	margin-bottom: 6px;
 }
 
-.wp-builder-html-editor {
-	background: var(--wpb-bg-sunken);
-	border: 1px solid var(--wpb-border-default);
-	border-radius: 0px;
-	box-sizing: border-box;
-	color: var(--wpb-text-primary);
-	font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
-	font-size: 12px;
-	line-height: 1.6;
-	padding: 8px;
-	resize: vertical;
-	width: 100%;
-}
-
-.wp-builder-html-editor:focus {
-	border-color: var(--wpb-blue);
-	outline: none;
-}
-
-.wp-builder-html-editor::placeholder {
-	color: var(--wpb-text-disabled);
-}
-
 /* ── Inspector container editor ─────────────────────────────────────────── */
+/* Base form-control rules live in shared.css; only admin-specific rules here. */
 
 .wp-builder-inspector-divider {
 	border: 0;
@@ -608,30 +497,6 @@ body.wp-builder-body {
 
 .wp-builder-field-group input[type] {
 	border-radius: 0px;
-}
-
-.wp-builder-select,
-.wp-builder-input {
-	background: var(--wpb-bg-control);
-	border: 1px solid var(--wpb-border-default);
-	border-radius: 0px;
-	box-sizing: border-box;
-	color: var(--wpb-text-primary);
-	font: inherit;
-	font-size: 13px;
-	min-height: 32px;
-	padding: 4px 8px;
-	width: 100%;
-}
-
-.wp-builder-select:focus,
-.wp-builder-input:focus {
-	border-color: var(--wpb-blue);
-	outline: none;
-}
-
-.wp-builder-select option {
-	background: var(--wpb-bg-control);
 }
 
 .wp-builder-field-group .CodeMirror-placeholder {

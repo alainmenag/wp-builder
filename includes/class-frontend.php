@@ -101,9 +101,16 @@ trait WP_Builder_Frontend {
 		}
 
 		wp_enqueue_style(
+			'wp-builder-shared',
+			WP_BUILDER_URL . 'assets/shared.css',
+			array(),
+			self::VERSION
+		);
+
+		wp_enqueue_style(
 			'wp-builder-frontend-editor',
 			WP_BUILDER_URL . 'assets/frontend-editor.css',
-			array(),
+			array( 'wp-builder-shared' ),
 			self::VERSION
 		);
 
