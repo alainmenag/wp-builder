@@ -16,8 +16,9 @@ trait WP_Builder_Editor_Assets {
 		$ctx       = $this->get_post_context( $post_id );
 
 		// Load WordPress's bundled CodeMirror for the CSS editor (available since WP 4.9).
-		wp_enqueue_style( 'code-editor' );
-		wp_enqueue_script( 'code-editor' );
+		// wp_enqueue_code_editor() loads all CSS-specific addons (hints, linting, etc.)
+		// and populates wp.codeEditor.defaultSettings so that autocomplete works.
+		wp_enqueue_code_editor( array( 'type' => 'text/css' ) );
 
 		wp_enqueue_style(
 			'wp-builder-shared',

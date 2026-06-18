@@ -100,9 +100,14 @@ trait WP_Builder_Frontend {
 			return;
 		}
 
-		// Load WordPress's bundled CodeMirror for the CSS style editor (available since WP 4.9).
-		wp_enqueue_style( 'code-editor' );
-		wp_enqueue_script( 'code-editor' );
+		// Load WordPress's bundled CodeMirror with all CSS-specific addons (hints,
+		// linting, autocomplete) and populate wp.codeEditor.defaultSettings.
+		// On the frontend wp_enqueue_code_editor() may not be loaded yet, so
+		// require the admin file that defines it.
+		if ( ! function_exists( 'wp_enqueue_code_editor' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/misc.php';
+		}
+		wp_enqueue_code_editor( array( 'type' => 'text/css' ) );
 
 		wp_enqueue_style(
 			'wp-builder-shared',
