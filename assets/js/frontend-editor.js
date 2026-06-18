@@ -29,14 +29,16 @@ import { renderNodeAttrs } from './dom-helpers.js';
 
 	/** @type {HTMLElement|null} */
 	let _panel     = null;
-	/** @type {HTMLElement|null} */
-	let _backdrop  = null;
 	/** @type {string|null} */
 	let _postId    = null;
 	/** @type {string|null} */
 	let _elementId = null;
 	/** @type {HTMLElement|null} The live [data-wp-builder-post-id] root element. */
 	let _liveRoot  = null;
+	/** @type {number|null} Persisted panel left position (px). */
+	let _panelLeft = null;
+	/** @type {number|null} Persisted panel top position (px). */
+	let _panelTop  = null;
 
 	// Panel field references (populated once by createPanel).
 	let _nodeChip          = null;
@@ -120,12 +122,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 	// -----------------------------------------------------------------------
 
 	function createPanel() {
-		// Backdrop
-		_backdrop = document.createElement( 'div' );
-		_backdrop.className = 'wpbfe-backdrop';
-		_backdrop.addEventListener( 'click', closePanel );
-		document.body.appendChild( _backdrop );
-
 		// Panel shell
 		_panel = document.createElement( 'div' );
 		_panel.className = 'wpbfe-panel';
@@ -286,6 +282,48 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		_panel.appendChild( body );
 		_panel.appendChild( footer );
 		document.body.appendChild( _panel );
+		initDrag();
+	}
+
+	// -----------------------------------------------------------------------
+	// Drag logic
+	// -----------------------------------------------------------------------
+
+	function initDrag() {
+		const header = _panel.querySelector( '.wpbfe-panel-header' );
+		let dragging = false;
+		let startX, startY, startLeft, startTop;
+
+		header.addEventListener( 'mousedown', ( e ) => {
+			// Ignore clicks on interactive children (button, link).
+			if ( e.target.closest( 'button, a' ) ) { return; }
+			dragging  = true;
+			startX    = e.clientX;
+			startY    = e.clientY;
+			const rect = _panel.getBoundingClientRect();
+			startLeft = rect.left;
+			startTop  = rect.top;
+			_panel.classList.add( 'is-dragging' );
+			e.preventDefault();
+		} );
+
+		document.addEventListener( 'mousemove', ( e ) => {
+			if ( ! dragging ) { return; }
+			const dx      = e.clientX - startX;
+			const dy      = e.clientY - startY;
+			const maxLeft = window.innerWidth  - _panel.offsetWidth;
+			const maxTop  = window.innerHeight - _panel.offsetHeight;
+			_panelLeft = Math.max( 0, Math.min( maxLeft, startLeft + dx ) );
+			_panelTop  = Math.max( 0, Math.min( maxTop,  startTop  + dy ) );
+			_panel.style.left = _panelLeft + 'px';
+			_panel.style.top  = _panelTop  + 'px';
+		} );
+
+		document.addEventListener( 'mouseup', () => {
+			if ( ! dragging ) { return; }
+			dragging = false;
+			_panel.classList.remove( 'is-dragging' );
+		} );
 	}
 
 	// -----------------------------------------------------------------------
@@ -299,12 +337,22 @@ import { renderNodeAttrs } from './dom-helpers.js';
 
 		if ( ! _panel ) { createPanel(); }
 
+		// Position the panel: use persisted position or default to top-right corner.
+		if ( _panelLeft === null ) {
+			const adminBarOffset = document.body.classList.contains( 'admin-bar' )
+				? ( window.innerWidth <= 782 ? 46 : 32 )
+				: 0;
+			_panelLeft = Math.max( 0, window.innerWidth - 340 );
+			_panelTop  = adminBarOffset;
+		}
+		_panel.style.left = _panelLeft + 'px';
+		_panel.style.top  = _panelTop + 'px';
+
 		_editLink.href    = config.builderBaseUrl + '?post=' + encodeURIComponent( postId ) + '&action=builder';
 		_saveBtn.disabled = true;
 		setStatus( text.loading || 'Loading\u2026', false );
 
 		_panel.classList.add( 'is-open' );
-		_backdrop.classList.add( 'is-visible' );
 
 		fetchElement( postId, elementId );
 	}
@@ -312,7 +360,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 	function closePanel() {
 		if ( ! _panel ) { return; }
 		_panel.classList.remove( 'is-open' );
-		_backdrop.classList.remove( 'is-visible' );
 		_postId    = null;
 		_elementId = null;
 		_liveRoot  = null;

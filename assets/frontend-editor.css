@@ -6,58 +6,29 @@
  * This file contains only the front-end panel-specific styles.
  */
 
-/* ── Backdrop ───────────────────────────────────────────────────────────── */
-
-.wpbfe-backdrop {
-	background: rgba(0, 0, 0, .45);
-	bottom: 0;
-	display: none;
-	left: 0;
-	position: fixed;
-	right: 0;
-	top: 0;
-	z-index: 99998;
-}
-
-.wpbfe-backdrop.is-visible {
-	display: block;
-}
-
 /* ── Panel shell ────────────────────────────────────────────────────────── */
 
 .wpbfe-panel {
 	background: var(--wpb-bg-page);
-	bottom: 0;
-	box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
+	box-shadow: 0 4px 32px rgba(0, 0, 0, .55);
 	color: var(--wpb-text-primary);
-	display: flex;
+	display: none;
 	flex-direction: column;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	font-size: 13px;
 	line-height: 1.5;
-	overflow: hidden;
+	max-width: 600px;
+	min-height: 200px;
+	min-width: 280px;
+	overflow: auto;
 	position: fixed;
-	right: 0;
-	top: 0;
-	transform: translateX(100%);
-	transition: transform 240ms ease;
+	resize: both;
 	width: 340px;
 	z-index: 99999;
 }
 
-/* Admin-bar offset */
-body.admin-bar .wpbfe-panel {
-	top: 32px;
-}
-
-@media (max-width: 782px) {
-	body.admin-bar .wpbfe-panel {
-		top: 46px;
-	}
-}
-
 .wpbfe-panel.is-open {
-	transform: translateX(0);
+	display: flex;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -66,11 +37,20 @@ body.admin-bar .wpbfe-panel {
 	align-items: center;
 	background: var(--wpb-bg-elevated);
 	border-bottom: 1px solid var(--wpb-border-subtle);
+	cursor: grab;
 	display: flex;
 	flex-shrink: 0;
 	gap: 8px;
 	min-height: 48px;
 	padding: 8px 12px;
+}
+
+.wpbfe-panel.is-dragging {
+	user-select: none;
+}
+
+.wpbfe-panel.is-dragging .wpbfe-panel-header {
+	cursor: grabbing;
 }
 
 .wpbfe-panel-header-left {
