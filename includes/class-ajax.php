@@ -123,13 +123,14 @@ trait WP_Builder_Ajax {
 
 		wp_send_json_success(
 			array(
-				'layout'       => $layout,
-				'postStatus'   => $post ? $post->post_status : 'draft',
-				'postTitle'    => get_the_title( $post_id ),
-				'docTitle'     => $this->get_builder_doc_title( $post_id ),
-				'previewUrl'   => $this->get_preview_url( $post_id ),
-				'pageTemplate' => $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
-				'message'      => __( 'Layout saved.', 'wp-builder' ),
+				'layout'          => $layout,
+				'postStatus'      => $post ? $post->post_status : 'draft',
+				'postTitle'       => get_the_title( $post_id ),
+				'docTitle'        => $this->get_builder_doc_title( $post_id ),
+				'previewUrl'      => $this->get_preview_url( $post_id ),
+				'pageTemplate'    => $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
+				'renderedContent' => $this->render_element( $this->get_layout_root_element( $post_id ), 'wp-builder-layout', $post_id ),
+				'message'         => __( 'Layout saved.', 'wp-builder' ),
 			)
 		);
 	}

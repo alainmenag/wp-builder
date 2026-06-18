@@ -10,6 +10,7 @@ import {
 	state,
 	initState,
 	markDirty,
+	selectElement,
 	addElementToSelection,
 	updateStatusBadge,
 	updateSelectedId
@@ -73,30 +74,7 @@ const viewLink           = document.getElementById( 'wp-builder-view-link' );
 const pageTemplateSelect = document.getElementById( 'wp-builder-chrome-template' );
 
 // Guard — abort silently if the editor shell was not rendered on this page.
-if ( config.view === 'live' && stage ) {
-
-	// Live-preview mode: render the shortcode output inside a Shadow DOM so the
-	// editor's own styles don't bleed into the preview and vice versa.
-	const host   = document.createElement( 'div' );
-	host.className = 'wp-builder-live-preview';
-	const shadow = host.attachShadow( { mode: 'open' } );
-
-	// Inject the frontend layout stylesheet into the shadow root.
-	if ( config.frontendCssUrl ) {
-		const link  = document.createElement( 'link' );
-		link.rel    = 'stylesheet';
-		link.href   = config.frontendCssUrl;
-		shadow.appendChild( link );
-	}
-
-	// Inject the server-rendered layout HTML.
-	const content = document.createElement( 'div' );
-	content.innerHTML = config.renderedContent || '';
-	shadow.appendChild( content );
-
-	stage.appendChild( host );
-
-} else if ( stage && saveButton ) {
+if ( stage && saveButton ) {
 
 	// -----------------------------------------------------------------------
 	// Initialise state
@@ -109,10 +87,24 @@ if ( config.view === 'live' && stage ) {
 	state.saving       = false;
 	state.pageTemplate = config.pageTemplate || 'default';
 
-	// Composite render callback — called whenever state changes require a
-	// full re-render of both the stage and the inspector.
+	// Live-preview shadow DOM references — populated below when view=live.
+	let _livePreviewShadow    = null;
+	let _livePreviewContentEl = null;
+
+	// Composite render callback — in live mode updates the selection highlight
+	// and re-renders the inspector; in canvas mode rebuilds the stage tree.
 	const render = () => {
-		renderCanvas();
+		if ( config.view === 'live' ) {
+			if ( _livePreviewShadow ) {
+				_livePreviewShadow.querySelectorAll( '[data-wp-builder-id].is-selected' ).forEach( ( el ) => {
+					el.classList.remove( 'is-selected' );
+				} );
+				const sel = _livePreviewShadow.querySelector( '[data-wp-builder-id="' + state.selectedId + '"]' );
+				if ( sel ) { sel.classList.add( 'is-selected' ); }
+			}
+		} else {
+			renderCanvas();
+		}
 		renderInspector();
 	};
 
@@ -169,11 +161,58 @@ if ( config.view === 'live' && stage ) {
 		viewLink,
 		config,
 		text,
-		onRender: render
+		onRender: render,
+		onAfterSave: config.view === 'live'
+			? ( html ) => {
+				if ( _livePreviewContentEl ) {
+					_livePreviewContentEl.innerHTML = html || '';
+					render();
+				}
+			}
+			: null
 	} );
 
 	initTabs();
 	initAccordions( getStyleEditor );
+
+	// -----------------------------------------------------------------------
+	// Live-preview mode — Shadow DOM host with click-to-select delegation.
+	// -----------------------------------------------------------------------
+
+	if ( config.view === 'live' ) {
+		const host     = document.createElement( 'div' );
+		host.className = 'wp-builder-live-preview';
+
+		_livePreviewShadow = host.attachShadow( { mode: 'open' } );
+
+		// Scoped selection-highlight style inside the shadow root.
+		const selStyle       = document.createElement( 'style' );
+		selStyle.textContent = '[data-wp-builder-id].is-selected{outline:2px solid #28937b!important;outline-offset:2px;cursor:pointer;}' +
+			'[data-wp-builder-id]{cursor:pointer;}';
+		_livePreviewShadow.appendChild( selStyle );
+
+		if ( config.frontendCssUrl ) {
+			const link  = document.createElement( 'link' );
+			link.rel    = 'stylesheet';
+			link.href   = config.frontendCssUrl;
+			_livePreviewShadow.appendChild( link );
+		}
+
+		_livePreviewContentEl           = document.createElement( 'div' );
+		_livePreviewContentEl.innerHTML = config.renderedContent || '';
+		_livePreviewShadow.appendChild( _livePreviewContentEl );
+
+		// Click delegation — clicking any builder element selects it in the inspector.
+		_livePreviewShadow.addEventListener( 'click', ( event ) => {
+			const target = event.target.closest( '[data-wp-builder-id]' );
+			if ( target ) {
+				event.stopPropagation();
+				selectElement( target.dataset.wpBuilderId );
+			}
+		} );
+
+		stage.appendChild( host );
+	}
 
 	// -----------------------------------------------------------------------
 	// Event listeners

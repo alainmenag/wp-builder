@@ -18,6 +18,7 @@ let _viewLink         = null;
 let _config           = {};
 let _text             = {};
 let _onRender         = null;
+let _onAfterSave      = null;
 
 /**
  * @param {Object} opts
@@ -30,8 +31,9 @@ let _onRender         = null;
  * @param {Object}   opts.config              window.wpBuilder config object (mutable reference).
  * @param {Object}   opts.text                i18n strings object.
  * @param {Function} opts.onRender            Callback to trigger a full re-render after save.
+ * @param {Function} opts.onAfterSave         Optional callback invoked with the fresh rendered HTML after a successful save.
  */
-export function initApi( { saveButton, postStatusSelect, titleInput, pageTemplateSelect, postTitleInput, viewLink, config, text, onRender } ) {
+export function initApi( { saveButton, postStatusSelect, titleInput, pageTemplateSelect, postTitleInput, viewLink, config, text, onRender, onAfterSave } ) {
 	_saveButton        = saveButton;
 	_postStatusSelect  = postStatusSelect;
 	_titleInput        = titleInput;
@@ -41,6 +43,7 @@ export function initApi( { saveButton, postStatusSelect, titleInput, pageTemplat
 	_config            = config || {};
 	_text              = text   || {};
 	_onRender          = onRender || null;
+	_onAfterSave       = onAfterSave || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -112,6 +115,10 @@ export function saveLayout() {
 			}
 
 			if ( _onRender ) { _onRender(); }
+
+			if ( _onAfterSave && payload.data.renderedContent !== undefined ) {
+				_onAfterSave( payload.data.renderedContent );
+			}
 
 			state.dirty = false;
 			if ( _saveButton ) { _saveButton.classList.remove( 'is-dirty' ); }
