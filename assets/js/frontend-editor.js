@@ -46,7 +46,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 	let _nodeChip          = null;
 	let _idChip            = null;
 	let _editLink          = null;
-	let _dockBtn           = null;
 	let _statusMsg         = null;
 	let _saveBtn           = null;
 	let _nodeSelectCtrl    = null;
@@ -159,13 +158,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		_editLink.rel       = 'noopener noreferrer';
 		_editLink.textContent = text.editInBuilder || 'Edit in Builder';
 
-		_dockBtn = document.createElement( 'button' );
-		_dockBtn.className = 'wpbfe-dock-btn';
-		_dockBtn.type      = 'button';
-		_dockBtn.setAttribute( 'aria-label', text.snapToSide || 'Snap to side' );
-		_dockBtn.innerHTML = '&#x21A6;'; // ↦
-		_dockBtn.addEventListener( 'click', toggleDock );
-
 		const closeBtn = document.createElement( 'button' );
 		closeBtn.className = 'wpbfe-close-btn';
 		closeBtn.type      = 'button';
@@ -175,7 +167,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 
 		header.appendChild( headerLeft );
 		header.appendChild( _editLink );
-		header.appendChild( _dockBtn );
 		header.appendChild( closeBtn );
 		_panel.appendChild( header );
 
@@ -339,6 +330,11 @@ import { renderNodeAttrs } from './dom-helpers.js';
 			e.preventDefault();
 		} );
 
+		header.addEventListener( 'dblclick', ( e ) => {
+			if ( e.target.closest( 'button, a' ) ) { return; }
+			toggleDock();
+		} );
+
 		document.addEventListener( 'mousemove', ( e ) => {
 			if ( ! dragging ) { return; }
 			const dx      = e.clientX - startX;
@@ -370,8 +366,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 			_panel.classList.add( 'is-docked' );
 			_panel.style.left = '';
 			_panel.style.top  = '';
-			_dockBtn.setAttribute( 'aria-label', text.floatPanel || 'Float panel' );
-			_dockBtn.innerHTML = '&#x21A4;'; // ↤
 		} else {
 			_panel.classList.remove( 'is-docked' );
 			// Restore last floating position (default to top-right if not yet set).
@@ -384,8 +378,6 @@ import { renderNodeAttrs } from './dom-helpers.js';
 			}
 			_panel.style.left = _panelLeft + 'px';
 			_panel.style.top  = _panelTop  + 'px';
-			_dockBtn.setAttribute( 'aria-label', text.snapToSide || 'Snap to side' );
-			_dockBtn.innerHTML = '&#x21A6;'; // ↦
 		}
 	}
 

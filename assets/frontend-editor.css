@@ -151,31 +151,6 @@ body.admin-bar .wpbfe-panel.is-docked {
 	outline: none;
 }
 
-.wpbfe-dock-btn {
-	background: transparent;
-	border: none;
-	border-radius: 3px;
-	color: var(--wpb-text-muted);
-	cursor: pointer;
-	flex-shrink: 0;
-	font-size: 16px;
-	height: 28px;
-	line-height: 1;
-	padding: 0;
-	width: 28px;
-}
-
-.wpbfe-dock-btn:hover,
-.wpbfe-dock-btn:focus {
-	background: var(--wpb-bg-control);
-	color: var(--wpb-text-primary);
-	outline: none;
-}
-
-.wpbfe-panel.is-docked .wpbfe-dock-btn {
-	color: var(--wpb-accent);
-}
-
 /* ── Body ───────────────────────────────────────────────────────────────── */
 
 .wpbfe-panel-body {
