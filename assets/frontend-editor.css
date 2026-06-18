@@ -290,14 +290,18 @@ body.admin-bar .wpbfe-panel.is-docked {
 	opacity: .5;
 }
 
-.wpbfe-status {
-	color: var(--wpb-text-muted);
-	flex: 1;
-	font-size: 12px;
-	font-weight: 600;
+/* Status text lives inside the save button; label hides while status is shown. */
+
+.wpbfe-save-status,
+.wpbfe-save-status:not(:empty) + span {
+	display: none;
 }
 
-.wpbfe-status--error {
+.wpbfe-save-status:not(:empty) {
+	display: block;
+}
+
+.wpbfe-save-btn.is-error .wpbfe-save-status {
 	color: var(--wpb-danger-text);
 }
 
