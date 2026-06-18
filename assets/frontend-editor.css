@@ -17,6 +17,7 @@
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	font-size: 13px;
 	line-height: 1.5;
+	max-height: 100vh;
 	max-width: 600px;
 	min-height: 200px;
 	min-width: 280px;
@@ -29,6 +30,31 @@
 
 .wpbfe-panel.is-open {
 	display: flex;
+}
+
+/* ── Docked (snapped full-height to right edge) ─────────────────────────── */
+
+.wpbfe-panel.is-docked {
+	bottom: 0;
+	box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
+	height: 100vh;
+	left: auto;
+	max-height: 100vh;
+	resize: none;
+	right: 0;
+	top: 0;
+}
+
+body.admin-bar .wpbfe-panel.is-docked {
+	height: calc(100vh - 32px);
+	top: 32px;
+}
+
+@media (max-width: 782px) {
+	body.admin-bar .wpbfe-panel.is-docked {
+		height: calc(100vh - 46px);
+		top: 46px;
+	}
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -123,6 +149,31 @@
 	background: var(--wpb-bg-control);
 	color: var(--wpb-text-primary);
 	outline: none;
+}
+
+.wpbfe-dock-btn {
+	background: transparent;
+	border: none;
+	border-radius: 3px;
+	color: var(--wpb-text-muted);
+	cursor: pointer;
+	flex-shrink: 0;
+	font-size: 16px;
+	height: 28px;
+	line-height: 1;
+	padding: 0;
+	width: 28px;
+}
+
+.wpbfe-dock-btn:hover,
+.wpbfe-dock-btn:focus {
+	background: var(--wpb-bg-control);
+	color: var(--wpb-text-primary);
+	outline: none;
+}
+
+.wpbfe-panel.is-docked .wpbfe-dock-btn {
+	color: var(--wpb-accent);
 }
 
 /* ── Body ───────────────────────────────────────────────────────────────── */

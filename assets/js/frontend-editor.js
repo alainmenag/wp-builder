@@ -39,11 +39,14 @@ import { renderNodeAttrs } from './dom-helpers.js';
 	let _panelLeft = null;
 	/** @type {number|null} Persisted panel top position (px). */
 	let _panelTop  = null;
+	/** @type {boolean} Whether the panel is docked (snapped full-height to right). */
+	let _isDocked  = false;
 
 	// Panel field references (populated once by createPanel).
 	let _nodeChip          = null;
 	let _idChip            = null;
 	let _editLink          = null;
+	let _dockBtn           = null;
 	let _statusMsg         = null;
 	let _saveBtn           = null;
 	let _nodeSelectCtrl    = null;
@@ -79,6 +82,15 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		btn.setAttribute( 'aria-expanded', startOpen ? 'true' : 'false' );
 		btn.addEventListener( 'click', () => {
 			const isOpen = section.classList.contains( 'is-open' );
+			// Collapse all other open accordions in the panel (one-at-a-time).
+			if ( _panel && ! isOpen ) {
+				_panel.querySelectorAll( '.wpbfe-accordion.is-open' ).forEach( ( other ) => {
+					if ( other === section ) { return; }
+					other.classList.remove( 'is-open' );
+					const otherBtn = other.querySelector( '.wpbfe-accordion-header' );
+					if ( otherBtn ) { otherBtn.setAttribute( 'aria-expanded', 'false' ); }
+				} );
+			}
 			section.classList.toggle( 'is-open', ! isOpen );
 			btn.setAttribute( 'aria-expanded', ( ! isOpen ).toString() );
 		} );
@@ -147,6 +159,13 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		_editLink.rel       = 'noopener noreferrer';
 		_editLink.textContent = text.editInBuilder || 'Edit in Builder';
 
+		_dockBtn = document.createElement( 'button' );
+		_dockBtn.className = 'wpbfe-dock-btn';
+		_dockBtn.type      = 'button';
+		_dockBtn.setAttribute( 'aria-label', text.snapToSide || 'Snap to side' );
+		_dockBtn.innerHTML = '&#x21A6;'; // ↦
+		_dockBtn.addEventListener( 'click', toggleDock );
+
 		const closeBtn = document.createElement( 'button' );
 		closeBtn.className = 'wpbfe-close-btn';
 		closeBtn.type      = 'button';
@@ -156,6 +175,7 @@ import { renderNodeAttrs } from './dom-helpers.js';
 
 		header.appendChild( headerLeft );
 		header.appendChild( _editLink );
+		header.appendChild( _dockBtn );
 		header.appendChild( closeBtn );
 		_panel.appendChild( header );
 
@@ -286,8 +306,19 @@ import { renderNodeAttrs } from './dom-helpers.js';
 	}
 
 	// -----------------------------------------------------------------------
-	// Drag logic
+	// Drag logic + viewport clamping
 	// -----------------------------------------------------------------------
+
+	function clampToViewport() {
+		if ( _isDocked || ! _panel || ! _panel.classList.contains( 'is-open' ) ) { return; }
+		if ( _panelLeft === null ) { return; }
+		const maxLeft = window.innerWidth  - _panel.offsetWidth;
+		const maxTop  = window.innerHeight - _panel.offsetHeight;
+		_panelLeft = Math.max( 0, Math.min( maxLeft, _panelLeft ) );
+		_panelTop  = Math.max( 0, Math.min( maxTop,  _panelTop ) );
+		_panel.style.left = _panelLeft + 'px';
+		_panel.style.top  = _panelTop  + 'px';
+	}
 
 	function initDrag() {
 		const header = _panel.querySelector( '.wpbfe-panel-header' );
@@ -295,7 +326,8 @@ import { renderNodeAttrs } from './dom-helpers.js';
 		let startX, startY, startLeft, startTop;
 
 		header.addEventListener( 'mousedown', ( e ) => {
-			// Ignore clicks on interactive children (button, link).
+			// Ignore clicks on interactive children (button, link) and docked mode.
+			if ( _isDocked ) { return; }
 			if ( e.target.closest( 'button, a' ) ) { return; }
 			dragging  = true;
 			startX    = e.clientX;
@@ -324,6 +356,37 @@ import { renderNodeAttrs } from './dom-helpers.js';
 			dragging = false;
 			_panel.classList.remove( 'is-dragging' );
 		} );
+
+		window.addEventListener( 'resize', clampToViewport );
+	}
+
+	// -----------------------------------------------------------------------
+	// Dock / undock toggle
+	// -----------------------------------------------------------------------
+
+	function toggleDock() {
+		_isDocked = ! _isDocked;
+		if ( _isDocked ) {
+			_panel.classList.add( 'is-docked' );
+			_panel.style.left = '';
+			_panel.style.top  = '';
+			_dockBtn.setAttribute( 'aria-label', text.floatPanel || 'Float panel' );
+			_dockBtn.innerHTML = '&#x21A4;'; // ↤
+		} else {
+			_panel.classList.remove( 'is-docked' );
+			// Restore last floating position (default to top-right if not yet set).
+			if ( _panelLeft === null ) {
+				const adminBarOffset = document.body.classList.contains( 'admin-bar' )
+					? ( window.innerWidth <= 782 ? 46 : 32 )
+					: 0;
+				_panelLeft = Math.max( 0, window.innerWidth - 340 );
+				_panelTop  = adminBarOffset;
+			}
+			_panel.style.left = _panelLeft + 'px';
+			_panel.style.top  = _panelTop  + 'px';
+			_dockBtn.setAttribute( 'aria-label', text.snapToSide || 'Snap to side' );
+			_dockBtn.innerHTML = '&#x21A6;'; // ↦
+		}
 	}
 
 	// -----------------------------------------------------------------------
