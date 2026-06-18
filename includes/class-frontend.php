@@ -152,8 +152,14 @@ trait WP_Builder_Frontend {
 					'flexDirection' => __( 'Flex Direction', 'wp-builder' ),
 					'flexGrow'      => __( 'Flex Grow', 'wp-builder' ),
 					'gap'           => __( 'Gap', 'wp-builder' ),
-					'customStyle'   => __( 'Custom CSS', 'wp-builder' ),
-					'error'         => __( 'Error', 'wp-builder' ),
+					'customStyle'    => __( 'Custom CSS', 'wp-builder' ),
+					'customStyleHint' => sprintf(
+						/* translators: %1$s: opening code tag, %2$s: closing code tag */
+						__( 'Use %1$sself%2$s to target this element.', 'wp-builder' ),
+						'<code>',
+						'</code>'
+					),
+					'error'          => __( 'Error', 'wp-builder' ),
 				),
 			)
 		);

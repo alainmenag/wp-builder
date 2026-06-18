@@ -185,6 +185,7 @@ import { ICON_OPEN } from './constants.js';
 					mode:              'css',
 					autoCloseBrackets: true,
 					matchBrackets:     true,
+					placeholder:       _styleTextareaCtrl.placeholder || '',
 				},
 			} );
 		}
@@ -313,13 +314,22 @@ import { ICON_OPEN } from './constants.js';
 		// Style section
 		const styleAcc   = createAccordion( text.style || 'Style', false );
 		const styleInner = styleAcc.querySelector( '.wpbfe-accordion-body-inner' );
+		const STYLE_PLACEHOLDER = "self {\n  background-color: red;\n}";
 		const styleField = createFieldGroup( text.customStyle || 'Custom CSS', () => {
 			const ta = document.createElement( 'textarea' );
-			ta.className = 'wpbfe-textarea';
-			ta.rows      = 6;
+			ta.className   = 'wpbfe-textarea';
+			ta.rows        = 6;
+			ta.placeholder = STYLE_PLACEHOLDER;
 			return ta;
 		} );
 		_styleTextareaCtrl = styleField.control;
+		// Insert the hint paragraph between the label and the textarea.
+		if ( text.customStyleHint ) {
+			const hint = document.createElement( 'p' );
+			hint.className = 'wpbfe-inspector-hint';
+			hint.innerHTML = text.customStyleHint;
+			styleField.group.insertBefore( hint, _styleTextareaCtrl );
+		}
 		styleInner.appendChild( styleField.group );
 		body.appendChild( styleAcc );
 
