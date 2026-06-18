@@ -177,3 +177,10 @@
 .wpbfe-textarea::placeholder {
 	color: var(--wpb-text-disabled);
 }
+
+/* ── CodeMirror ─────────────────────────────────────────────────────────── */
+
+.wp-builder-field-group .CodeMirror-placeholder,
+.wpbfe-field-group .CodeMirror-placeholder {
+	opacity: .25;
+}
