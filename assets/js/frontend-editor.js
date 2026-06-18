@@ -333,6 +333,16 @@ import { ICON_OPEN } from './constants.js';
 		styleInner.appendChild( styleField.group );
 		body.appendChild( styleAcc );
 
+		// Refresh CodeMirror when the style accordion opens so it renders
+		// correctly after being initialised inside a hidden container.
+		// Mirrors the equivalent fix in navigation.js for the full editor.
+		const styleAccBtn = styleAcc.querySelector( '.wpbfe-accordion-header' );
+		styleAccBtn.addEventListener( 'click', () => {
+			if ( _styleEditor && styleAcc.classList.contains( 'is-open' ) ) {
+				_styleEditor.codemirror.refresh();
+			}
+		} );
+
 		// Attributes section — rendered dynamically in populatePanel
 		_attrsSection = createAccordion( text.attributes || 'Attributes', false );
 		body.appendChild( _attrsSection );
