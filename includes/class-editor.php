@@ -89,19 +89,19 @@ return array(
 }
 
 /**
- * Add type="module" to the wp-builder-admin script tag so the browser
- * treats assets/js/editor.js as a native ES module.
+ * Add type="module" to wp-builder script tags so the browser treats
+ * assets/js/editor.js and assets/js/frontend-editor.js as native ES modules.
  *
  * wp_localize_script emits a separate inline <script> block (no type
- * attribute) that sets var wpBuilder = {...} before this tag, so
- * window.wpBuilder is available when the deferred module executes.
+ * attribute) that sets the config global before these tags, so the
+ * config object is available when each deferred module executes.
  *
  * @param string $tag    The full <script> tag HTML.
  * @param string $handle The registered script handle.
  * @return string
  */
 public function add_module_type_to_script_tag( string $tag, string $handle ): string {
-if ( 'wp-builder-admin' !== $handle ) {
+if ( 'wp-builder-admin' !== $handle && 'wp-builder-frontend-editor' !== $handle ) {
 return $tag;
 }
 // Strip any legacy type="text/javascript" attribute WordPress may add.
