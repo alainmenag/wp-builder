@@ -36,11 +36,44 @@ import { renderNodeAttrs } from './dom-helpers.js';
 	/** @type {HTMLElement|null} The live [data-wp-builder-post-id] root element. */
 	let _liveRoot  = null;
 	/** @type {number|null} Persisted panel left position (px). */
-	let _panelLeft = null;
+	let _panelLeft  = null;
 	/** @type {number|null} Persisted panel top position (px). */
-	let _panelTop  = null;
+	let _panelTop   = null;
 	/** @type {boolean} Whether the panel is docked (snapped full-height to right). */
-	let _isDocked  = false;
+	let _isDocked   = false;
+	/** @type {number|null} Persisted docked panel width (px). */
+	let _panelWidth = null;
+
+	// -----------------------------------------------------------------------
+	// localStorage persistence
+	// -----------------------------------------------------------------------
+
+	const STORAGE_KEY = 'wpbfe_panel_prefs';
+
+	function loadPrefs() {
+		try {
+			const raw = localStorage.getItem( STORAGE_KEY );
+			if ( ! raw ) { return; }
+			const prefs = JSON.parse( raw );
+			if ( typeof prefs.isDocked  === 'boolean' ) { _isDocked   = prefs.isDocked; }
+			if ( typeof prefs.left      === 'number'  ) { _panelLeft  = prefs.left; }
+			if ( typeof prefs.top       === 'number'  ) { _panelTop   = prefs.top; }
+			if ( typeof prefs.width     === 'number'  ) { _panelWidth = prefs.width; }
+		} catch ( e ) { /* silently ignore corrupt data */ }
+	}
+
+	function savePrefs() {
+		try {
+			localStorage.setItem( STORAGE_KEY, JSON.stringify( {
+				isDocked: _isDocked,
+				left:     _panelLeft,
+				top:      _panelTop,
+				width:    _panelWidth,
+			} ) );
+		} catch ( e ) { /* silently ignore quota / private-mode errors */ }
+	}
+
+	loadPrefs();
 
 	// Panel field references (populated once by createPanel).
 	let _nodeChip          = null;
@@ -357,6 +390,7 @@ import { renderNodeAttrs } from './dom-helpers.js';
 			if ( ! dragging ) { return; }
 			dragging = false;
 			_panel.classList.remove( 'is-dragging' );
+			savePrefs();
 		} );
 
 		window.addEventListener( 'resize', clampToViewport );
@@ -394,6 +428,8 @@ import { renderNodeAttrs } from './dom-helpers.js';
 			if ( ! resizing ) { return; }
 			resizing = false;
 			_panel.classList.remove( 'is-resizing' );
+			_panelWidth = _panel.offsetWidth;
+			savePrefs();
 		} );
 	}
 
@@ -422,6 +458,7 @@ import { renderNodeAttrs } from './dom-helpers.js';
 			_panel.style.left = _panelLeft + 'px';
 			_panel.style.top  = _panelTop  + 'px';
 		}
+		savePrefs();
 	}
 
 	// -----------------------------------------------------------------------
@@ -435,16 +472,29 @@ import { renderNodeAttrs } from './dom-helpers.js';
 
 		if ( ! _panel ) { createPanel(); }
 
-		// Position the panel: use persisted position or default to top-right corner.
-		if ( _panelLeft === null ) {
-			const adminBarOffset = document.body.classList.contains( 'admin-bar' )
-				? ( window.innerWidth <= 782 ? 46 : 32 )
-				: 0;
-			_panelLeft = Math.max( 0, window.innerWidth - 340 );
-			_panelTop  = adminBarOffset;
+		if ( _isDocked ) {
+			// Apply docked state (CSS handles position; restore any saved width).
+			_panel.classList.add( 'is-docked' );
+			_panel.style.left   = '';
+			_panel.style.top    = '';
+			_panel.style.height = '';
+			if ( _panelWidth !== null ) {
+				_panel.style.width = _panelWidth + 'px';
+			}
+		} else {
+			// Position the panel: use persisted position or default to top-right corner.
+			_panel.classList.remove( 'is-docked' );
+			if ( _panelLeft === null ) {
+				const adminBarOffset = document.body.classList.contains( 'admin-bar' )
+					? ( window.innerWidth <= 782 ? 46 : 32 )
+					: 0;
+				_panelLeft = Math.max( 0, window.innerWidth - 340 );
+				_panelTop  = adminBarOffset;
+			}
+			_panel.style.left  = _panelLeft + 'px';
+			_panel.style.top   = _panelTop  + 'px';
+			_panel.style.width = '';
 		}
-		_panel.style.left = _panelLeft + 'px';
-		_panel.style.top  = _panelTop + 'px';
 
 		_editLink.href    = config.builderBaseUrl + '?post=' + encodeURIComponent( postId ) + '&action=builder';
 		_saveBtn.disabled = true;
