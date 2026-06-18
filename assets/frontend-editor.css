@@ -262,6 +262,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 	user-select: none;
 	gap: 10px;
 	padding: 10px 14px;
+	justify-content: space-between;
 }
 
 .wpbfe-save-btn {
