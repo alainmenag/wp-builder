@@ -75,13 +75,26 @@ const pageTemplateSelect = document.getElementById( 'wp-builder-chrome-template'
 // Guard — abort silently if the editor shell was not rendered on this page.
 if ( config.view === 'live' && stage ) {
 
-	// Live-preview mode: render the front-end shortcode output in an iframe.
-	const iframe       = document.createElement( 'iframe' );
-	iframe.src         = config.previewUrl || '';
-	iframe.className   = 'wp-builder-live-preview';
-	iframe.title       = text.livePreview || 'Live preview';
-	iframe.setAttribute( 'allowfullscreen', '' );
-	stage.appendChild( iframe );
+	// Live-preview mode: render the shortcode output inside a Shadow DOM so the
+	// editor's own styles don't bleed into the preview and vice versa.
+	const host   = document.createElement( 'div' );
+	host.className = 'wp-builder-live-preview';
+	const shadow = host.attachShadow( { mode: 'open' } );
+
+	// Inject the frontend layout stylesheet into the shadow root.
+	if ( config.frontendCssUrl ) {
+		const link  = document.createElement( 'link' );
+		link.rel    = 'stylesheet';
+		link.href   = config.frontendCssUrl;
+		shadow.appendChild( link );
+	}
+
+	// Inject the server-rendered layout HTML.
+	const content = document.createElement( 'div' );
+	content.innerHTML = config.renderedContent || '';
+	shadow.appendChild( content );
+
+	stage.appendChild( host );
 
 } else if ( stage && saveButton ) {
 

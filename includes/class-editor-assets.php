@@ -60,6 +60,8 @@ trait WP_Builder_Editor_Assets {
 				'previewUrl' => $ctx['preview_url'],
 				'pageTemplate'  => $ctx['current_template'],
 				'pageTemplates' => $ctx['page_templates'],
+				'renderedContent' => 'live' === $view ? $this->render_element( $this->get_layout_root_element( $post_id ), 'wp-builder-layout', $post_id ) : '',
+				'frontendCssUrl'  => 'live' === $view ? $asset_url . 'frontend.css' : '',
 				'i18n'       => array(
 					'addContainer'    => __( 'Container', 'wp-builder' ),
 					'delete'          => __( 'Delete', 'wp-builder' ),
