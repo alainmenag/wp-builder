@@ -20,9 +20,16 @@ trait WP_Builder_Editor_Assets {
 		wp_enqueue_script( 'code-editor' );
 
 		wp_enqueue_style(
+			'wp-builder-shared',
+			$asset_url . 'shared.css',
+			array(),
+			self::VERSION
+		);
+
+		wp_enqueue_style(
 			'wp-builder-admin',
 			$asset_url . 'admin.css',
-			array( 'code-editor' ),
+			array( 'code-editor', 'wp-builder-shared' ),
 			self::VERSION
 		);
 

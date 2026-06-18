@@ -63,7 +63,7 @@ trait WP_Builder_Layout {
 		);
 	}
 
-	private function render_element( array $element, string $class = 'wp-builder-container' ): string {
+	private function render_element( array $element, string $class = 'wp-builder-container', int $post_id = 0 ): string {
 		if ( ! isset( $element['node'] ) ) {
 			return '';
 		}
@@ -79,6 +79,10 @@ trait WP_Builder_Layout {
 
 		$inline_style = $this->build_container_inline_style( $props );
 		$style_attr   = $inline_style ? ' style="' . esc_attr( $inline_style ) . '"' : '';
+
+		// Emit data-wp-builder-post-id only on the top-level call (post_id > 0)
+		// so the front-end quick-editor can resolve which post an element belongs to.
+		$post_id_attr = $post_id > 0 ? ' data-wp-builder-post-id="' . esc_attr( (string) $post_id ) . '"' : '';
 
 		$extra_attrs = '';
 		foreach ( $node_attrs as $attr_name => $attr_value ) {
@@ -97,22 +101,24 @@ trait WP_Builder_Layout {
 
 		if ( $is_void ) {
 			return $style_block . sprintf(
-				'<%1$s class="%2$s" data-wp-builder-id="%3$s"%4$s%5$s />',
+				'<%1$s class="%2$s" data-wp-builder-id="%3$s"%4$s%5$s%6$s />',
 				$tag,
 				esc_attr( $class ),
 				esc_attr( $id ),
 				$style_attr,
-				$extra_attrs
+				$extra_attrs,
+				$post_id_attr
 			);
 		}
 
 		return $style_block . sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content pre-sanitized via wp_kses_post; render_elements() output is pre-escaped.
-			'<%1$s class="%2$s" data-wp-builder-id="%3$s"%4$s%5$s>%6$s%7$s</%1$s>',
+			'<%1$s class="%2$s" data-wp-builder-id="%3$s"%4$s%5$s%6$s>%7$s%8$s</%1$s>',
 			$tag,
 			esc_attr( $class ),
 			esc_attr( $id ),
 			$style_attr,
 			$extra_attrs,
+			$post_id_attr,
 			$content,
 			$this->render_elements( $children )
 		);

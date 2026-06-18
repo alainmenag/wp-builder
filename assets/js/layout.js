@@ -3,7 +3,10 @@
  * traversing the v2 layout data model. No DOM access; no side effects.
  */
 
-import { NODE_GLOSSARY } from './constants.js';
+import { NODE_GLOSSARY, ALLOWED_NODES } from './constants.js';
+
+// Build a fast lookup set from the canonical ALLOWED_NODES array.
+const ALLOWED_NODE_SET = new Set( ALLOWED_NODES );
 
 // ---------------------------------------------------------------------------
 // ID generation
@@ -34,15 +37,7 @@ export function createContainer() {
 // ---------------------------------------------------------------------------
 
 export function normalizeNodeTag( tag ) {
-	const allowed = {
-		div: true, section: true, article: true, main: true, aside: true,
-		header: true, footer: true, nav: true, p: true, span: true,
-		h1: true, h2: true, h3: true, h4: true, h5: true, h6: true,
-		img: true, a: true, button: true, input: true, label: true,
-		figure: true, figcaption: true, video: true, audio: true,
-		source: true, iframe: true
-	};
-	return ( typeof tag === 'string' && allowed[ tag ] ) ? tag : 'div';
+	return ( typeof tag === 'string' && ALLOWED_NODE_SET.has( tag ) ) ? tag : 'div';
 }
 
 export function normalizeContainerProps( props ) {

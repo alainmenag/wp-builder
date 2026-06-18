@@ -1,0 +1,179 @@
+/**
+ * WP Builder — Shared design tokens and base component styles
+ *
+ * Loaded by both the full-screen builder editor (admin.css) and the
+ * front-end quick-editor (frontend-editor.css) so each file only needs
+ * to contain its own context-specific rules.
+ */
+
+/* ── Design tokens ──────────────────────────────────────────────────────── */
+
+:root {
+	/* backgrounds */
+	--wpb-bg-page:        #1d2327;
+	--wpb-bg-surface:     #1d2327;
+	--wpb-bg-elevated:    #252c33; /* panel header/footer surfaces */
+	--wpb-bg-sunken:      #161b22;
+	--wpb-bg-raised:      #2c3338;
+	--wpb-bg-control:     #2a2f36;
+	--wpb-bg-control-hover: #313840;
+	--wpb-bg-node-title-hover: #2d333b;
+
+	/* borders */
+	--wpb-border-subtle:  #2e3338;
+	--wpb-border-muted:   #30363d;
+	--wpb-border-default: #3a3f45;
+	--wpb-border-strong:  #454c54;
+
+	/* text */
+	--wpb-text-primary:   #e2e4e7;
+	--wpb-text-secondary: #c9d1d9;
+	--wpb-text-muted:     #8b949e;
+	--wpb-text-disabled:  #555b63;
+	--wpb-text-inverse:   #ffffff;
+
+	/* accent – green */
+	--wpb-accent:         #1f6f5c;
+	--wpb-accent-hover:   #28937b;
+	--wpb-accent-dim:     #164e40;
+	--wpb-accent-rgb:     40, 147, 123;
+
+	/* accent – blue (focus / link) */
+	--wpb-blue:           #58a6ff;
+
+	/* danger */
+	--wpb-danger:         #b91c1c;
+	--wpb-danger-hover:   #dc2626;
+	--wpb-danger-border:  #b91c1c;
+	--wpb-danger-text:    #f87171;
+}
+
+/* ── Accordion ──────────────────────────────────────────────────────────── */
+
+.wp-builder-accordion-header,
+.wpbfe-accordion-header {
+	align-items: center;
+	background: var(--wpb-accent-dim);
+	border: 0;
+	border-radius: 0;
+	color: var(--wpb-text-secondary);
+	cursor: pointer;
+	display: flex;
+	font: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	gap: 8px;
+	justify-content: space-between;
+	letter-spacing: 0.06em;
+	min-height: 40px;
+	padding: 8px 14px;
+	text-transform: uppercase;
+	width: 100%;
+}
+
+.wp-builder-accordion-header:hover,
+.wp-builder-accordion-header:focus,
+.wpbfe-accordion-header:hover,
+.wpbfe-accordion-header:focus {
+	background: var(--wpb-accent);
+	color: var(--wpb-text-inverse);
+	outline: none;
+}
+
+.wp-builder-accordion.is-open .wp-builder-accordion-header,
+.wpbfe-accordion.is-open .wpbfe-accordion-header {
+	background: var(--wpb-accent);
+	color: var(--wpb-text-inverse);
+}
+
+.wp-builder-accordion-chevron,
+.wpbfe-accordion-chevron {
+	border-right: 2px solid currentColor;
+	border-top: 2px solid currentColor;
+	display: block;
+	flex: 0 0 8px;
+	height: 8px;
+	transform: rotate(135deg);
+	width: 8px;
+}
+
+.wp-builder-accordion.is-open .wp-builder-accordion-chevron,
+.wpbfe-accordion.is-open .wpbfe-accordion-chevron {
+	transform: rotate(-45deg);
+}
+
+.wp-builder-accordion-body,
+.wpbfe-accordion-body {
+	display: none;
+}
+
+.wp-builder-accordion.is-open .wp-builder-accordion-body,
+.wpbfe-accordion.is-open .wpbfe-accordion-body {
+	display: block;
+}
+
+.wp-builder-accordion-body-inner,
+.wpbfe-accordion-body-inner {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* ── Form controls ──────────────────────────────────────────────────────── */
+
+.wp-builder-select,
+.wp-builder-input,
+.wpbfe-select,
+.wpbfe-input {
+	background: var(--wpb-bg-control);
+	border: 1px solid var(--wpb-border-default);
+	border-radius: 0;
+	box-sizing: border-box;
+	color: var(--wpb-text-primary);
+	font: inherit;
+	font-size: 13px;
+	min-height: 32px;
+	padding: 4px 8px;
+	width: 100%;
+}
+
+.wp-builder-select:focus,
+.wp-builder-input:focus,
+.wpbfe-select:focus,
+.wpbfe-input:focus {
+	border-color: var(--wpb-blue);
+	outline: none;
+}
+
+.wp-builder-select option,
+.wpbfe-select option {
+	background: var(--wpb-bg-control);
+}
+
+/* ── Textarea / code editor ─────────────────────────────────────────────── */
+
+.wp-builder-html-editor,
+.wpbfe-textarea {
+	background: var(--wpb-bg-sunken);
+	border: 1px solid var(--wpb-border-default);
+	border-radius: 0;
+	box-sizing: border-box;
+	color: var(--wpb-text-primary);
+	font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.6;
+	padding: 8px;
+	resize: vertical;
+	width: 100%;
+}
+
+.wp-builder-html-editor:focus,
+.wpbfe-textarea:focus {
+	border-color: var(--wpb-blue);
+	outline: none;
+}
+
+.wp-builder-html-editor::placeholder,
+.wpbfe-textarea::placeholder {
+	color: var(--wpb-text-disabled);
+}
