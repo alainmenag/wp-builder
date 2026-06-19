@@ -44,6 +44,10 @@ import { ICON_OPEN } from './constants.js';
 	let _isDocked   = false;
 	/** @type {number|null} Persisted docked panel width (px). */
 	let _panelWidth = null;
+	/** @type {boolean} Whether the fit-page zoom is currently active. */
+	let _isPageZoomed = false;
+	/** @type {HTMLElement|null} Reference to the Fit Page footer button. */
+	let _fitBtn = null;
 
 	// -----------------------------------------------------------------------
 	// localStorage persistence
@@ -56,20 +60,22 @@ import { ICON_OPEN } from './constants.js';
 			const raw = localStorage.getItem( STORAGE_KEY );
 			if ( ! raw ) { return; }
 			const prefs = JSON.parse( raw );
-			if ( typeof prefs.isDocked  === 'boolean' ) { _isDocked   = prefs.isDocked; }
-			if ( typeof prefs.left      === 'number'  ) { _panelLeft  = prefs.left; }
-			if ( typeof prefs.top       === 'number'  ) { _panelTop   = prefs.top; }
-			if ( typeof prefs.width     === 'number'  ) { _panelWidth = prefs.width; }
+			if ( typeof prefs.isDocked  === 'boolean' ) { _isDocked    = prefs.isDocked; }
+			if ( typeof prefs.left      === 'number'  ) { _panelLeft   = prefs.left; }
+			if ( typeof prefs.top       === 'number'  ) { _panelTop    = prefs.top; }
+			if ( typeof prefs.width     === 'number'  ) { _panelWidth  = prefs.width; }
+			if ( typeof prefs.isPageZoomed === 'boolean' ) { _isPageZoomed = prefs.isPageZoomed; }
 		} catch ( e ) { /* silently ignore corrupt data */ }
 	}
 
 	function savePrefs() {
 		try {
 			localStorage.setItem( STORAGE_KEY, JSON.stringify( {
-				isDocked: _isDocked,
-				left:     _panelLeft,
-				top:      _panelTop,
-				width:    _panelWidth,
+				isDocked:     _isDocked,
+				left:         _panelLeft,
+				top:          _panelTop,
+				width:        _panelWidth,
+				isPageZoomed: _isPageZoomed,
 			} ) );
 		} catch ( e ) { /* silently ignore quota / private-mode errors */ }
 	}
@@ -359,6 +365,16 @@ import { ICON_OPEN } from './constants.js';
 		_editLink.innerHTML = ICON_OPEN;
 		_editLink.style.fill = '#ffffff';
 
+		_fitBtn = document.createElement( 'button' );
+		_fitBtn.type      = 'button';
+		_fitBtn.className = 'wpbfe-fit-btn';
+		_fitBtn.setAttribute( 'aria-label', text.fitPage || 'Fit Page' );
+		_fitBtn.setAttribute( 'title', text.fitPage || 'Fit Page' );
+		_fitBtn.disabled  = ! _isDocked;
+		// Scale / fit icon — two arrows pointing inward horizontally.
+		_fitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1 8a.5.5 0 0 1 .5-.5h4.793L4.646 5.854a.5.5 0 1 1 .708-.708l2.5 2.5a.5.5 0 0 1 0 .708l-2.5 2.5a.5.5 0 0 1-.708-.708L6.293 8.5H1.5A.5.5 0 0 1 1 8zm14 0a.5.5 0 0 1-.5.5H9.707l1.647 1.646a.5.5 0 0 1-.708.708l-2.5-2.5a.5.5 0 0 1 0-.708l2.5-2.5a.5.5 0 1 1 .708.708L9.707 7.5H14.5A.5.5 0 0 1 15 8z"/></svg>';
+		_fitBtn.addEventListener( 'click', togglePageZoom );
+
 		_saveBtn = document.createElement( 'button' );
 		_saveBtn.type      = 'button';
 		_saveBtn.className = 'wpbfe-save-btn';
@@ -376,6 +392,7 @@ import { ICON_OPEN } from './constants.js';
 		_saveBtn.addEventListener( 'click', saveElement );
 
 		footer.appendChild( _editLink );
+		footer.appendChild( _fitBtn );
 		footer.appendChild( _saveBtn );
 
 		// Left-edge resize handle (used when docked).
@@ -449,7 +466,10 @@ import { ICON_OPEN } from './constants.js';
 			savePrefs();
 		} );
 
-		window.addEventListener( 'resize', clampToViewport );
+		window.addEventListener( 'resize', () => {
+			clampToViewport();
+			if ( _isPageZoomed && _isDocked ) { applyPageZoom(); }
+		} );
 	}
 
 	// -----------------------------------------------------------------------
@@ -478,6 +498,8 @@ import { ICON_OPEN } from './constants.js';
 			const maxWidth = Math.floor( window.innerWidth * 0.9 );
 			const newWidth = Math.max( minWidth, Math.min( maxWidth, startWidth + dx ) );
 			_panel.style.width = newWidth + 'px';
+			// Recalculate zoom scale in real time as panel is resized.
+			if ( _isPageZoomed ) { applyPageZoom(); }
 		} );
 
 		document.addEventListener( 'mouseup', () => {
@@ -487,6 +509,56 @@ import { ICON_OPEN } from './constants.js';
 			_panelWidth = _panel.offsetWidth;
 			savePrefs();
 		} );
+	}
+
+	// -----------------------------------------------------------------------
+	// Fit-Page zoom
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Scale #page so it fits entirely within the space to the left of the
+	 * docked panel. Uses CSS transform: scale() with transform-origin top left.
+	 */
+	function applyPageZoom() {
+		const pageEl = document.getElementById( 'page' );
+		if ( ! pageEl || ! _panel ) { return; }
+		const panelWidth     = _panel.offsetWidth;
+		const availableWidth = window.innerWidth - panelWidth;
+		if ( availableWidth <= 0 ) { return; }
+		const scale = availableWidth / window.innerWidth;
+		pageEl.style.transform       = 'scale(' + scale + ')';
+		pageEl.style.transformOrigin = 'top left';
+		document.body.classList.add( 'wpbfe-page-zoomed' );
+		if ( _fitBtn ) {
+			_fitBtn.classList.add( 'is-active' );
+			_fitBtn.setAttribute( 'aria-label', text.resetFit || 'Reset Fit' );
+			_fitBtn.setAttribute( 'title',      text.resetFit || 'Reset Fit' );
+		}
+	}
+
+	function removePageZoom() {
+		const pageEl = document.getElementById( 'page' );
+		if ( pageEl ) {
+			pageEl.style.transform       = '';
+			pageEl.style.transformOrigin = '';
+		}
+		document.body.classList.remove( 'wpbfe-page-zoomed' );
+		if ( _fitBtn ) {
+			_fitBtn.classList.remove( 'is-active' );
+			_fitBtn.setAttribute( 'aria-label', text.fitPage || 'Fit Page' );
+			_fitBtn.setAttribute( 'title',      text.fitPage || 'Fit Page' );
+		}
+	}
+
+	function togglePageZoom() {
+		if ( ! _isDocked ) { return; }
+		_isPageZoomed = ! _isPageZoomed;
+		if ( _isPageZoomed ) {
+			applyPageZoom();
+		} else {
+			removePageZoom();
+		}
+		savePrefs();
 	}
 
 	// -----------------------------------------------------------------------
@@ -501,8 +573,15 @@ import { ICON_OPEN } from './constants.js';
 			_panel.style.top    = '';
 			_panel.style.width  = '';
 			_panel.style.height = '';
+			if ( _fitBtn ) { _fitBtn.disabled = false; }
 		} else {
+			// When undocking, remove any active page zoom first.
+			if ( _isPageZoomed ) {
+				_isPageZoomed = false;
+				removePageZoom();
+			}
 			_panel.classList.remove( 'is-docked' );
+			if ( _fitBtn ) { _fitBtn.disabled = true; }
 			// Restore last floating position (default to top-right if not yet set).
 			if ( _panelLeft === null ) {
 				const adminBarOffset = document.body.classList.contains( 'admin-bar' )
@@ -537,6 +616,7 @@ import { ICON_OPEN } from './constants.js';
 			if ( _panelWidth !== null ) {
 				_panel.style.width = _panelWidth + 'px';
 			}
+			if ( _fitBtn ) { _fitBtn.disabled = false; }
 		} else {
 			// Position the panel: use persisted position or default to top-right corner.
 			_panel.classList.remove( 'is-docked' );
@@ -550,6 +630,7 @@ import { ICON_OPEN } from './constants.js';
 			_panel.style.left  = _panelLeft + 'px';
 			_panel.style.top   = _panelTop  + 'px';
 			_panel.style.width = '';
+			if ( _fitBtn ) { _fitBtn.disabled = true; }
 		}
 
 		_editLink.href    = config.builderBaseUrl + '?post=' + encodeURIComponent( postId ) + '&action=builder';
@@ -558,12 +639,20 @@ import { ICON_OPEN } from './constants.js';
 
 		_panel.classList.add( 'is-open' );
 
+		// Restore persisted zoom (only valid when docked).
+		if ( _isDocked && _isPageZoomed ) {
+			applyPageZoom();
+		}
+
 		fetchElement( postId, elementId );
 	}
 
 	function closePanel() {
 		if ( ! _panel ) { return; }
 		_panel.classList.remove( 'is-open' );
+		if ( _isPageZoomed ) {
+			removePageZoom();
+		}
 		_postId    = null;
 		_elementId = null;
 		_liveRoot  = null;

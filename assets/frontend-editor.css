@@ -306,6 +306,56 @@ body.admin-bar .wpbfe-panel.is-docked {
 	color: var(--wpb-danger-text);
 }
 
+/* ── Fit Page button ────────────────────────────────────────────────────── */
+
+.wpbfe-fit-btn {
+	align-items: center;
+	background: transparent;
+	border: 1px solid var(--wpb-border-subtle);
+	border-radius: 3px;
+	color: var(--wpb-text-muted);
+	cursor: pointer;
+	display: inline-flex;
+	flex-shrink: 0;
+	height: 34px;
+	justify-content: center;
+	width: 34px;
+}
+
+.wpbfe-fit-btn:hover,
+.wpbfe-fit-btn:focus {
+	background: var(--wpb-bg-control);
+	color: var(--wpb-text-primary);
+	outline: none;
+}
+
+.wpbfe-fit-btn.is-active {
+	background: var(--wpb-accent-dim);
+	border-color: var(--wpb-accent);
+	color: var(--wpb-accent-hover);
+}
+
+.wpbfe-fit-btn.is-active:hover,
+.wpbfe-fit-btn.is-active:focus {
+	background: var(--wpb-accent);
+	color: #fff;
+}
+
+.wpbfe-fit-btn:disabled {
+	cursor: not-allowed;
+	opacity: .4;
+}
+
+/* ── Fit-page zoom body state ───────────────────────────────────────────── */
+
+body.wpbfe-page-zoomed {
+	overflow-x: hidden;
+}
+
+body.wpbfe-page-zoomed #page {
+	will-change: transform;
+}
+
 /* ── Hover highlight on editable elements ───────────────────────────────── */
 
 [data-wp-builder-id]:hover {

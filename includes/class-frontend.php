@@ -165,6 +165,8 @@ trait WP_Builder_Frontend {
 						'</code>'
 					),
 					'error'          => __( 'Error', 'wp-builder' ),
+					'fitPage'        => __( 'Fit Page', 'wp-builder' ),
+					'resetFit'       => __( 'Reset Fit', 'wp-builder' ),
 				),
 			)
 		);
