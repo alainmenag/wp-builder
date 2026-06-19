@@ -204,7 +204,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	function scrollBuilderElementIntoView( id ) {
 		if ( ! id ) { return; }
 		const target = document.querySelector( '[data-wp-builder-id="' + id + '"]' );
-		if ( target ) { target.scrollIntoView( { behavior: 'smooth', block: 'center' } ); }
+		if ( target ) { target.scrollIntoView( { behavior: 'instant', block: 'center' } ); }
 	}
 
 	function createPanel() {
