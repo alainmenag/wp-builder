@@ -598,12 +598,12 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 			_panel.style.width  = '';
 			_panel.style.height = '';
 			if ( _fitBtn ) { _fitBtn.disabled = false; }
+			// Re-apply fit zoom if the user had it on before undocking.
+			if ( _isPageZoomed ) { applyPageZoom(); }
 		} else {
-			// When undocking, remove any active page zoom first.
-			if ( _isPageZoomed ) {
-				_isPageZoomed = false;
-				removePageZoom();
-			}
+			// When undocking, visually remove the zoom but keep _isPageZoomed so
+			// the preference is restored automatically when the panel is re-docked.
+			if ( _isPageZoomed ) { removePageZoom(); }
 			_panel.classList.remove( 'is-docked' );
 			if ( _fitBtn ) { _fitBtn.disabled = true; }
 			// Restore last floating position (default to top-right if not yet set).
