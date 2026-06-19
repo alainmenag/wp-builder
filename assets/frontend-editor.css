@@ -320,6 +320,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 	height: 34px;
 	justify-content: center;
 	width: 34px;
+	padding: 0;
 }
 
 .wpbfe-fit-btn:hover,

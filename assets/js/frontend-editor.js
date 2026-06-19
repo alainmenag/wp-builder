@@ -14,7 +14,7 @@
 import { VOID_NODES, ALLOWED_NODES } from './constants.js';
 import { normalizeNodeTag } from './layout.js';
 import { renderNodeAttrs } from './dom-helpers.js';
-import { ICON_OPEN } from './constants.js';
+import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 ( () => {
 	'use strict';
@@ -372,7 +372,7 @@ import { ICON_OPEN } from './constants.js';
 		_fitBtn.setAttribute( 'title', text.fitPage || 'Fit Page' );
 		_fitBtn.disabled  = ! _isDocked;
 		// Scale / fit icon — two arrows pointing inward horizontally.
-		_fitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1 8a.5.5 0 0 1 .5-.5h4.793L4.646 5.854a.5.5 0 1 1 .708-.708l2.5 2.5a.5.5 0 0 1 0 .708l-2.5 2.5a.5.5 0 0 1-.708-.708L6.293 8.5H1.5A.5.5 0 0 1 1 8zm14 0a.5.5 0 0 1-.5.5H9.707l1.647 1.646a.5.5 0 0 1-.708.708l-2.5-2.5a.5.5 0 0 1 0-.708l2.5-2.5a.5.5 0 1 1 .708.708L9.707 7.5H14.5A.5.5 0 0 1 15 8z"/></svg>';
+		_fitBtn.innerHTML = ICON_FIT;
 		_fitBtn.addEventListener( 'click', togglePageZoom );
 
 		_saveBtn = document.createElement( 'button' );
