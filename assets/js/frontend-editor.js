@@ -46,6 +46,8 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	let _panelWidth = null;
 	/** @type {boolean} Whether the fit-page zoom is currently active. */
 	let _isPageZoomed = false;
+	/** @type {number} The scale factor applied by the last applyPageZoom() call. */
+	let _pageZoomScale = 1;
 	/** @type {HTMLElement|null} Reference to the Fit Page footer button. */
 	let _fitBtn = null;
 
@@ -519,16 +521,32 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	 * Scale #page so it fits entirely within the space to the left of the
 	 * docked panel. Uses CSS transform: scale() with transform-origin top left.
 	 */
-	function applyPageZoom() {
+	/**
+	 * @param {boolean} [compensateScroll=false] When true, re-centres the
+	 *   viewport so the same page content stays in view after the scale is
+	 *   applied.  Pass true only when the user explicitly toggles fit on;
+	 *   leave false for re-applications triggered by panel-open / resize.
+	 */
+	function applyPageZoom( compensateScroll ) {
 		const pageEl = document.getElementById( 'page' );
 		if ( ! pageEl || ! _panel ) { return; }
 		const panelWidth     = _panel.offsetWidth;
 		const availableWidth = window.innerWidth - panelWidth;
 		if ( availableWidth <= 0 ) { return; }
 		const scale = availableWidth / window.innerWidth;
+		// Capture the page-coordinate of the current viewport centre *before*
+		// the transform is applied so we can re-centre when the user toggled fit.
+		const viewportCenterPx = window.scrollY + window.innerHeight / 2;
+		_pageZoomScale               = scale;
 		pageEl.style.transform       = 'scale(' + scale + ')';
 		pageEl.style.transformOrigin = 'top left';
 		document.body.classList.add( 'wpbfe-page-zoomed' );
+		// Only re-scroll on explicit user toggle; skip on panel-open / resize
+		// re-applications so we don't jump the page away from the clicked element.
+		if ( compensateScroll ) {
+			// Re-centre: logical centre C maps to C*scale after transform-origin:top-left.
+			window.scrollTo( { top: Math.max( 0, viewportCenterPx * scale - window.innerHeight / 2 ), behavior: 'instant' } );
+		}
 		if ( _fitBtn ) {
 			_fitBtn.classList.add( 'is-active' );
 			_fitBtn.setAttribute( 'aria-label', text.resetFit || 'Reset Fit' );
@@ -538,11 +556,17 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 	function removePageZoom() {
 		const pageEl = document.getElementById( 'page' );
+		// Capture the scaled viewport centre before clearing the transform so we
+		// can map it back to page coordinates and restore the scroll position.
+		const viewportCenterPx = window.scrollY + window.innerHeight / 2;
+		const newScrollTop     = viewportCenterPx / _pageZoomScale - window.innerHeight / 2;
 		if ( pageEl ) {
 			pageEl.style.transform       = '';
 			pageEl.style.transformOrigin = '';
 		}
+		_pageZoomScale = 1;
 		document.body.classList.remove( 'wpbfe-page-zoomed' );
+		window.scrollTo( { top: Math.max( 0, newScrollTop ), behavior: 'instant' } );
 		if ( _fitBtn ) {
 			_fitBtn.classList.remove( 'is-active' );
 			_fitBtn.setAttribute( 'aria-label', text.fitPage || 'Fit Page' );
@@ -554,7 +578,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		if ( ! _isDocked ) { return; }
 		_isPageZoomed = ! _isPageZoomed;
 		if ( _isPageZoomed ) {
-			applyPageZoom();
+			applyPageZoom( true );
 		} else {
 			removePageZoom();
 		}
@@ -574,12 +598,12 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 			_panel.style.width  = '';
 			_panel.style.height = '';
 			if ( _fitBtn ) { _fitBtn.disabled = false; }
+			// Re-apply fit zoom if the user had it on before undocking.
+			if ( _isPageZoomed ) { applyPageZoom( true ); }
 		} else {
-			// When undocking, remove any active page zoom first.
-			if ( _isPageZoomed ) {
-				_isPageZoomed = false;
-				removePageZoom();
-			}
+			// When undocking, visually remove the zoom but keep _isPageZoomed so
+			// the preference is restored automatically when the panel is re-docked.
+			if ( _isPageZoomed ) { removePageZoom(); }
 			_panel.classList.remove( 'is-docked' );
 			if ( _fitBtn ) { _fitBtn.disabled = true; }
 			// Restore last floating position (default to top-right if not yet set).
@@ -641,7 +665,11 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 		// Restore persisted zoom (only valid when docked).
 		if ( _isDocked && _isPageZoomed ) {
-			applyPageZoom();
+			// Compensate scroll only when zoom is transitioning OFF→ON.
+			// If zoom is already visually applied (e.g. switching between elements
+			// while the panel stays open), the scroll position is already correct.
+			const zoomAlreadyApplied = document.body.classList.contains( 'wpbfe-page-zoomed' );
+			applyPageZoom( ! zoomAlreadyApplied );
 		}
 
 		fetchElement( postId, elementId );
