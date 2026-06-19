@@ -46,6 +46,8 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	let _panelWidth = null;
 	/** @type {boolean} Whether the fit-page zoom is currently active. */
 	let _isPageZoomed = false;
+	/** @type {number} The scale factor applied by the last applyPageZoom() call. */
+	let _pageZoomScale = 1;
 	/** @type {HTMLElement|null} Reference to the Fit Page footer button. */
 	let _fitBtn = null;
 
@@ -526,9 +528,16 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		const availableWidth = window.innerWidth - panelWidth;
 		if ( availableWidth <= 0 ) { return; }
 		const scale = availableWidth / window.innerWidth;
+		// Capture the page-coordinate of the current viewport centre so we can
+		// restore the same content into view after the scale is applied.
+		const viewportCenterPx = window.scrollY + window.innerHeight / 2;
+		_pageZoomScale               = scale;
 		pageEl.style.transform       = 'scale(' + scale + ')';
 		pageEl.style.transformOrigin = 'top left';
 		document.body.classList.add( 'wpbfe-page-zoomed' );
+		// Re-centre the scroll: the same logical centre C maps to C*scale after
+		// transform-origin:top-left, so scroll to (C*scale - vh/2).
+		window.scrollTo( { top: Math.max( 0, viewportCenterPx * scale - window.innerHeight / 2 ), behavior: 'instant' } );
 		if ( _fitBtn ) {
 			_fitBtn.classList.add( 'is-active' );
 			_fitBtn.setAttribute( 'aria-label', text.resetFit || 'Reset Fit' );
@@ -538,11 +547,17 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 	function removePageZoom() {
 		const pageEl = document.getElementById( 'page' );
+		// Capture the scaled viewport centre before clearing the transform so we
+		// can map it back to page coordinates and restore the scroll position.
+		const viewportCenterPx = window.scrollY + window.innerHeight / 2;
+		const newScrollTop     = viewportCenterPx / _pageZoomScale - window.innerHeight / 2;
 		if ( pageEl ) {
 			pageEl.style.transform       = '';
 			pageEl.style.transformOrigin = '';
 		}
+		_pageZoomScale = 1;
 		document.body.classList.remove( 'wpbfe-page-zoomed' );
+		window.scrollTo( { top: Math.max( 0, newScrollTop ), behavior: 'instant' } );
 		if ( _fitBtn ) {
 			_fitBtn.classList.remove( 'is-active' );
 			_fitBtn.setAttribute( 'aria-label', text.fitPage || 'Fit Page' );
