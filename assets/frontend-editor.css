@@ -145,11 +145,10 @@ body.admin-bar .wpbfe-panel.is-docked {
 	text-transform: none;
 }
 
-.wpbfe-edit-link {
+.wpbfe-panel-footer-link {
 	align-items: center;
-	background: transparent;
-	border: 1px solid var(--wpb-border-subtle);
-	border-radius: 3px;
+	background: transparent !important;
+	border-radius: 0;
 	color: var(--wpb-text-muted);
 	cursor: pointer;
 	display: inline-flex;
@@ -158,11 +157,12 @@ body.admin-bar .wpbfe-panel.is-docked {
 	justify-content: center;
 	text-decoration: none;
 	width: 34px;
+	padding: 0;
+	border: none !important;
 }
 
-.wpbfe-edit-link:hover,
-.wpbfe-edit-link:focus {
-	background: var(--wpb-bg-control);
+.wpbfe-panel-footer-link:hover,
+.wpbfe-panel-footer-link:focus {
 	color: var(--wpb-text-primary);
 	outline: none;
 }
@@ -262,7 +262,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 	user-select: none;
 	gap: 10px;
 	padding: 10px 14px;
-	justify-content: space-between;
+	justify-content: flex-end;
 }
 
 .wpbfe-save-btn {
@@ -304,6 +304,27 @@ body.admin-bar .wpbfe-panel.is-docked {
 
 .wpbfe-save-btn.is-error .wpbfe-save-status {
 	color: var(--wpb-danger-text);
+}
+
+/* ── Fit Page button ────────────────────────────────────────────────────── */
+
+.wpbfe-fit-btn.is-active {
+	color: var(--wpb-accent);
+}
+
+.wpbfe-fit-btn:disabled {
+	cursor: not-allowed;
+	opacity: .4;
+}
+
+/* ── Fit-page zoom body state ───────────────────────────────────────────── */
+
+body.wpbfe-page-zoomed {
+	overflow-x: hidden;
+}
+
+body.wpbfe-page-zoomed #page {
+	will-change: transform;
 }
 
 /* ── Hover highlight on editable elements ───────────────────────────────── */
