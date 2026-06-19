@@ -145,11 +145,10 @@ body.admin-bar .wpbfe-panel.is-docked {
 	text-transform: none;
 }
 
-.wpbfe-edit-link {
+.wpbfe-panel-footer-link {
 	align-items: center;
-	background: transparent;
-	border: 1px solid var(--wpb-border-subtle);
-	border-radius: 3px;
+	background: transparent !important;
+	border-radius: 0;
 	color: var(--wpb-text-muted);
 	cursor: pointer;
 	display: inline-flex;
@@ -158,11 +157,12 @@ body.admin-bar .wpbfe-panel.is-docked {
 	justify-content: center;
 	text-decoration: none;
 	width: 34px;
+	padding: 0;
+	border: none !important;
 }
 
-.wpbfe-edit-link:hover,
-.wpbfe-edit-link:focus {
-	background: var(--wpb-bg-control);
+.wpbfe-panel-footer-link:hover,
+.wpbfe-panel-footer-link:focus {
 	color: var(--wpb-text-primary);
 	outline: none;
 }
@@ -262,7 +262,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 	user-select: none;
 	gap: 10px;
 	padding: 10px 14px;
-	justify-content: space-between;
+	justify-content: flex-end;
 }
 
 .wpbfe-save-btn {
@@ -308,38 +308,8 @@ body.admin-bar .wpbfe-panel.is-docked {
 
 /* ── Fit Page button ────────────────────────────────────────────────────── */
 
-.wpbfe-fit-btn {
-	align-items: center;
-	background: transparent;
-	border: 1px solid var(--wpb-border-subtle);
-	border-radius: 3px;
-	color: var(--wpb-text-muted);
-	cursor: pointer;
-	display: inline-flex;
-	flex-shrink: 0;
-	height: 34px;
-	justify-content: center;
-	width: 34px;
-	padding: 0;
-}
-
-.wpbfe-fit-btn:hover,
-.wpbfe-fit-btn:focus {
-	background: var(--wpb-bg-control);
-	color: var(--wpb-text-primary);
-	outline: none;
-}
-
 .wpbfe-fit-btn.is-active {
-	background: var(--wpb-accent-dim);
-	border-color: var(--wpb-accent);
-	color: var(--wpb-accent-hover);
-}
-
-.wpbfe-fit-btn.is-active:hover,
-.wpbfe-fit-btn.is-active:focus {
-	background: var(--wpb-accent);
-	color: #fff;
+	color: var(--wpb-accent);
 }
 
 .wpbfe-fit-btn:disabled {

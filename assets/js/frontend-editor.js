@@ -358,7 +358,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		footer.className = 'wpbfe-panel-footer';
 
 		_editLink = document.createElement( 'a' );
-		_editLink.className = 'wpbfe-edit-link';
+		_editLink.className = 'wpbfe-edit-link wpbfe-panel-footer-link';
 		_editLink.target    = '_blank';
 		_editLink.rel       = 'noopener noreferrer';
 		_editLink.setAttribute( 'aria-label', text.editInBuilder || 'Edit in Builder' );
@@ -367,7 +367,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 		_fitBtn = document.createElement( 'button' );
 		_fitBtn.type      = 'button';
-		_fitBtn.className = 'wpbfe-fit-btn';
+		_fitBtn.className = 'wpbfe-fit-btn wpbfe-panel-footer-link';
 		_fitBtn.setAttribute( 'aria-label', text.fitPage || 'Fit Page' );
 		_fitBtn.setAttribute( 'title', text.fitPage || 'Fit Page' );
 		_fitBtn.disabled  = ! _isDocked;
