@@ -521,23 +521,32 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	 * Scale #page so it fits entirely within the space to the left of the
 	 * docked panel. Uses CSS transform: scale() with transform-origin top left.
 	 */
-	function applyPageZoom() {
+	/**
+	 * @param {boolean} [compensateScroll=false] When true, re-centres the
+	 *   viewport so the same page content stays in view after the scale is
+	 *   applied.  Pass true only when the user explicitly toggles fit on;
+	 *   leave false for re-applications triggered by panel-open / resize.
+	 */
+	function applyPageZoom( compensateScroll ) {
 		const pageEl = document.getElementById( 'page' );
 		if ( ! pageEl || ! _panel ) { return; }
 		const panelWidth     = _panel.offsetWidth;
 		const availableWidth = window.innerWidth - panelWidth;
 		if ( availableWidth <= 0 ) { return; }
 		const scale = availableWidth / window.innerWidth;
-		// Capture the page-coordinate of the current viewport centre so we can
-		// restore the same content into view after the scale is applied.
+		// Capture the page-coordinate of the current viewport centre *before*
+		// the transform is applied so we can re-centre when the user toggled fit.
 		const viewportCenterPx = window.scrollY + window.innerHeight / 2;
 		_pageZoomScale               = scale;
 		pageEl.style.transform       = 'scale(' + scale + ')';
 		pageEl.style.transformOrigin = 'top left';
 		document.body.classList.add( 'wpbfe-page-zoomed' );
-		// Re-centre the scroll: the same logical centre C maps to C*scale after
-		// transform-origin:top-left, so scroll to (C*scale - vh/2).
-		window.scrollTo( { top: Math.max( 0, viewportCenterPx * scale - window.innerHeight / 2 ), behavior: 'instant' } );
+		// Only re-scroll on explicit user toggle; skip on panel-open / resize
+		// re-applications so we don't jump the page away from the clicked element.
+		if ( compensateScroll ) {
+			// Re-centre: logical centre C maps to C*scale after transform-origin:top-left.
+			window.scrollTo( { top: Math.max( 0, viewportCenterPx * scale - window.innerHeight / 2 ), behavior: 'instant' } );
+		}
 		if ( _fitBtn ) {
 			_fitBtn.classList.add( 'is-active' );
 			_fitBtn.setAttribute( 'aria-label', text.resetFit || 'Reset Fit' );
@@ -569,7 +578,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		if ( ! _isDocked ) { return; }
 		_isPageZoomed = ! _isPageZoomed;
 		if ( _isPageZoomed ) {
-			applyPageZoom();
+			applyPageZoom( true );
 		} else {
 			removePageZoom();
 		}
