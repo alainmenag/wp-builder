@@ -216,6 +216,12 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 		_nodeChip = document.createElement( 'span' );
 		_nodeChip.className = 'wpbfe-chip wpbfe-chip--node';
+		_nodeChip.style.cursor = 'pointer';
+		_nodeChip.addEventListener( 'click', () => {
+			if ( ! _elementId ) { return; }
+			const target = document.querySelector( '[data-wp-builder-id="' + _elementId + '"]' );
+			if ( target ) { target.scrollIntoView( { behavior: 'smooth', block: 'center' } ); }
+		} );
 		_idChip = document.createElement( 'span' );
 		_idChip.className = 'wpbfe-chip wpbfe-chip--id';
 		headerLeft.appendChild( _nodeChip );
