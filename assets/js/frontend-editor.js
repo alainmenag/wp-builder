@@ -201,6 +201,12 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		// additional listener is needed.
 	}
 
+	function scrollBuilderElementIntoView( id ) {
+		if ( ! id ) { return; }
+		const target = document.querySelector( '[data-wp-builder-id="' + id + '"]' );
+		if ( target ) { target.scrollIntoView( { behavior: 'smooth', block: 'center' } ); }
+	}
+
 	function createPanel() {
 		// Panel shell
 		_panel = document.createElement( 'div' );
@@ -218,9 +224,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		_nodeChip.className = 'wpbfe-chip wpbfe-chip--node';
 		_nodeChip.style.cursor = 'pointer';
 		_nodeChip.addEventListener( 'click', () => {
-			if ( ! _elementId ) { return; }
-			const target = document.querySelector( '[data-wp-builder-id="' + _elementId + '"]' );
-			if ( target ) { target.scrollIntoView( { behavior: 'smooth', block: 'center' } ); }
+			scrollBuilderElementIntoView( _elementId );
 		} );
 		_idChip = document.createElement( 'span' );
 		_idChip.className = 'wpbfe-chip wpbfe-chip--id';
@@ -516,6 +520,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 			_panel.classList.remove( 'is-resizing' );
 			_panelWidth = _panel.offsetWidth;
 			savePrefs();
+			scrollBuilderElementIntoView( _elementId );
 		} );
 	}
 
