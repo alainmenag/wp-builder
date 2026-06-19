@@ -516,8 +516,22 @@ import { ICON_OPEN } from './constants.js';
 	// -----------------------------------------------------------------------
 
 	/**
+	 * Return the current CSS scale applied to pageEl (1 if none).
+	 *
+	 * @param {HTMLElement} pageEl
+	 * @return {number}
+	 */
+	function getPageScale( pageEl ) {
+		const t = pageEl.style.transform;
+		if ( ! t ) { return 1; }
+		const m = t.match( /scale\(\s*([\d.]+)\s*\)/ );
+		return m ? parseFloat( m[1] ) : 1;
+	}
+
+	/**
 	 * Scale #page so it fits entirely within the space to the left of the
 	 * docked panel. Uses CSS transform: scale() with transform-origin top left.
+	 * Adjusts window.scrollY so the same page content stays at the viewport top.
 	 */
 	function applyPageZoom() {
 		const pageEl = document.getElementById( 'page' );
@@ -525,9 +539,14 @@ import { ICON_OPEN } from './constants.js';
 		const panelWidth     = _panel.offsetWidth;
 		const availableWidth = window.innerWidth - panelWidth;
 		if ( availableWidth <= 0 ) { return; }
-		const scale = availableWidth / window.innerWidth;
-		pageEl.style.transform       = 'scale(' + scale + ')';
+		const newScale = availableWidth / window.innerWidth;
+		const oldScale = getPageScale( pageEl );
+		// Page-layout coord at the current viewport top (unscaled).
+		const pageTopY = window.scrollY / oldScale;
+		pageEl.style.transform       = 'scale(' + newScale + ')';
 		pageEl.style.transformOrigin = 'top left';
+		// Scroll so the same layout position is at the viewport top (no animation).
+		window.scrollTo( 0, Math.round( pageTopY * newScale ) );
 		document.body.classList.add( 'wpbfe-page-zoomed' );
 		if ( _fitBtn ) {
 			_fitBtn.classList.add( 'is-active' );
@@ -539,8 +558,13 @@ import { ICON_OPEN } from './constants.js';
 	function removePageZoom() {
 		const pageEl = document.getElementById( 'page' );
 		if ( pageEl ) {
+			const oldScale = getPageScale( pageEl );
+			// Compute the unscaled page-layout coord at the viewport top.
+			const pageTopY = window.scrollY / oldScale;
 			pageEl.style.transform       = '';
 			pageEl.style.transformOrigin = '';
+			// Restore scroll to the same layout position at scale=1 (no animation).
+			window.scrollTo( 0, Math.round( pageTopY ) );
 		}
 		document.body.classList.remove( 'wpbfe-page-zoomed' );
 		if ( _fitBtn ) {
