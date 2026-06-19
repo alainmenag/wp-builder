@@ -599,7 +599,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 			_panel.style.height = '';
 			if ( _fitBtn ) { _fitBtn.disabled = false; }
 			// Re-apply fit zoom if the user had it on before undocking.
-			if ( _isPageZoomed ) { applyPageZoom(); }
+			if ( _isPageZoomed ) { applyPageZoom( true ); }
 		} else {
 			// When undocking, visually remove the zoom but keep _isPageZoomed so
 			// the preference is restored automatically when the panel is re-docked.
@@ -665,7 +665,11 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 		// Restore persisted zoom (only valid when docked).
 		if ( _isDocked && _isPageZoomed ) {
-			applyPageZoom();
+			// Compensate scroll only when zoom is transitioning OFF→ON.
+			// If zoom is already visually applied (e.g. switching between elements
+			// while the panel stays open), the scroll position is already correct.
+			const zoomAlreadyApplied = document.body.classList.contains( 'wpbfe-page-zoomed' );
+			applyPageZoom( ! zoomAlreadyApplied );
 		}
 
 		fetchElement( postId, elementId );
