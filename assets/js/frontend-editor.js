@@ -48,7 +48,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	let _panelWidth = null;
 
 	/** Pixels from viewport edge that triggers auto-snap while floating. */
-	const SNAP_THRESHOLD   = 20;
+	const SNAP_THRESHOLD   = 0;
 	/** Pixels dragged away from a docked edge before the panel undocks. */
 	const UNDOCK_THRESHOLD = 25;
 	/** @type {boolean} Whether the fit-page zoom is currently active. */
