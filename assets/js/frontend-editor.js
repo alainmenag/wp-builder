@@ -693,7 +693,13 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		_panel.style.width  = '';
 		_panel.style.height = '';
 		if ( _fitBtn ) { _fitBtn.disabled = false; }
-		if ( _isPageZoomed ) { applyPageZoom( true ); }
+		// Only apply zoom if the panel is already open and has a real rendered width.
+		// When called from openPanel() the panel is still display:none at this point;
+		// openPanel() handles zoom after adding the is-open class.
+		if ( _isPageZoomed && _panel.classList.contains( 'is-open' ) ) {
+			const zoomAlreadyApplied = document.body.classList.contains( 'wpbfe-page-zoomed' );
+			applyPageZoom( ! zoomAlreadyApplied );
+		}
 	}
 
 	/**
