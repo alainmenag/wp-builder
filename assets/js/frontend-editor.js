@@ -40,10 +40,19 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	let _panelLeft  = null;
 	/** @type {number|null} Persisted panel top position (px). */
 	let _panelTop   = null;
-	/** @type {boolean} Whether the panel is docked (snapped full-height to right). */
+	/** @type {number} Last known pointer X position (clientX), updated on every mousemove. */
+	let _pointerX   = 0;
+	/** @type {boolean} Whether the panel is docked (snapped full-height to an edge). */
 	let _isDocked   = false;
+	/** @type {'left'|'right'} Which edge the panel is docked to. */
+	let _dockedSide = 'right';
 	/** @type {number|null} Persisted docked panel width (px). */
 	let _panelWidth = null;
+
+	/** Pixels the pointer must be from a viewport edge (while the panel is already flush) to trigger a snap. */
+	const POINTER_SNAP_THRESHOLD  = 50;
+	/** Pixels dragged away from a docked edge before the panel undocks. */
+	const UNDOCK_THRESHOLD        = 25;
 	/** @type {boolean} Whether the fit-page zoom is currently active. */
 	let _isPageZoomed = false;
 	/** @type {number} The scale factor applied by the last applyPageZoom() call. */
@@ -63,6 +72,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 			if ( ! raw ) { return; }
 			const prefs = JSON.parse( raw );
 			if ( typeof prefs.isDocked  === 'boolean' ) { _isDocked    = prefs.isDocked; }
+			if ( prefs.dockedSide === 'left' || prefs.dockedSide === 'right' ) { _dockedSide = prefs.dockedSide; }
 			if ( typeof prefs.left      === 'number'  ) { _panelLeft   = prefs.left; }
 			if ( typeof prefs.top       === 'number'  ) { _panelTop    = prefs.top; }
 			if ( typeof prefs.width     === 'number'  ) { _panelWidth  = prefs.width; }
@@ -74,6 +84,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		try {
 			localStorage.setItem( STORAGE_KEY, JSON.stringify( {
 				isDocked:     _isDocked,
+				dockedSide:   _dockedSide,
 				left:         _panelLeft,
 				top:          _panelTop,
 				width:        _panelWidth,
@@ -407,16 +418,21 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		footer.appendChild( _fitBtn );
 		footer.appendChild( _saveBtn );
 
-		// Left-edge resize handle (used when docked).
+		// Left-edge resize handle (used when docked right).
 		const resizeHandle = document.createElement( 'div' );
 		resizeHandle.className = 'wpbfe-resize-handle-left';
+
+		// Right-edge resize handle (used when docked left).
+		const resizeHandleRight = document.createElement( 'div' );
+		resizeHandleRight.className = 'wpbfe-resize-handle-right';
 
 		_panel.appendChild( body );
 		_panel.appendChild( footer );
 		_panel.appendChild( resizeHandle );
+		_panel.appendChild( resizeHandleRight );
 		document.body.appendChild( _panel );
 		initDrag();
-		initLeftResize();
+		initResize();
 		initStyleEditor();
 	}
 
@@ -439,18 +455,22 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		const header = _panel.querySelector( '.wpbfe-panel-header' );
 		let dragging = false;
 		let startX, startY, startLeft, startTop;
+		/** clientX recorded at the moment a docked-drag begins. */
+		let dockedDragStartX = 0;
 
 		header.addEventListener( 'mousedown', ( e ) => {
-			// Ignore clicks on interactive children (button, link) and docked mode.
-			if ( _isDocked ) { return; }
 			if ( e.target.closest( 'button, a' ) ) { return; }
-			dragging  = true;
-			startX    = e.clientX;
-			startY    = e.clientY;
-			const rect = _panel.getBoundingClientRect();
-			startLeft = rect.left;
-			startTop  = rect.top;
+			dragging = true;
+			startX   = e.clientX;
+			startY   = e.clientY;
 			_panel.classList.add( 'is-dragging' );
+			if ( _isDocked ) {
+				dockedDragStartX = e.clientX;
+			} else {
+				const rect = _panel.getBoundingClientRect();
+				startLeft  = rect.left;
+				startTop   = rect.top;
+			}
 			e.preventDefault();
 		} );
 
@@ -460,13 +480,60 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		} );
 
 		document.addEventListener( 'mousemove', ( e ) => {
+			_pointerX = e.clientX;
 			if ( ! dragging ) { return; }
-			const dx      = e.clientX - startX;
-			const dy      = e.clientY - startY;
-			const maxLeft = window.innerWidth  - _panel.offsetWidth;
-			const maxTop  = window.innerHeight - _panel.offsetHeight;
+
+			if ( _isDocked ) {
+				// Determine how far the cursor has moved away from the docked edge.
+				const dx = e.clientX - dockedDragStartX;
+				const shouldUndock = _dockedSide === 'right'
+					? dx < -UNDOCK_THRESHOLD
+					: dx >  UNDOCK_THRESHOLD;
+
+				if ( ! shouldUndock ) { return; }
+
+				// Transition to floating: calculate a sensible initial position.
+				const panelWidth  = _panel.offsetWidth;
+				const panelHeight = _panel.offsetHeight;
+				undockPanel();
+				// Place panel so the header is under the cursor.
+				_panelLeft = Math.max( 0, Math.min( window.innerWidth  - panelWidth,  e.clientX - panelWidth  / 2 ) );
+				_panelTop  = Math.max( 0, Math.min( window.innerHeight - panelHeight, e.clientY - 20 ) );
+				startLeft  = _panelLeft;
+				startTop   = _panelTop;
+				startX     = e.clientX;
+				startY     = e.clientY;
+				_panel.style.left = _panelLeft + 'px';
+				_panel.style.top  = _panelTop  + 'px';
+				return;
+			}
+
+			// ── Floating drag ──────────────────────────────────────────────
+			const dx         = e.clientX - startX;
+			const dy         = e.clientY - startY;
+			const panelWidth = _panel.offsetWidth;
+			const maxLeft    = window.innerWidth  - panelWidth;
+			const maxTop     = window.innerHeight - _panel.offsetHeight;
 			_panelLeft = Math.max( 0, Math.min( maxLeft, startLeft + dx ) );
 			_panelTop  = Math.max( 0, Math.min( maxTop,  startTop  + dy ) );
+
+			// Snap only when the panel is flush against a viewport edge AND
+			// the pointer is still pushing toward that side (within POINTER_SNAP_THRESHOLD).
+			if ( _panelLeft === 0 && _pointerX < POINTER_SNAP_THRESHOLD ) {
+				dragging = false;
+				_panel.classList.remove( 'is-dragging' );
+				dockTo( 'left' );
+				savePrefs();
+				return;
+			}
+			if ( _panelLeft + panelWidth >= window.innerWidth && _pointerX > window.innerWidth - POINTER_SNAP_THRESHOLD ) {
+				dragging = false;
+				_panel.classList.remove( 'is-dragging' );
+				dockTo( 'right' );
+				savePrefs();
+				return;
+			}
+
 			_panel.style.left = _panelLeft + 'px';
 			_panel.style.top  = _panelTop  + 'px';
 		} );
@@ -485,32 +552,41 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	}
 
 	// -----------------------------------------------------------------------
-	// Left-edge resize (docked mode only)
+	// Edge resize handles (docked mode only)
 	// -----------------------------------------------------------------------
 
-	function initLeftResize() {
-		const handle = _panel.querySelector( '.wpbfe-resize-handle-left' );
-		let resizing = false;
+	function initResize() {
+		const handleLeft  = _panel.querySelector( '.wpbfe-resize-handle-left' );
+		const handleRight = _panel.querySelector( '.wpbfe-resize-handle-right' );
+
+		let resizing     = false;
+		let resizingSide = null; // 'left' | 'right'
 		let startX, startWidth;
 
-		handle.addEventListener( 'mousedown', ( e ) => {
+		function startResize( e, side ) {
 			if ( ! _isDocked ) { return; }
-			resizing   = true;
-			startX     = e.clientX;
-			startWidth = _panel.offsetWidth;
+			resizing     = true;
+			resizingSide = side;
+			startX       = e.clientX;
+			startWidth   = _panel.offsetWidth;
 			_panel.classList.add( 'is-resizing' );
 			e.preventDefault();
 			e.stopPropagation();
-		} );
+		}
+
+		handleLeft.addEventListener(  'mousedown', ( e ) => startResize( e, 'left' ) );
+		handleRight.addEventListener( 'mousedown', ( e ) => startResize( e, 'right' ) );
 
 		document.addEventListener( 'mousemove', ( e ) => {
 			if ( ! resizing ) { return; }
-			const dx       = startX - e.clientX;
 			const minWidth = 280;
 			const maxWidth = Math.floor( window.innerWidth * 0.9 );
+			// Left handle grows the panel leftward; right handle rightward.
+			const dx       = resizingSide === 'left'
+				? startX - e.clientX
+				: e.clientX - startX;
 			const newWidth = Math.max( minWidth, Math.min( maxWidth, startWidth + dx ) );
 			_panel.style.width = newWidth + 'px';
-			// Recalculate zoom scale in real time as panel is resized.
 			if ( _isPageZoomed ) { applyPageZoom(); }
 		} );
 
@@ -550,7 +626,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		const viewportCenterPx = window.scrollY + window.innerHeight / 2;
 		_pageZoomScale               = scale;
 		pageEl.style.transform       = 'scale(' + scale + ')';
-		pageEl.style.transformOrigin = 'top left';
+		pageEl.style.transformOrigin = _dockedSide === 'left' ? 'top right' : 'top left';
 		document.body.classList.add( 'wpbfe-page-zoomed' );
 		// Only re-scroll on explicit user toggle; skip on panel-open / resize
 		// re-applications so we don't jump the page away from the clicked element.
@@ -600,33 +676,58 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	// Dock / undock toggle
 	// -----------------------------------------------------------------------
 
+	/**
+	 * Dock the panel to the given edge ('left' or 'right'), updating all
+	 * related state, CSS classes, and button states.
+	 *
+	 * @param {'left'|'right'} side
+	 */
+	function dockTo( side ) {
+		_isDocked   = true;
+		_dockedSide = side;
+		_panel.classList.add( 'is-docked' );
+		_panel.classList.toggle( 'is-docked-right', side === 'right' );
+		_panel.classList.toggle( 'is-docked-left',  side === 'left' );
+		_panel.style.left   = '';
+		_panel.style.top    = '';
+		_panel.style.width  = '';
+		_panel.style.height = '';
+		if ( _fitBtn ) { _fitBtn.disabled = false; }
+		if ( _isPageZoomed ) { applyPageZoom( true ); }
+	}
+
+	/**
+	 * Undock the panel (remove all docked classes / state) without positioning it.
+	 * Callers are responsible for setting `_panel.style.left/top` afterwards.
+	 */
+	function undockPanel() {
+		if ( _isPageZoomed ) { removePageZoom(); }
+		_isDocked = false;
+		_panel.classList.remove( 'is-docked', 'is-docked-left', 'is-docked-right' );
+		if ( _fitBtn ) { _fitBtn.disabled = true; }
+	}
+
 	function toggleDock() {
-		_isDocked = ! _isDocked;
 		if ( _isDocked ) {
-			_panel.classList.add( 'is-docked' );
-			_panel.style.left   = '';
-			_panel.style.top    = '';
-			_panel.style.width  = '';
-			_panel.style.height = '';
-			if ( _fitBtn ) { _fitBtn.disabled = false; }
-			// Re-apply fit zoom if the user had it on before undocking.
-			if ( _isPageZoomed ) { applyPageZoom( true ); }
-		} else {
-			// When undocking, visually remove the zoom but keep _isPageZoomed so
-			// the preference is restored automatically when the panel is re-docked.
-			if ( _isPageZoomed ) { removePageZoom(); }
-			_panel.classList.remove( 'is-docked' );
-			if ( _fitBtn ) { _fitBtn.disabled = true; }
-			// Restore last floating position (default to top-right if not yet set).
+			undockPanel();
+			// Restore last floating position, or default to near the previously-docked edge.
 			if ( _panelLeft === null ) {
 				const adminBarOffset = document.body.classList.contains( 'admin-bar' )
 					? ( window.innerWidth <= 782 ? 46 : 32 )
 					: 0;
-				_panelLeft = Math.max( 0, window.innerWidth - 340 );
+				_panelLeft = _dockedSide === 'left'
+					? 20
+					: Math.max( 0, window.innerWidth - 340 );
 				_panelTop  = adminBarOffset;
 			}
 			_panel.style.left = _panelLeft + 'px';
 			_panel.style.top  = _panelTop  + 'px';
+		} else {
+			// Snap to whichever edge the panel is currently nearest.
+			const rect      = _panel.getBoundingClientRect();
+			const distLeft  = rect.left;
+			const distRight = window.innerWidth - rect.right;
+			dockTo( distLeft <= distRight ? 'left' : 'right' );
 		}
 		savePrefs();
 	}
@@ -644,17 +745,13 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 		if ( _isDocked ) {
 			// Apply docked state (CSS handles position; restore any saved width).
-			_panel.classList.add( 'is-docked' );
-			_panel.style.left   = '';
-			_panel.style.top    = '';
-			_panel.style.height = '';
+			dockTo( _dockedSide );
 			if ( _panelWidth !== null ) {
 				_panel.style.width = _panelWidth + 'px';
 			}
-			if ( _fitBtn ) { _fitBtn.disabled = false; }
 		} else {
 			// Position the panel: use persisted position or default to top-right corner.
-			_panel.classList.remove( 'is-docked' );
+			_panel.classList.remove( 'is-docked', 'is-docked-left', 'is-docked-right' );
 			if ( _panelLeft === null ) {
 				const adminBarOffset = document.body.classList.contains( 'admin-bar' )
 					? ( window.innerWidth <= 782 ? 46 : 32 )

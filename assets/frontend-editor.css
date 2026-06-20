@@ -32,18 +32,29 @@
 	display: flex;
 }
 
-/* ── Docked (snapped full-height to right edge) ─────────────────────────── */
+/* ── Docked (snapped full-height to an edge) ────────────────────────────── */
 
 .wpbfe-panel.is-docked {
 	bottom: 0;
-	box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
 	height: 100vh;
-	left: auto;
 	max-height: 100vh;
 	max-width: none;
 	resize: none;
-	right: 0;
 	top: 0;
+}
+
+/* Right edge */
+.wpbfe-panel.is-docked-right {
+	box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
+	left: auto;
+	right: 0;
+}
+
+/* Left edge */
+.wpbfe-panel.is-docked-left {
+	box-shadow: 4px 0 24px rgba(0, 0, 0, .5);
+	left: 0;
+	right: auto;
 }
 
 body.admin-bar .wpbfe-panel.is-docked {
@@ -58,13 +69,13 @@ body.admin-bar .wpbfe-panel.is-docked {
 	}
 }
 
-/* ── Left-edge resize handle (docked mode only) ─────────────────────────── */
+/* ── Left-edge resize handle (docked-right mode only) ───────────────────── */
 
 .wpbfe-resize-handle-left {
 	display: none;
 }
 
-.wpbfe-panel.is-docked .wpbfe-resize-handle-left {
+.wpbfe-panel.is-docked-right .wpbfe-resize-handle-left {
 	bottom: 0;
 	cursor: ew-resize;
 	display: block;
@@ -74,8 +85,30 @@ body.admin-bar .wpbfe-panel.is-docked {
 	width: 5px;
 }
 
-.wpbfe-panel.is-docked .wpbfe-resize-handle-left:hover,
+.wpbfe-panel.is-docked-right .wpbfe-resize-handle-left:hover,
 .wpbfe-panel.is-resizing .wpbfe-resize-handle-left {
+	background: var(--wpb-accent);
+	opacity: 0.4;
+}
+
+/* ── Right-edge resize handle (docked-left mode only) ───────────────────── */
+
+.wpbfe-resize-handle-right {
+	display: none;
+}
+
+.wpbfe-panel.is-docked-left .wpbfe-resize-handle-right {
+	bottom: 0;
+	cursor: ew-resize;
+	display: block;
+	position: absolute;
+	right: 0;
+	top: 0;
+	width: 5px;
+}
+
+.wpbfe-panel.is-docked-left .wpbfe-resize-handle-right:hover,
+.wpbfe-panel.is-resizing .wpbfe-resize-handle-right {
 	background: var(--wpb-accent);
 	opacity: 0.4;
 }
