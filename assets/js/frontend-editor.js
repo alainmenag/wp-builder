@@ -40,6 +40,8 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	let _panelLeft  = null;
 	/** @type {number|null} Persisted panel top position (px). */
 	let _panelTop   = null;
+	/** @type {number} Last known pointer X position (clientX), updated on every mousemove. */
+	let _pointerX   = 0;
 	/** @type {boolean} Whether the panel is docked (snapped full-height to an edge). */
 	let _isDocked   = false;
 	/** @type {'left'|'right'} Which edge the panel is docked to. */
@@ -48,9 +50,11 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	let _panelWidth = null;
 
 	/** Pixels from viewport edge that triggers auto-snap while floating. */
-	const SNAP_THRESHOLD   = 0;
+	const SNAP_THRESHOLD          = 0;
+	/** Pixels the pointer must be from a viewport edge (while the panel is already flush) to trigger a snap. */
+	const POINTER_SNAP_THRESHOLD  = 50;
 	/** Pixels dragged away from a docked edge before the panel undocks. */
-	const UNDOCK_THRESHOLD = 25;
+	const UNDOCK_THRESHOLD        = 25;
 	/** @type {boolean} Whether the fit-page zoom is currently active. */
 	let _isPageZoomed = false;
 	/** @type {number} The scale factor applied by the last applyPageZoom() call. */
@@ -478,6 +482,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		} );
 
 		document.addEventListener( 'mousemove', ( e ) => {
+			_pointerX = e.clientX;
 			if ( ! dragging ) { return; }
 
 			if ( _isDocked ) {
@@ -514,15 +519,17 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 			_panelLeft = Math.max( 0, Math.min( maxLeft, startLeft + dx ) );
 			_panelTop  = Math.max( 0, Math.min( maxTop,  startTop  + dy ) );
 
-			// Auto-snap when the panel edge reaches the viewport edge.
-			if ( _panelLeft <= SNAP_THRESHOLD ) {
+			// Auto-snap when the panel edge reaches the viewport edge,
+			// or when the panel is already flush and the pointer keeps pushing toward that side.
+			if ( _panelLeft <= SNAP_THRESHOLD || ( _panelLeft === 0 && _pointerX < POINTER_SNAP_THRESHOLD ) ) {
 				dragging = false;
 				_panel.classList.remove( 'is-dragging' );
 				dockTo( 'left' );
 				savePrefs();
 				return;
 			}
-			if ( _panelLeft + panelWidth >= window.innerWidth - SNAP_THRESHOLD ) {
+			if ( _panelLeft + panelWidth >= window.innerWidth - SNAP_THRESHOLD ||
+				( _panelLeft + panelWidth >= window.innerWidth && _pointerX > window.innerWidth - POINTER_SNAP_THRESHOLD ) ) {
 				dragging = false;
 				_panel.classList.remove( 'is-dragging' );
 				dockTo( 'right' );
