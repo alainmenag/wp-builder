@@ -693,7 +693,10 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		_panel.style.width  = '';
 		_panel.style.height = '';
 		if ( _fitBtn ) { _fitBtn.disabled = false; }
-		if ( _isPageZoomed ) { applyPageZoom( true ); }
+		if ( _isPageZoomed ) {
+			const zoomAlreadyApplied = document.body.classList.contains( 'wpbfe-page-zoomed' );
+			applyPageZoom( ! zoomAlreadyApplied );
+		}
 	}
 
 	/**
