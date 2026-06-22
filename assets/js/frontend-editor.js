@@ -11,7 +11,7 @@
  * dom-helpers.js rather than duplicating them.
  */
 
-import { VOID_NODES, ALLOWED_NODES } from './constants.js';
+import { VOID_NODES, ALLOWED_NODES, TEMPLATE_CPT } from './constants.js';
 import { normalizeNodeTag } from './layout.js';
 import { renderNodeAttrs } from './dom-helpers.js';
 import { ICON_OPEN, ICON_FIT } from './constants.js';
@@ -771,7 +771,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 			if ( _fitBtn ) { _fitBtn.disabled = true; }
 		}
 
-		_editLink.href    = config.builderBaseUrl + '?post=' + encodeURIComponent( postId ) + '&action=builder';
+		_editLink.href    = `/?post_type=${TEMPLATE_CPT}&p=${encodeURIComponent( postId )}`;
 		_saveBtn.disabled = true;
 		setStatus( text.loading || 'Loading\u2026', false );
 
