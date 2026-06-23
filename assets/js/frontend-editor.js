@@ -110,6 +110,16 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	let _gapCtrl           = null;
 	let _styleTextareaCtrl = null;
 	let _attrsSection      = null;
+	/** @type {HTMLElement|null} The Main tab panel container. */
+	let _mainTabPanel      = null;
+	/** @type {HTMLElement|null} The Element tab panel container. */
+	let _elementTabPanel   = null;
+	/** @type {HTMLInputElement|null} Readonly post title display in Main tab. */
+	let _mainTitleDisplay  = null;
+	/** @type {HTMLInputElement|null} Readonly post status display in Main tab. */
+	let _mainStatusDisplay = null;
+	/** @type {HTMLButtonElement[]} The two tab toggle buttons. */
+	let _tabBtns           = [];
 
 	// CodeMirror wrapper instance (null when wp.codeEditor is unavailable).
 	let _styleEditor              = null;
@@ -218,6 +228,19 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		if ( target ) { target.scrollIntoView( { behavior: 'instant', block: 'center' } ); }
 	}
 
+	/**
+	 * Switch the active tab panel in the front-end editor widget.
+	 *
+	 * @param {'main'|'element'} key Tab key to activate.
+	 */
+	function switchTab( key ) {
+		_tabBtns.forEach( ( btn ) => {
+			btn.classList.toggle( 'is-active', btn.dataset.tab === key );
+		} );
+		if ( _mainTabPanel )    { _mainTabPanel.hidden    = key !== 'main'; }
+		if ( _elementTabPanel ) { _elementTabPanel.hidden = key !== 'element'; }
+	}
+
 	function createPanel() {
 		// Panel shell
 		_panel = document.createElement( 'div' );
@@ -257,6 +280,43 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		const body = document.createElement( 'div' );
 		body.className = 'wpbfe-panel-body';
 
+		// ── Main tab panel (post-level info, hidden by default) ────────────
+		_mainTabPanel = document.createElement( 'div' );
+		_mainTabPanel.className  = 'wpbfe-tab-panel';
+		_mainTabPanel.dataset.tab = 'main';
+		_mainTabPanel.hidden     = true;
+
+		const mainInner = document.createElement( 'div' );
+		mainInner.className = 'wpbfe-accordion-body-inner';
+
+		const titleField = createFieldGroup( text.postTitle || 'Post Title', () => {
+			const inp = document.createElement( 'input' );
+			inp.className = 'wpbfe-input';
+			inp.type      = 'text';
+			inp.readOnly  = true;
+			return inp;
+		} );
+		_mainTitleDisplay = titleField.control;
+		mainInner.appendChild( titleField.group );
+
+		const statusField = createFieldGroup( text.postStatus || 'Post Status', () => {
+			const inp = document.createElement( 'input' );
+			inp.className = 'wpbfe-input';
+			inp.type      = 'text';
+			inp.readOnly  = true;
+			return inp;
+		} );
+		_mainStatusDisplay = statusField.control;
+		mainInner.appendChild( statusField.group );
+
+		_mainTabPanel.appendChild( mainInner );
+		body.appendChild( _mainTabPanel );
+
+		// ── Element tab panel (all element accordions) ─────────────────────
+		_elementTabPanel = document.createElement( 'div' );
+		_elementTabPanel.className  = 'wpbfe-tab-panel';
+		_elementTabPanel.dataset.tab = 'element';
+
 		// Identity section
 		const identityAcc   = createAccordion( text.identity || 'Identity', false );
 		const identityInner = identityAcc.querySelector( '.wpbfe-accordion-body-inner' );
@@ -284,7 +344,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		} );
 		_idDisplayCtrl = idField.control;
 		identityInner.appendChild( idField.group );
-		body.appendChild( identityAcc );
+		_elementTabPanel.appendChild( identityAcc );
 
 		// Content section
 		_contentSection        = createAccordion( text.content || 'Content', true );
@@ -297,7 +357,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		} );
 		_htmlTextareaCtrl = htmlField.control;
 		contentInner.appendChild( htmlField.group );
-		body.appendChild( _contentSection );
+		_elementTabPanel.appendChild( _contentSection );
 
 		// Layout section
 		const layoutAcc   = createAccordion( text.layout || 'Layout', false );
@@ -338,7 +398,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		} );
 		_gapCtrl = gapField.control;
 		layoutInner.appendChild( gapField.group );
-		body.appendChild( layoutAcc );
+		_elementTabPanel.appendChild( layoutAcc );
 
 		// Style section
 		const styleAcc   = createAccordion( text.style || 'Style', false );
@@ -360,7 +420,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 			styleField.group.insertBefore( hint, _styleTextareaCtrl );
 		}
 		styleInner.appendChild( styleField.group );
-		body.appendChild( styleAcc );
+		_elementTabPanel.appendChild( styleAcc );
 
 		// Refresh CodeMirror when the style accordion opens so it renders
 		// correctly after being initialised inside a hidden container.
@@ -374,11 +434,42 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 		// Attributes section — rendered dynamically in populatePanel
 		_attrsSection = createAccordion( text.attributes || 'Attributes', false );
-		body.appendChild( _attrsSection );
+		_elementTabPanel.appendChild( _attrsSection );
+
+		body.appendChild( _elementTabPanel );
+
+		_panel.appendChild( body );
 
 		// Footer
 		const footer = document.createElement( 'div' );
 		footer.className = 'wpbfe-panel-footer';
+
+		// Tab switcher buttons — left side of footer.
+		const tabBtnsGroup = document.createElement( 'div' );
+		tabBtnsGroup.className = 'wpbfe-tab-btns';
+
+		const tabMainBtn = document.createElement( 'button' );
+		tabMainBtn.type          = 'button';
+		tabMainBtn.className     = 'wpbfe-tab-btn';
+		tabMainBtn.dataset.tab   = 'main';
+		tabMainBtn.textContent   = text.tabMain || 'Main';
+		tabMainBtn.addEventListener( 'click', () => switchTab( 'main' ) );
+
+		const tabElementBtn = document.createElement( 'button' );
+		tabElementBtn.type        = 'button';
+		tabElementBtn.className   = 'wpbfe-tab-btn is-active';
+		tabElementBtn.dataset.tab = 'element';
+		tabElementBtn.textContent = text.tabElement || 'Element';
+		tabElementBtn.addEventListener( 'click', () => switchTab( 'element' ) );
+
+		tabBtnsGroup.appendChild( tabMainBtn );
+		tabBtnsGroup.appendChild( tabElementBtn );
+		_tabBtns = [ tabMainBtn, tabElementBtn ];
+		footer.appendChild( tabBtnsGroup );
+
+		// Action buttons — right side of footer.
+		const footerActions = document.createElement( 'div' );
+		footerActions.className = 'wpbfe-footer-actions';
 
 		_editLink = document.createElement( 'a' );
 		_editLink.className = 'wpbfe-edit-link wpbfe-panel-footer-link';
@@ -414,9 +505,10 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		_saveBtn.appendChild( saveLbl );
 		_saveBtn.addEventListener( 'click', saveElement );
 
-		footer.appendChild( _editLink );
-		footer.appendChild( _fitBtn );
-		footer.appendChild( _saveBtn );
+		footerActions.appendChild( _editLink );
+		footerActions.appendChild( _fitBtn );
+		footerActions.appendChild( _saveBtn );
+		footer.appendChild( footerActions );
 
 		// Left-edge resize handle (used when docked right).
 		const resizeHandle = document.createElement( 'div' );
@@ -426,7 +518,6 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		const resizeHandleRight = document.createElement( 'div' );
 		resizeHandleRight.className = 'wpbfe-resize-handle-right';
 
-		_panel.appendChild( body );
 		_panel.appendChild( footer );
 		_panel.appendChild( resizeHandle );
 		_panel.appendChild( resizeHandleRight );
@@ -826,7 +917,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 					throw new Error( payload && payload.data && payload.data.message
 						? payload.data.message : ( text.error || 'Error' ) );
 				}
-				populatePanel( payload.data.element );
+				populatePanel( payload.data.element, payload.data.post_title || '', payload.data.post_status || '' );
 				_saveBtn.disabled = false;
 				setStatus( '', false );
 			} )
@@ -839,7 +930,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 	// Populate panel fields from element data
 	// -----------------------------------------------------------------------
 
-	function populatePanel( element ) {
+	function populatePanel( element, postTitle, postStatus ) {
 		const node   = normalizeNodeTag( element.node );
 		const isVoid = !! VOID_NODES[ node ];
 		const props  = element.props || {};
@@ -881,6 +972,10 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 			ctrl.dataset.attrName = attrName;
 		} );
 		_attrsSection.hidden = ! _attrsSection.querySelector( '.wpbfe-accordion-body-inner' ).childElementCount;
+
+		// Populate the Main tab's post-level fields when values are provided.
+		if ( postTitle !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = postTitle; }
+		if ( postStatus !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = postStatus; }
 	}
 
 	// -----------------------------------------------------------------------

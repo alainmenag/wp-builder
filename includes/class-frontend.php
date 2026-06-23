@@ -167,6 +167,10 @@ trait WP_Builder_Frontend {
 					'error'          => __( 'Error', 'wp-builder' ),
 					'fitPage'        => __( 'Fit Page', 'wp-builder' ),
 					'resetFit'       => __( 'Reset Fit', 'wp-builder' ),
+					'tabMain'        => __( 'Main', 'wp-builder' ),
+					'tabElement'     => __( 'Element', 'wp-builder' ),
+					'postTitle'      => __( 'Post Title', 'wp-builder' ),
+					'postStatus'     => __( 'Post Status', 'wp-builder' ),
 				),
 			)
 		);

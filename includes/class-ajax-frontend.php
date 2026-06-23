@@ -37,7 +37,11 @@ trait WP_Builder_Ajax_Frontend {
 			wp_send_json_error( array( 'message' => __( 'Element not found.', 'wp-builder' ) ), 404 );
 		}
 
-		wp_send_json_success( array( 'element' => $element ) );
+		wp_send_json_success( array(
+			'element'     => $element,
+			'post_title'  => get_the_title( $post_id ),
+			'post_status' => get_post_status( $post_id ),
+		) );
 	}
 
 	// -------------------------------------------------------------------------
