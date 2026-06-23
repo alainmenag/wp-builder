@@ -14,7 +14,7 @@
 import { VOID_NODES, ALLOWED_NODES, TEMPLATE_CPT } from './constants.js';
 import { normalizeNodeTag } from './layout.js';
 import { renderNodeAttrs } from './dom-helpers.js';
-import { ICON_OPEN, ICON_FIT } from './constants.js';
+import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js';
 
 ( () => {
 	'use strict';
@@ -450,16 +450,18 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 
 		const tabMainBtn = document.createElement( 'button' );
 		tabMainBtn.type          = 'button';
-		tabMainBtn.className     = 'wpbfe-tab-btn';
+		tabMainBtn.className     = 'wpbfe-tab-btn wpbfe-panel-footer-link';
 		tabMainBtn.dataset.tab   = 'main';
-		tabMainBtn.textContent   = text.tabMain || 'Main';
+		tabMainBtn.innerHTML = ICON_ELEMENT;
+		tabMainBtn.style.fill = '#ffffff';
 		tabMainBtn.addEventListener( 'click', () => switchTab( 'main' ) );
 
 		const tabElementBtn = document.createElement( 'button' );
 		tabElementBtn.type        = 'button';
-		tabElementBtn.className   = 'wpbfe-tab-btn is-active';
+		tabElementBtn.className   = 'wpbfe-tab-btn wpbfe-panel-footer-link is-active';
 		tabElementBtn.dataset.tab = 'element';
-		tabElementBtn.textContent = text.tabElement || 'Element';
+		tabElementBtn.innerHTML = ICON_POST;
+		tabElementBtn.style.fill = '#ffffff';
 		tabElementBtn.addEventListener( 'click', () => switchTab( 'element' ) );
 
 		tabBtnsGroup.appendChild( tabMainBtn );
@@ -476,7 +478,7 @@ import { ICON_OPEN, ICON_FIT } from './constants.js';
 		_editLink.target    = '_blank';
 		_editLink.rel       = 'noopener noreferrer';
 		_editLink.setAttribute( 'aria-label', text.editInBuilder || 'Edit in Builder' );
-		_editLink.innerHTML = ICON_OPEN;
+		_editLink.innerHTML = ICON_ISOLATE;
 		_editLink.style.fill = '#ffffff';
 
 		_fitBtn = document.createElement( 'button' );

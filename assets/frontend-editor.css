@@ -298,42 +298,6 @@ body.admin-bar .wpbfe-panel.is-docked {
 	justify-content: space-between;
 }
 
-/* ── Tab switcher buttons (left side of footer) ─────────────────────────── */
-
-.wpbfe-tab-btns {
-	align-items: center;
-	display: flex;
-	gap: 0;
-}
-
-.wpbfe-tab-btn {
-	background: transparent !important;
-	border: 0;
-	border-bottom: 2px solid transparent;
-	color: var(--wpb-text-muted);
-	cursor: pointer;
-	font: inherit;
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: .06em;
-	margin-bottom: -1px;
-	min-height: 34px;
-	padding: 6px 10px;
-	text-transform: uppercase;
-	transition: color 120ms ease, border-color 120ms ease;
-}
-
-.wpbfe-tab-btn:hover,
-.wpbfe-tab-btn:focus {
-	color: var(--wpb-text-secondary);
-	outline: none;
-}
-
-.wpbfe-tab-btn.is-active {
-	border-bottom-color: var(--wpb-accent-hover);
-	color: var(--wpb-text-primary);
-}
-
 /* ── Footer action buttons cluster (right side of footer) ───────────────── */
 
 .wpbfe-footer-actions {
