@@ -69,6 +69,19 @@ trait WP_Builder_Ajax_Frontend {
 			wp_send_json_error( array( 'message' => __( 'Element not found.', 'wp-builder' ) ), 404 );
 		}
 
+		// Resolve the new element ID — use the submitted value if valid, else keep the original.
+		$new_element_id = isset( $_POST['new_element_id'] ) ? sanitize_key( wp_unslash( $_POST['new_element_id'] ) ) : '';
+		if ( '' === $new_element_id ) {
+			$new_element_id = $element_id;
+		}
+		// Reject if the requested ID is already used by a different element.
+		if ( $new_element_id !== $element_id ) {
+			$collision = $this->find_layout_element( $layout['children'], $new_element_id );
+			if ( null !== $collision ) {
+				wp_send_json_error( array( 'message' => __( 'An element with that ID already exists.', 'wp-builder' ) ), 409 );
+			}
+		}
+
 		// Decode JSON-encoded props / attrs sent as serialized strings.
 		$raw_props = array();
 		if ( isset( $_POST['props'] ) ) {
@@ -83,7 +96,7 @@ trait WP_Builder_Ajax_Frontend {
 		}
 
 		$updated = array(
-			'id'       => $element_id,
+			'id'       => $new_element_id,
 			'node'     => isset( $_POST['node'] ) ? sanitize_key( wp_unslash( $_POST['node'] ) ) : $element['node'],
 			'props'    => $raw_props,
 			'style'    => isset( $_POST['style'] ) ? wp_unslash( (string) $_POST['style'] ) : '',

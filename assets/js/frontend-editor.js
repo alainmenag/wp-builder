@@ -341,10 +341,17 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			const inp = document.createElement( 'input' );
 			inp.className = 'wpbfe-input';
 			inp.type      = 'text';
-			inp.readOnly  = true;
 			return inp;
 		} );
 		_idDisplayCtrl = idField.control;
+		_idDisplayCtrl.addEventListener( 'blur', () => {
+			const sanitized = _idDisplayCtrl.value.toLowerCase()
+				.replace( /\s+/g, '-' )
+				.replace( /[^a-z0-9_-]/g, '' )
+				.replace( /-+/g, '-' )
+				.replace( /^-+|-+$/g, '' );
+			_idDisplayCtrl.value = sanitized || _elementId || '';
+		} );
 		identityInner.appendChild( idField.group );
 		_elementTabPanel.appendChild( identityAcc );
 
@@ -1006,6 +1013,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		form.append( 'nonce',      config.saveNonce );
 		form.append( 'post_id',    _postId );
 		form.append( 'element_id', _elementId );
+		form.append( 'new_element_id', _idDisplayCtrl.value );
 		form.append( 'node',       _nodeSelectCtrl.value );
 		form.append( 'props',      JSON.stringify( {
 			flexDirection: _flexDirCtrl.value,
@@ -1036,6 +1044,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				}
 
 				if ( payload.data.element ) { populatePanel( payload.data.element ); }
+				if ( payload.data.element && payload.data.element.id ) {
+					_elementId = payload.data.element.id;
+				}
 				setStatus( text.saved || 'Saved', false );
 			} )
 			.catch( ( err ) => {
