@@ -178,7 +178,7 @@ trait WP_Builder_Ajax_Frontend {
 	private function get_frontend_page_template( int $post_id ): string {
 		$post = get_post( $post_id );
 		if ( $post && self::TEMPLATE_CPT === $post->post_type ) {
-			return '';
+			return 'wp-builder-canvas';
 		}
 		return get_post_meta( $post_id, '_wp_page_template', true ) ?: '';
 	}
