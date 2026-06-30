@@ -368,7 +368,7 @@ body.wpbfe-page-zoomed {
 	overflow-x: hidden;
 }
 
-body.wpbfe-page-zoomed #page {
+body.wpbfe-page-zoomed .wpbfe-scaled-page {
 	will-change: transform;
 }
 

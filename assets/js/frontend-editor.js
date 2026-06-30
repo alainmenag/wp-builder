@@ -57,6 +57,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 	let _isPageZoomed = false;
 	/** @type {number} The scale factor applied by the last applyPageZoom() call. */
 	let _pageZoomScale = 1;
+	/** @type {HTMLElement|null} The element currently being scaled by Fit Page. */
+	let _scaledPageEl = null;
 	/** @type {HTMLElement|null} Reference to the Fit Page footer button. */
 	let _fitBtn = null;
 
@@ -700,17 +702,40 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Scale #page so it fits entirely within the space to the left of the
-	 * docked panel. Uses CSS transform: scale() with transform-origin top left.
+	 * Return the element to scale for Fit Page.
+	 *
+	 * Tries #page first (standard WordPress themes), then falls back to the
+	 * first block-level direct child of <body> that is neither the admin bar
+	 * nor the editor panel — covering themes and the Builder canvas template
+	 * that do not use a #page wrapper.
+	 *
+	 * @return {HTMLElement|null}
 	 */
+	function getPageElement() {
+		const standard = document.getElementById( 'page' );
+		if ( standard ) { return standard; }
+		const skip = new Set( [ 'SCRIPT', 'STYLE', 'LINK', 'META', 'NOSCRIPT' ] );
+		for ( const child of document.body.children ) {
+			if ( skip.has( child.tagName ) )  { continue; }
+			if ( child.id === 'wpadminbar' )  { continue; }
+			if ( child === _panel )           { continue; }
+			return /** @type {HTMLElement} */ ( child );
+		}
+		return null;
+	}
+
 	/**
+	 * Scale the page content element so it fits entirely within the space to
+	 * the left of the docked panel. Uses CSS transform: scale() with
+	 * transform-origin top left.
+	 *
 	 * @param {boolean} [compensateScroll=false] When true, re-centres the
 	 *   viewport so the same page content stays in view after the scale is
 	 *   applied.  Pass true only when the user explicitly toggles fit on;
 	 *   leave false for re-applications triggered by panel-open / resize.
 	 */
 	function applyPageZoom( compensateScroll ) {
-		const pageEl = document.getElementById( 'page' );
+		const pageEl = getPageElement();
 		if ( ! pageEl || ! _panel ) { return; }
 		const panelWidth     = _panel.offsetWidth;
 		const availableWidth = window.innerWidth - panelWidth;
@@ -719,9 +744,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		// Capture the page-coordinate of the current viewport centre *before*
 		// the transform is applied so we can re-centre when the user toggled fit.
 		const viewportCenterPx = window.scrollY + window.innerHeight / 2;
+		_scaledPageEl                = pageEl;
 		_pageZoomScale               = scale;
 		pageEl.style.transform       = 'scale(' + scale + ')';
 		pageEl.style.transformOrigin = _dockedSide === 'left' ? 'top right' : 'top left';
+		pageEl.classList.add( 'wpbfe-scaled-page' );
 		document.body.classList.add( 'wpbfe-page-zoomed' );
 		// Only re-scroll on explicit user toggle; skip on panel-open / resize
 		// re-applications so we don't jump the page away from the clicked element.
@@ -737,7 +764,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 	}
 
 	function removePageZoom() {
-		const pageEl = document.getElementById( 'page' );
+		const pageEl = _scaledPageEl;
 		// Capture the scaled viewport centre before clearing the transform so we
 		// can map it back to page coordinates and restore the scroll position.
 		const viewportCenterPx = window.scrollY + window.innerHeight / 2;
@@ -745,7 +772,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		if ( pageEl ) {
 			pageEl.style.transform       = '';
 			pageEl.style.transformOrigin = '';
+			pageEl.classList.remove( 'wpbfe-scaled-page' );
 		}
+		_scaledPageEl  = null;
 		_pageZoomScale = 1;
 		document.body.classList.remove( 'wpbfe-page-zoomed' );
 		window.scrollTo( { top: Math.max( 0, newScrollTop ), behavior: 'instant' } );
