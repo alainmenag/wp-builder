@@ -360,7 +360,22 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		_mainStatusDisplay = statusField.control;
 		mainInner.appendChild( statusField.group );
 
-		if ( ! config.isTemplate && config.pageTemplates && Object.keys( config.pageTemplates ).length ) {
+		if ( config.isTemplate ) {
+			// Snippet CPTs always use Canvas Layout — show a read-only field
+			// that matches the disabled dropdown in the backend editor.
+			const pageTemplateField = createFieldGroup( text.pageLayout || 'Page Layout', () => {
+				const sel = document.createElement( 'select' );
+				sel.className = 'wpbfe-select';
+				const opt = document.createElement( 'option' );
+				opt.value       = 'wp-builder-canvas';
+				opt.textContent = text.canvasLayout || 'Canvas Layout';
+				sel.appendChild( opt );
+				sel.disabled = true;
+				return sel;
+			}, 'wpbfe-page-template' );
+			_mainPageTemplateDisplay = pageTemplateField.control;
+			mainInner.appendChild( pageTemplateField.group );
+		} else if ( config.pageTemplates && Object.keys( config.pageTemplates ).length ) {
 			const pageTemplateField = createFieldGroup( text.pageLayout || 'Page Layout', () => {
 				const sel = document.createElement( 'select' );
 				sel.className = 'wpbfe-select';
