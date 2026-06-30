@@ -183,10 +183,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		return section;
 	}
 
-	function createFieldGroup( labelText, controlFactory ) {
+	function createFieldGroup( labelText, controlFactory, fieldId ) {
 		const group   = document.createElement( 'div' );
 		group.className = 'wpbfe-field-group';
 		const control = controlFactory();
+		if ( fieldId ) { control.id = fieldId; }
 		const lbl     = document.createElement( 'label' );
 		lbl.className   = 'wpbfe-label';
 		lbl.textContent = labelText;
@@ -194,6 +195,39 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		group.appendChild( lbl );
 		group.appendChild( control );
 		return { group, control };
+	}
+
+	/**
+	 * Navigate to a specific tab, accordion section, and optional form field
+	 * within the front-end editor panel. Mirrors navigate() in navigation.js
+	 * for the full backend editor.
+	 *
+	 * @param {'main'|'element'} tab     Tab key to activate.
+	 * @param {string|null}      section Accordion ID suffix (e.g. 'identity') or null.
+	 * @param {string}           [field] Element ID to focus after opening.
+	 */
+	function navigateFrontend( tab, section, field ) {
+		switchTab( tab );
+
+		if ( section ) {
+			const accordion = document.getElementById( 'wpbfe-accordion-' + section );
+			if ( accordion && ! accordion.classList.contains( 'is-open' ) ) {
+				const accHeader = accordion.querySelector( '.wpbfe-accordion-header' );
+				if ( accHeader ) { accHeader.click(); }
+			}
+		}
+
+		if ( field ) {
+			const fieldEl = document.getElementById( field );
+			if ( fieldEl ) {
+				// Use requestAnimationFrame to ensure the accordion is fully
+				// visible before attempting to focus and select the field.
+				requestAnimationFrame( () => {
+					fieldEl.focus();
+					if ( fieldEl.select ) { fieldEl.select(); }
+				} );
+			}
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -259,9 +293,14 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		_nodeChip.style.cursor = 'pointer';
 		_nodeChip.addEventListener( 'click', () => {
 			scrollBuilderElementIntoView( _elementId );
+			navigateFrontend( 'element', 'identity', 'wpbfe-node' );
 		} );
 		_idChip = document.createElement( 'span' );
 		_idChip.className = 'wpbfe-chip wpbfe-chip--id';
+		_idChip.style.cursor = 'pointer';
+		_idChip.addEventListener( 'click', () => {
+			navigateFrontend( 'element', 'identity', 'wpbfe-node-id' );
+		} );
 		headerLeft.appendChild( _nodeChip );
 		headerLeft.appendChild( _idChip );
 
@@ -296,7 +335,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			inp.className = 'wpbfe-input';
 			inp.type      = 'text';
 			return inp;
-		} );
+		}, 'wpbfe-post-title' );
 		_mainTitleDisplay = titleField.control;
 		mainInner.appendChild( titleField.group );
 
@@ -315,7 +354,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				sel.appendChild( opt );
 			}
 			return sel;
-		} );
+		}, 'wpbfe-post-status' );
 		_mainStatusDisplay = statusField.control;
 		mainInner.appendChild( statusField.group );
 
@@ -329,6 +368,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 
 		// Identity section
 		const identityAcc   = createAccordion( text.identity || 'Identity', false );
+		identityAcc.id      = 'wpbfe-accordion-identity';
 		const identityInner = identityAcc.querySelector( '.wpbfe-accordion-body-inner' );
 
 		const nodeField = createFieldGroup( text.node || 'Node', () => {
@@ -341,7 +381,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				sel.appendChild( opt );
 			}
 			return sel;
-		} );
+		}, 'wpbfe-node' );
 		_nodeSelectCtrl = nodeField.control;
 		identityInner.appendChild( nodeField.group );
 
@@ -350,7 +390,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			inp.className = 'wpbfe-input';
 			inp.type      = 'text';
 			return inp;
-		} );
+		}, 'wpbfe-node-id' );
 		_idDisplayCtrl = idField.control;
 		_idDisplayCtrl.addEventListener( 'blur', () => {
 			const sanitized = _idDisplayCtrl.value.toLowerCase()
@@ -365,19 +405,21 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 
 		// Content section
 		_contentSection        = createAccordion( text.content || 'Content', true );
+		_contentSection.id     = 'wpbfe-accordion-content';
 		const contentInner     = _contentSection.querySelector( '.wpbfe-accordion-body-inner' );
 		const htmlField        = createFieldGroup( text.htmlContent || 'HTML Content', () => {
 			const ta = document.createElement( 'textarea' );
 			ta.className = 'wpbfe-textarea';
 			ta.rows      = 8;
 			return ta;
-		} );
+		}, 'wpbfe-html-content' );
 		_htmlTextareaCtrl = htmlField.control;
 		contentInner.appendChild( htmlField.group );
 		_elementTabPanel.appendChild( _contentSection );
 
 		// Layout section
 		const layoutAcc   = createAccordion( text.layout || 'Layout', false );
+		layoutAcc.id      = 'wpbfe-accordion-layout';
 		const layoutInner = layoutAcc.querySelector( '.wpbfe-accordion-body-inner' );
 
 		const flexDirField = createFieldGroup( text.flexDirection || 'Flex Direction', () => {
@@ -390,7 +432,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				sel.appendChild( opt );
 			}
 			return sel;
-		} );
+		}, 'wpbfe-flex-direction' );
 		_flexDirCtrl = flexDirField.control;
 		layoutInner.appendChild( flexDirField.group );
 
@@ -402,7 +444,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			inp.step        = '1';
 			inp.placeholder = '0';
 			return inp;
-		} );
+		}, 'wpbfe-flex-grow' );
 		_flexGrowCtrl = flexGrowField.control;
 		layoutInner.appendChild( flexGrowField.group );
 
@@ -412,13 +454,14 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			inp.type        = 'text';
 			inp.placeholder = 'e.g. 16px';
 			return inp;
-		} );
+		}, 'wpbfe-gap' );
 		_gapCtrl = gapField.control;
 		layoutInner.appendChild( gapField.group );
 		_elementTabPanel.appendChild( layoutAcc );
 
 		// Style section
 		const styleAcc   = createAccordion( text.style || 'Style', false );
+		styleAcc.id      = 'wpbfe-accordion-style';
 		const styleInner = styleAcc.querySelector( '.wpbfe-accordion-body-inner' );
 		const STYLE_PLACEHOLDER = "self {\n  background-color: red;\n}";
 		const styleField = createFieldGroup( text.customStyle || 'Custom CSS', () => {
@@ -427,7 +470,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			ta.rows        = 6;
 			ta.placeholder = STYLE_PLACEHOLDER;
 			return ta;
-		} );
+		}, 'wpbfe-custom-style' );
 		_styleTextareaCtrl = styleField.control;
 		// Insert the hint paragraph between the label and the textarea.
 		if ( text.customStyleHint ) {
@@ -450,7 +493,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		} );
 
 		// Attributes section — rendered dynamically in populatePanel
-		_attrsSection = createAccordion( text.attributes || 'Attributes', false );
+		_attrsSection    = createAccordion( text.attributes || 'Attributes', false );
+		_attrsSection.id = 'wpbfe-accordion-attrs';
 		_elementTabPanel.appendChild( _attrsSection );
 
 		body.appendChild( _elementTabPanel );
