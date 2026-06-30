@@ -186,11 +186,11 @@ body.admin-bar .wpbfe-panel.is-docked {
 	cursor: pointer;
 	display: inline-flex;
 	flex-shrink: 0;
-	height: 34px;
+	height: 44px;
 	justify-content: center;
 	text-decoration: none;
-	width: 34px;
-	padding: 0;
+	width: 44px;
+	padding: 12px;
 	border: none !important;
 }
 
@@ -198,6 +198,11 @@ body.admin-bar .wpbfe-panel.is-docked {
 .wpbfe-panel-footer-link:focus {
 	color: var(--wpb-text-primary);
 	outline: none;
+}
+
+.wpbfe-tab-btn.wpbfe-panel-footer-link.is-active {
+	background-color: var(--wpb-bg-page) !important;
+	color: #ffffff !important;
 }
 
 .wpbfe-close-btn {
@@ -289,12 +294,11 @@ body.admin-bar .wpbfe-panel.is-docked {
 .wpbfe-panel-footer {
 	align-items: center;
 	background: var(--wpb-bg-elevated);
-	border-top: 1px solid var(--wpb-border-subtle);
 	display: flex;
 	flex-shrink: 0;
 	user-select: none;
 	gap: 10px;
-	padding: 10px 14px;
+	padding: 0px;
 	justify-content: space-between;
 }
 
@@ -303,7 +307,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 .wpbfe-footer-actions {
 	align-items: center;
 	display: flex;
-	gap: 10px;
+	gap: 0px;
 }
 
 .wpbfe-save-btn {

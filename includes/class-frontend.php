@@ -149,7 +149,7 @@ trait WP_Builder_Frontend {
 					'saving'        => __( 'Saving...', 'wp-builder' ),
 					'saved'         => __( 'Saved', 'wp-builder' ),
 					'close'         => __( 'Close', 'wp-builder' ),
-					'loading'       => __( 'Loading...', 'wp-builder' ),
+					'loading'       => __( '...', 'wp-builder' ),
 					'editInBuilder' => __( 'Edit in Builder', 'wp-builder' ),
 					'node'          => __( 'Node', 'wp-builder' ),
 					'elementId'     => __( 'Element ID', 'wp-builder' ),
