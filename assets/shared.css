@@ -158,7 +158,7 @@
 
 .wp-builder-select:disabled option,
 .wpbfe-select:disabled option {
-	color: var(--wpb-text-disabled);
+	color: var(--wpb-text-disabled) !important;
 }
 
 /* ── Textarea / code editor ─────────────────────────────────────────────── */

@@ -371,6 +371,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				opt.textContent = text.canvasLayout || 'Canvas Layout';
 				opt.selected    = true;
 				sel.appendChild( opt );
+				sel.value    = 'wp-builder-canvas';
 				sel.disabled = true;
 				return sel;
 			}, 'wpbfe-page-template' );
