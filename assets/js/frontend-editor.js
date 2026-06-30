@@ -114,9 +114,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 	let _mainTabPanel      = null;
 	/** @type {HTMLElement|null} The Element tab panel container. */
 	let _elementTabPanel   = null;
-	/** @type {HTMLInputElement|null} Readonly post title display in Main tab. */
+	/** @type {HTMLInputElement|null} Post title input in Main tab. */
 	let _mainTitleDisplay  = null;
-	/** @type {HTMLInputElement|null} Readonly post status display in Main tab. */
+	/** @type {HTMLSelectElement|null} Post-status select in Main tab. */
 	let _mainStatusDisplay = null;
 	/** @type {HTMLButtonElement[]} The two tab toggle buttons. */
 	let _tabBtns           = [];
@@ -295,18 +295,26 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			const inp = document.createElement( 'input' );
 			inp.className = 'wpbfe-input';
 			inp.type      = 'text';
-			inp.readOnly  = true;
 			return inp;
 		} );
 		_mainTitleDisplay = titleField.control;
 		mainInner.appendChild( titleField.group );
 
 		const statusField = createFieldGroup( text.postStatus || 'Post Status', () => {
-			const inp = document.createElement( 'input' );
-			inp.className = 'wpbfe-input';
-			inp.type      = 'text';
-			inp.readOnly  = true;
-			return inp;
+			const sel = document.createElement( 'select' );
+			sel.className = 'wpbfe-select';
+			for ( const [ val, lbl ] of [
+				[ 'publish', text.statusPublish  || 'Publish'        ],
+				[ 'draft',   text.statusDraft    || 'Draft'          ],
+				[ 'pending', text.statusPending  || 'Pending Review' ],
+				[ 'private', text.statusPrivate  || 'Private'        ],
+			] ) {
+				const opt = document.createElement( 'option' );
+				opt.value = val;
+				opt.textContent = lbl;
+				sel.appendChild( opt );
+			}
+			return sel;
 		} );
 		_mainStatusDisplay = statusField.control;
 		mainInner.appendChild( statusField.group );
@@ -341,10 +349,17 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			const inp = document.createElement( 'input' );
 			inp.className = 'wpbfe-input';
 			inp.type      = 'text';
-			inp.readOnly  = true;
 			return inp;
 		} );
 		_idDisplayCtrl = idField.control;
+		_idDisplayCtrl.addEventListener( 'blur', () => {
+			const sanitized = _idDisplayCtrl.value.toLowerCase()
+				.replace( /\s+/g, '-' )
+				.replace( /[^a-z0-9_-]/g, '' )
+				.replace( /-+/g, '-' )
+				.replace( /^-+|-+$/g, '' );
+			_idDisplayCtrl.value = sanitized || _elementId || '';
+		} );
 		identityInner.appendChild( idField.group );
 		_elementTabPanel.appendChild( identityAcc );
 
@@ -1006,6 +1021,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		form.append( 'nonce',      config.saveNonce );
 		form.append( 'post_id',    _postId );
 		form.append( 'element_id', _elementId );
+		form.append( 'new_element_id', _idDisplayCtrl.value );
+		form.append( 'title',       _mainTitleDisplay  ? _mainTitleDisplay.value  : '' );
+		form.append( 'post_status', _mainStatusDisplay ? _mainStatusDisplay.value : '' );
 		form.append( 'node',       _nodeSelectCtrl.value );
 		form.append( 'props',      JSON.stringify( {
 			flexDirection: _flexDirCtrl.value,
@@ -1036,6 +1054,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				}
 
 				if ( payload.data.element ) { populatePanel( payload.data.element ); }
+				if ( payload.data.element && payload.data.element.id ) {
+					_elementId = payload.data.element.id;
+				}
+				if ( payload.data.post_title  !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = payload.data.post_title; }
+				if ( payload.data.post_status !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = payload.data.post_status; }
 				setStatus( text.saved || 'Saved', false );
 			} )
 			.catch( ( err ) => {

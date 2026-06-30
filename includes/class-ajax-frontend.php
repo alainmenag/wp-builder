@@ -69,6 +69,19 @@ trait WP_Builder_Ajax_Frontend {
 			wp_send_json_error( array( 'message' => __( 'Element not found.', 'wp-builder' ) ), 404 );
 		}
 
+		// Resolve the new element ID — use the submitted value if valid, else keep the original.
+		$new_element_id = isset( $_POST['new_element_id'] ) ? sanitize_key( wp_unslash( $_POST['new_element_id'] ) ) : '';
+		if ( '' === $new_element_id ) {
+			$new_element_id = $element_id;
+		}
+		// Reject if the requested ID is already used by a different element.
+		if ( $new_element_id !== $element_id ) {
+			$collision = $this->find_layout_element( $layout['children'], $new_element_id );
+			if ( null !== $collision ) {
+				wp_send_json_error( array( 'message' => __( 'An element with that ID already exists.', 'wp-builder' ) ), 409 );
+			}
+		}
+
 		// Decode JSON-encoded props / attrs sent as serialized strings.
 		$raw_props = array();
 		if ( isset( $_POST['props'] ) ) {
@@ -83,7 +96,7 @@ trait WP_Builder_Ajax_Frontend {
 		}
 
 		$updated = array(
-			'id'       => $element_id,
+			'id'       => $new_element_id,
 			'node'     => isset( $_POST['node'] ) ? sanitize_key( wp_unslash( $_POST['node'] ) ) : $element['node'],
 			'props'    => $raw_props,
 			'style'    => isset( $_POST['style'] ) ? wp_unslash( (string) $_POST['style'] ) : '',
@@ -100,18 +113,43 @@ trait WP_Builder_Ajax_Frontend {
 		// wp_slash() is required because update_post_meta calls wp_unslash() internally.
 		update_post_meta( $post_id, self::META_KEY, wp_slash( wp_json_encode( $layout ) ) );
 
+		// Update post status if supplied and allowed.
+		$allowed_statuses = array( 'publish', 'draft', 'pending', 'private' );
+		$new_status       = isset( $_POST['post_status'] ) ? sanitize_key( wp_unslash( $_POST['post_status'] ) ) : '';
+		$post             = get_post( $post_id );
+
+		if ( $new_status && in_array( $new_status, $allowed_statuses, true ) && $post && $new_status !== $post->post_status ) {
+			$can_change = true;
+			if ( in_array( $new_status, array( 'publish', 'private' ), true ) ) {
+				$can_change = current_user_can( 'publish_post', $post_id );
+			}
+			if ( $can_change ) {
+				wp_update_post( array( 'ID' => $post_id, 'post_status' => $new_status ) );
+				$post = get_post( $post_id );
+			}
+		}
+
+		// Update post title if supplied.
+		$new_title = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+		if ( $new_title !== '' ) {
+			wp_update_post( array( 'ID' => $post_id, 'post_title' => $new_title ) );
+			$post = get_post( $post_id );
+		}
+
 		// Re-render the full layout root with the post ID so the DOM swap
 		// preserves the data-wp-builder-post-id attribute and any nested styles.
-		$post      = get_post( $post_id );
-		$css_class = ( $post && self::TEMPLATE_CPT === $post->post_type )
+		$post_obj  = $post instanceof WP_Post ? $post : get_post( $post_id );
+		$css_class = ( $post_obj && self::TEMPLATE_CPT === $post_obj->post_type )
 			? 'wp-builder-layout wp-builder-layout--snippet'
 			: 'wp-builder-layout';
 		$html      = $this->render_element( $new_children[0], $css_class, $post_id );
 
 		wp_send_json_success(
 			array(
-				'element' => $sanitized,
-				'html'    => $html,
+				'element'     => $sanitized,
+				'html'        => $html,
+				'post_title'  => get_the_title( $post_id ),
+				'post_status' => $post_obj ? $post_obj->post_status : '',
 			)
 		);
 	}
