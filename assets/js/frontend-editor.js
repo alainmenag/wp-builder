@@ -293,6 +293,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		_nodeChip.style.cursor = 'pointer';
 		_nodeChip.addEventListener( 'click', () => {
 			scrollBuilderElementIntoView( _elementId );
+			navigateFrontend( 'element', 'identity', 'wpbfe-node' );
 		} );
 		_idChip = document.createElement( 'span' );
 		_idChip.className = 'wpbfe-chip wpbfe-chip--id';
