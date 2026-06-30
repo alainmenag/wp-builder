@@ -171,6 +171,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 
 .wpbfe-chip--id {
 	color: var(--wpb-text-muted);
+	cursor: pointer;
 	font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 	font-size: 10px;
 	font-weight: 400;
