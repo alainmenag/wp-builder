@@ -172,6 +172,10 @@ trait WP_Builder_Frontend {
 					'tabElement'     => __( 'Element', 'wp-builder' ),
 					'postTitle'      => __( 'Post Title', 'wp-builder' ),
 					'postStatus'     => __( 'Post Status', 'wp-builder' ),
+					'statusPublish'  => __( 'Publish', 'wp-builder' ),
+					'statusDraft'    => __( 'Draft', 'wp-builder' ),
+					'statusPending'  => __( 'Pending Review', 'wp-builder' ),
+					'statusPrivate'  => __( 'Private', 'wp-builder' ),
 				),
 			)
 		);
