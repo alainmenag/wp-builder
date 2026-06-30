@@ -509,7 +509,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		_saveBtn.appendChild( saveLbl );
 		_saveBtn.addEventListener( 'click', saveElement );
 
-		footerActions.appendChild( _editLink );
+		if ( ! config.isTemplate ) {
+			footerActions.appendChild( _editLink );
+		}
 		footerActions.appendChild( _fitBtn );
 		footerActions.appendChild( _saveBtn );
 		footer.appendChild( footerActions );
