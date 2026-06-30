@@ -118,6 +118,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 	let _mainTitleDisplay  = null;
 	/** @type {HTMLSelectElement|null} Post-status select in Main tab. */
 	let _mainStatusDisplay = null;
+	/** @type {HTMLSelectElement|null} Page layout select in Main tab. */
+	let _mainPageTemplateDisplay = null;
 	/** @type {HTMLButtonElement[]} The two tab toggle buttons. */
 	let _tabBtns           = [];
 
@@ -357,6 +359,42 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		}, 'wpbfe-post-status' );
 		_mainStatusDisplay = statusField.control;
 		mainInner.appendChild( statusField.group );
+
+		if ( config.isTemplate ) {
+			// Snippet CPTs always use Canvas Layout — show a read-only field
+			// that matches the disabled dropdown in the backend editor.
+			const pageTemplateField = createFieldGroup( text.pageLayout || 'Page Layout', () => {
+				const sel = document.createElement( 'select' );
+				sel.className = 'wpbfe-select';
+				const opt = document.createElement( 'option' );
+				opt.value       = 'wp-builder-canvas';
+				opt.textContent = text.canvasLayout || 'Canvas Layout';
+				opt.selected    = true;
+				sel.appendChild( opt );
+				sel.value    = 'wp-builder-canvas';
+				sel.disabled = true;
+				return sel;
+			}, 'wpbfe-page-template' );
+			_mainPageTemplateDisplay = pageTemplateField.control;
+			mainInner.appendChild( pageTemplateField.group );
+		} else if ( config.pageTemplates && Object.keys( config.pageTemplates ).length ) {
+			const pageTemplateField = createFieldGroup( text.pageLayout || 'Page Layout', () => {
+				const sel = document.createElement( 'select' );
+				sel.className = 'wpbfe-select';
+				for ( const [ val, lbl ] of Object.entries( config.pageTemplates ) ) {
+					const opt = document.createElement( 'option' );
+					opt.value       = val;
+					opt.textContent = lbl;
+					sel.appendChild( opt );
+				}
+				return sel;
+			}, 'wpbfe-page-template' );
+			_mainPageTemplateDisplay = pageTemplateField.control;
+			if ( config.pageTemplate ) {
+				_mainPageTemplateDisplay.value = config.pageTemplate;
+			}
+			mainInner.appendChild( pageTemplateField.group );
+		}
 
 		_mainTabPanel.appendChild( mainInner );
 		body.appendChild( _mainTabPanel );
@@ -982,7 +1020,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 					throw new Error( payload && payload.data && payload.data.message
 						? payload.data.message : ( text.error || 'Error' ) );
 				}
-				populatePanel( payload.data.element, payload.data.post_title || '', payload.data.post_status || '' );
+				populatePanel( payload.data.element, payload.data.post_title || '', payload.data.post_status || '', payload.data.page_template || '' );
 				_saveBtn.disabled = false;
 				setStatus( '', false );
 			} )
@@ -995,7 +1033,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 	// Populate panel fields from element data
 	// -----------------------------------------------------------------------
 
-	function populatePanel( element, postTitle, postStatus ) {
+	function populatePanel( element, postTitle, postStatus, pageTemplate ) {
 		const node   = normalizeNodeTag( element.node );
 		const isVoid = !! VOID_NODES[ node ];
 		const props  = element.props || {};
@@ -1041,6 +1079,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		// Populate the Main tab's post-level fields when values are provided.
 		if ( postTitle !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = postTitle; }
 		if ( postStatus !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = postStatus; }
+		if ( pageTemplate !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = pageTemplate; }
 	}
 
 	// -----------------------------------------------------------------------
@@ -1066,8 +1105,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		form.append( 'post_id',    _postId );
 		form.append( 'element_id', _elementId );
 		form.append( 'new_element_id', _idDisplayCtrl.value );
-		form.append( 'title',       _mainTitleDisplay  ? _mainTitleDisplay.value  : '' );
-		form.append( 'post_status', _mainStatusDisplay ? _mainStatusDisplay.value : '' );
+		form.append( 'title',         _mainTitleDisplay  ? _mainTitleDisplay.value  : '' );
+		form.append( 'post_status',   _mainStatusDisplay ? _mainStatusDisplay.value : '' );
+		form.append( 'page_template', _mainPageTemplateDisplay ? _mainPageTemplateDisplay.value : '' );
 		form.append( 'node',       _nodeSelectCtrl.value );
 		form.append( 'props',      JSON.stringify( {
 			flexDirection: _flexDirCtrl.value,
@@ -1103,6 +1143,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				}
 				if ( payload.data.post_title  !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = payload.data.post_title; }
 				if ( payload.data.post_status !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = payload.data.post_status; }
+				if ( payload.data.page_template !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = payload.data.page_template; }
 				setStatus( text.saved || 'Saved', false );
 			} )
 			.catch( ( err ) => {

@@ -150,6 +150,17 @@
 	background: var(--wpb-bg-control);
 }
 
+.wp-builder-select:disabled,
+.wpbfe-select:disabled {
+	color: var(--wpb-text-disabled);
+	opacity: 1;
+}
+
+.wp-builder-select:disabled option,
+.wpbfe-select:disabled option {
+	color: var(--wpb-text-disabled) !important;
+}
+
 /* ── Textarea / code editor ─────────────────────────────────────────────── */
 
 .wp-builder-html-editor,
