@@ -265,15 +265,17 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		headerLeft.appendChild( _nodeChip );
 		headerLeft.appendChild( _idChip );
 
-		const closeBtn = document.createElement( 'button' );
-		closeBtn.className = 'wpbfe-close-btn';
-		closeBtn.type      = 'button';
-		closeBtn.setAttribute( 'aria-label', text.close || 'Close' );
-		closeBtn.innerHTML = '&#x2715;';
-		closeBtn.addEventListener( 'click', closePanel );
-
 		header.appendChild( headerLeft );
-		header.appendChild( closeBtn );
+
+		if ( ! config.isTemplate ) {
+			const closeBtn = document.createElement( 'button' );
+			closeBtn.className = 'wpbfe-close-btn';
+			closeBtn.type      = 'button';
+			closeBtn.setAttribute( 'aria-label', text.close || 'Close' );
+			closeBtn.innerHTML = '&#x2715;';
+			closeBtn.addEventListener( 'click', closePanel );
+			header.appendChild( closeBtn );
+		}
 		_panel.appendChild( header );
 
 		// Body
@@ -1060,6 +1062,22 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				rootEl
 			);
 		} );
+
+		if ( config.isTemplate ) {
+			autoOpenForTemplate();
+		}
+	}
+
+	function autoOpenForTemplate() {
+		const rootEl = document.querySelector( '[data-wp-builder-post-id]' );
+		if ( ! rootEl ) { return; }
+		const firstEl = rootEl.querySelector( '[data-wp-builder-id]' );
+		if ( ! firstEl ) { return; }
+		openPanel(
+			rootEl.getAttribute( 'data-wp-builder-post-id' ),
+			firstEl.getAttribute( 'data-wp-builder-id' ),
+			rootEl
+		);
 	}
 
 	if ( document.readyState === 'loading' ) {

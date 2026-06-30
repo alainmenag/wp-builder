@@ -139,6 +139,7 @@ trait WP_Builder_Frontend {
 				'builderBaseUrl' => admin_url( 'post.php' ),
 				'getNonce'       => wp_create_nonce( self::FRONTEND_GET_NONCE_ACTION ),
 				'saveNonce'      => wp_create_nonce( self::FRONTEND_SAVE_NONCE_ACTION ),
+				'isTemplate'     => is_singular( self::TEMPLATE_CPT ),
 				'i18n'           => array(
 					'identity'      => __( 'Identity', 'wp-builder' ),
 					'content'       => __( 'Content', 'wp-builder' ),
