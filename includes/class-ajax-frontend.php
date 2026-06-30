@@ -38,9 +38,10 @@ trait WP_Builder_Ajax_Frontend {
 		}
 
 		wp_send_json_success( array(
-			'element'     => $element,
-			'post_title'  => get_the_title( $post_id ),
-			'post_status' => get_post_status( $post_id ),
+			'element'       => $element,
+			'post_title'    => get_the_title( $post_id ),
+			'post_status'   => get_post_status( $post_id ),
+			'page_template' => $this->get_frontend_page_template( $post_id ),
 		) );
 	}
 
@@ -136,6 +137,14 @@ trait WP_Builder_Ajax_Frontend {
 			$post = get_post( $post_id );
 		}
 
+		// Update page template if supplied (not applicable to snippet CPT).
+		$post_for_type = get_post( $post_id );
+		$is_cpt        = $post_for_type && self::TEMPLATE_CPT === $post_for_type->post_type;
+		if ( ! $is_cpt && isset( $_POST['page_template'] ) ) {
+			$page_template_value = sanitize_text_field( wp_unslash( $_POST['page_template'] ) );
+			update_post_meta( $post_id, '_wp_page_template', $page_template_value );
+		}
+
 		// Re-render the full layout root with the post ID so the DOM swap
 		// preserves the data-wp-builder-post-id attribute and any nested styles.
 		$post_obj  = $post instanceof WP_Post ? $post : get_post( $post_id );
@@ -146,10 +155,11 @@ trait WP_Builder_Ajax_Frontend {
 
 		wp_send_json_success(
 			array(
-				'element'     => $sanitized,
-				'html'        => $html,
-				'post_title'  => get_the_title( $post_id ),
-				'post_status' => $post_obj ? $post_obj->post_status : '',
+				'element'       => $sanitized,
+				'html'          => $html,
+				'post_title'    => get_the_title( $post_id ),
+				'post_status'   => $post_obj ? $post_obj->post_status : '',
+				'page_template' => $this->get_frontend_page_template( $post_id ),
 			)
 		);
 	}
@@ -157,6 +167,21 @@ trait WP_Builder_Ajax_Frontend {
 	// -------------------------------------------------------------------------
 	// Helpers — recursive element search / replace
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Return the active page template slug for a post, or an empty string for
+	 * snippet CPTs (which always use the canvas template).
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string Page template slug or empty string.
+	 */
+	private function get_frontend_page_template( int $post_id ): string {
+		$post = get_post( $post_id );
+		if ( $post && self::TEMPLATE_CPT === $post->post_type ) {
+			return '';
+		}
+		return get_post_meta( $post_id, '_wp_page_template', true ) ?: '';
+	}
 
 	private function find_layout_element( array $elements, string $id ): ?array {
 		foreach ( $elements as $element ) {

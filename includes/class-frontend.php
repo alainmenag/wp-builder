@@ -41,7 +41,7 @@ trait WP_Builder_Frontend {
 		}
 
 		$this->enqueue_frontend_style();
-		$this->enqueue_frontend_editor_assets();
+		$this->enqueue_frontend_editor_assets( $post_id );
 
 		return $this->render_element( $this->get_layout_root_element( $post_id ), $css_classes, $post_id );
 	}
@@ -61,7 +61,7 @@ trait WP_Builder_Frontend {
 		}
 
 		$this->enqueue_frontend_style();
-		$this->enqueue_frontend_editor_assets();
+		$this->enqueue_frontend_editor_assets( $post_id );
 	}
 
 	public function render_builder_content( string $content ): string {
@@ -90,7 +90,7 @@ trait WP_Builder_Frontend {
 		);
 	}
 
-	private function enqueue_frontend_editor_assets(): void {
+	private function enqueue_frontend_editor_assets( int $post_id = 0 ): void {
 		if ( ! is_user_logged_in() || ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
@@ -131,6 +131,9 @@ trait WP_Builder_Frontend {
 			true
 		);
 
+		$post_obj    = $post_id ? get_post( $post_id ) : null;
+		$is_cpt      = $post_obj && self::TEMPLATE_CPT === $post_obj->post_type;
+
 		wp_localize_script(
 			'wp-builder-frontend-editor',
 			'wpBuilderFrontendEditor',
@@ -140,6 +143,8 @@ trait WP_Builder_Frontend {
 				'getNonce'       => wp_create_nonce( self::FRONTEND_GET_NONCE_ACTION ),
 				'saveNonce'      => wp_create_nonce( self::FRONTEND_SAVE_NONCE_ACTION ),
 				'isTemplate'     => is_singular( self::TEMPLATE_CPT ),
+				'pageTemplate'   => ( $post_id && ! $is_cpt ) ? ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ) : '',
+				'pageTemplates'  => ( $post_id && ! $is_cpt ) ? $this->get_available_page_templates( $post_id ) : array(),
 				'i18n'           => array(
 					'identity'      => __( 'Identity', 'wp-builder' ),
 					'content'       => __( 'Content', 'wp-builder' ),
@@ -172,6 +177,7 @@ trait WP_Builder_Frontend {
 					'tabElement'     => __( 'Element', 'wp-builder' ),
 					'postTitle'      => __( 'Post Title', 'wp-builder' ),
 					'postStatus'     => __( 'Post Status', 'wp-builder' ),
+					'pageLayout'     => __( 'Page Layout', 'wp-builder' ),
 					'statusPublish'  => __( 'Publish', 'wp-builder' ),
 					'statusDraft'    => __( 'Draft', 'wp-builder' ),
 					'statusPending'  => __( 'Pending Review', 'wp-builder' ),
