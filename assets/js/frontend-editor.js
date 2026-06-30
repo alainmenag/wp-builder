@@ -369,6 +369,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				const opt = document.createElement( 'option' );
 				opt.value       = 'wp-builder-canvas';
 				opt.textContent = text.canvasLayout || 'Canvas Layout';
+				opt.selected    = true;
 				sel.appendChild( opt );
 				sel.disabled = true;
 				return sel;
