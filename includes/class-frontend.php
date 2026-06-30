@@ -149,7 +149,7 @@ trait WP_Builder_Frontend {
 					'saving'        => __( 'Saving...', 'wp-builder' ),
 					'saved'         => __( 'Saved', 'wp-builder' ),
 					'close'         => __( 'Close', 'wp-builder' ),
-					'loading'       => __( 'Loading...', 'wp-builder' ),
+					'loading'       => __( '...', 'wp-builder' ),
 					'editInBuilder' => __( 'Edit in Builder', 'wp-builder' ),
 					'node'          => __( 'Node', 'wp-builder' ),
 					'elementId'     => __( 'Element ID', 'wp-builder' ),
@@ -167,6 +167,10 @@ trait WP_Builder_Frontend {
 					'error'          => __( 'Error', 'wp-builder' ),
 					'fitPage'        => __( 'Fit Page', 'wp-builder' ),
 					'resetFit'       => __( 'Reset Fit', 'wp-builder' ),
+					'tabMain'        => __( 'Main', 'wp-builder' ),
+					'tabElement'     => __( 'Element', 'wp-builder' ),
+					'postTitle'      => __( 'Post Title', 'wp-builder' ),
+					'postStatus'     => __( 'Post Status', 'wp-builder' ),
 				),
 			)
 		);
