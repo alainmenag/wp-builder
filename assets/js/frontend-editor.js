@@ -1407,8 +1407,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		el.style.gap = gap || '';
 
-		// ── Custom style ──────────────────────────────────────────────────────
-		const styleValue = _styleEditor
+		// ── Custom style ──────────────────────────────────────────────────────		const styleValue = _styleEditor
 			? _styleEditor.codemirror.getValue()
 			: ( _styleTextareaCtrl ? _styleTextareaCtrl.value : '' );
 		const selector = '[data-wp-builder-id="' + _elementId + '"]';
@@ -1426,31 +1425,6 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			styleEl.textContent = styleValue.replace( /\bself\b/g, selector );
 		} else if ( styleEl ) {
 			styleEl.remove();
-		}
-
-		// ── Content ───────────────────────────────────────────────────────────
-		const node   = normalizeNodeTag( _nodeSelectCtrl ? _nodeSelectCtrl.value : 'div' );
-		const isVoid = !! VOID_NODES[ node ];
-		if ( ! isVoid && _htmlTextareaCtrl ) {
-			const contentValue = _htmlTextareaCtrl.value;
-			// PHP renders content before children; keep direct builder children in place.
-			const builderChildren = Array.from( el.children ).filter(
-				( c ) => c.hasAttribute( 'data-wp-builder-id' )
-			);
-			const firstBuilderChild = builderChildren[ 0 ] || null;
-			// Remove all nodes that precede the first builder child (old content).
-			const toRemove = [];
-			for ( const child of el.childNodes ) {
-				if ( firstBuilderChild && child === firstBuilderChild ) { break; }
-				toRemove.push( child );
-			}
-			toRemove.forEach( ( n ) => n.parentNode.removeChild( n ) );
-			// Re-insert the new content before the first builder child.
-			if ( contentValue ) {
-				const tpl = document.createElement( 'template' );
-				tpl.innerHTML = contentValue;
-				el.insertBefore( tpl.content, firstBuilderChild );
-			}
 		}
 	}
 
