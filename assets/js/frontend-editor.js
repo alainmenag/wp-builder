@@ -1407,7 +1407,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		el.style.gap = gap || '';
 
-		// ── Custom style ──────────────────────────────────────────────────────		const styleValue = _styleEditor
+		// ── Custom style ──────────────────────────────────────────────────────
+		const styleValue = _styleEditor
 			? _styleEditor.codemirror.getValue()
 			: ( _styleTextareaCtrl ? _styleTextareaCtrl.value : '' );
 		const selector = '[data-wp-builder-id="' + _elementId + '"]';
