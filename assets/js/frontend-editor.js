@@ -1355,7 +1355,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( _hasUnsavedChanges ) { return; }
 		_hasUnsavedChanges = true;
 		if ( _saveBtn ) { _saveBtn.classList.add( 'has-unsaved-changes' ); }
-		if ( _saveLbl ) { _saveLbl.textContent = text.unsave || 'Unsave'; }
+		if ( _saveLbl ) { _saveLbl.textContent = text.unsaved || 'Unsaved'; }
 	}
 
 	function markClean() {
@@ -1406,6 +1406,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		}
 
 		el.style.gap = gap || '';
+
+		// ── HTML content ──────────────────────────────────────────────────────
+		if ( _htmlTextareaCtrl && ! _contentSection.hidden ) {
+			el.innerHTML = _htmlTextareaCtrl.value;
+		}
 
 		// ── Custom style ──────────────────────────────────────────────────────
 		const styleValue = _styleEditor
