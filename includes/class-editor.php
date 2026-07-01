@@ -42,7 +42,7 @@ exit;
 
 // Render the builder canvas directly without an HTTP redirect.
 $this->enqueue_frontend_style();
-$this->enqueue_editor_assets( $post_id );
+$this->enqueue_editor_assets( $post_id, true );
 
 $root_element = $this->get_layout_root_element( $post_id );
 $canvas_html  = $this->render_element( $root_element, 'wp-builder-layout', $post_id );

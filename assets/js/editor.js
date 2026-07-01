@@ -1821,7 +1821,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			);
 		} );
 
-		if ( config.isTemplate ) {
+		if ( config.isBuilderMode ) {
 			autoOpenForTemplate();
 		}
 	}
