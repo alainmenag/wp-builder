@@ -46,7 +46,7 @@ exit;
 
 /**
  * Build a context array for a given post containing values needed by
- * get_frontend_panel_schema() and enqueue_editor_assets().
+ * get_panel_schema() and enqueue_editor_assets().
  *
  * @param int $post_id Post ID.
  * @return array {

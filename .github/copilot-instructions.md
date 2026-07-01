@@ -93,7 +93,7 @@ wp-builder/
 
 - All class names are prefixed with `wp-builder-` (e.g. `.wp-builder-container`, `.wp-builder-panel`).
 - Shared design tokens (`--wpb-*`) live in `assets/shared.css`, loaded as a dependency of `editor.css`.
-- The frontend editor stylesheet (`assets/editor.css`) uses the `wpbe-` prefix for editor-specific class names.
+- The editor stylesheet (`assets/editor.css`) uses the `wpbe-` prefix for editor-specific class names.
 - The frontend stylesheet (`assets/frontend.css`) is minimal — only layout rules for `.wp-builder-layout` and `.wp-builder-container`.
 
 ---

@@ -42,8 +42,8 @@ trait WP_Builder_Ajax {
 			'layout'        => $layout,
 			'post_title'    => get_the_title( $post_id ),
 			'post_status'   => get_post_status( $post_id ),
-			'page_template' => $this->get_frontend_page_template( $post_id ),
-			'fields'        => $this->get_frontend_panel_schema( $post_id ),
+			'page_template' => $this->get_page_template( $post_id ),
+			'fields'        => $this->get_panel_schema( $post_id ),
 		) );
 	}
 
@@ -162,7 +162,7 @@ trait WP_Builder_Ajax {
 				'html'          => $html,
 				'post_title'    => get_the_title( $post_id ),
 				'post_status'   => $post_obj ? $post_obj->post_status : '',
-				'page_template' => $this->get_frontend_page_template( $post_id ),
+				'page_template' => $this->get_page_template( $post_id ),
 			)
 		);
 	}
@@ -188,7 +188,7 @@ trait WP_Builder_Ajax {
 	 * @param int $post_id Post being edited.
 	 * @return array
 	 */
-	private function get_frontend_panel_schema( int $post_id ): array {
+	private function get_panel_schema( int $post_id ): array {
 		$ctx              = $this->get_post_context( $post_id );
 		$is_template      = $ctx['is_template'];
 		$page_templates   = $ctx['page_templates'];
@@ -402,7 +402,7 @@ trait WP_Builder_Ajax {
 	 * @param int $post_id Post ID.
 	 * @return string Page template slug or empty string.
 	 */
-	private function get_frontend_page_template( int $post_id ): string {
+	private function get_page_template( int $post_id ): string {
 		$post = get_post( $post_id );
 		if ( $post && self::TEMPLATE_CPT === $post->post_type ) {
 			return 'wp-builder-canvas';

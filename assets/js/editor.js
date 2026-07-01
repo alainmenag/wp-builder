@@ -229,7 +229,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	 * @param {string|null}      section Accordion ID suffix (e.g. 'identity') or null.
 	 * @param {string}           [field] Element ID to focus after opening.
 	 */
-	function navigateFrontend( tab, section, field ) {
+	function navigateEditor( tab, section, field ) {
 		switchTab( tab );
 
 		if ( section ) {
@@ -535,7 +535,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		_nodeChip.style.cursor = 'pointer';
 		_nodeChip.addEventListener( 'click', () => {
 			scrollBuilderElementIntoView( _elementId );
-			navigateFrontend( 'element', 'identity', 'wpbe-node' );
+			navigateEditor( 'element', 'identity', 'wpbe-node' );
 		} );
 
 		// Structure-view toggle button — placed to the left of the node chip.
@@ -552,7 +552,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		_idChip.className = 'wpbe-chip wpbe-chip--id';
 		_idChip.style.cursor = 'pointer';
 		_idChip.addEventListener( 'click', () => {
-			navigateFrontend( 'element', 'identity', 'wpbe-node-id' );
+			navigateEditor( 'element', 'identity', 'wpbe-node-id' );
 		} );
 		headerLeft.appendChild( _nodeChip );
 		headerLeft.appendChild( _idChip );
