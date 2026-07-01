@@ -2,6 +2,7 @@
  * Editor constants — node glossary, void-node set, and icon SVG strings.
  */
 
+export const EDITOR_CPT = 'builder';
 export const TEMPLATE_CPT = 'wp_builder_template';
 
 export const NODE_GLOSSARY = {
