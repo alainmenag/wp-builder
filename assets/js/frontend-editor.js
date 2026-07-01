@@ -1398,16 +1398,79 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	/**
 	 * Apply the current panel field values directly to the live DOM element so
 	 * changes appear in real time before the user saves.
+	 *
+	 * In structure mode there is no live DOM element to mutate, so only the
+	 * panel header chips, the content-section visibility, and the Attributes
+	 * accordion are updated — and the matching node row in the structure tree
+	 * has its own chips kept in sync.
 	 */
 	function applyLivePreview() {
+		const newTag = _nodeSelectCtrl ? _nodeSelectCtrl.value : '';
+		const newId  = _idDisplayCtrl  ? _idDisplayCtrl.value  : '';
+
+		// ── Panel header chips + content-section visibility (both modes) ──────
+		if ( newTag ) {
+			if ( _nodeChip ) { _nodeChip.textContent = newTag.toUpperCase(); }
+			// Show or hide the content accordion for void nodes (e.g. img, input).
+			if ( _contentSection ) {
+				_contentSection.hidden = !! VOID_NODES[ newTag ];
+			}
+		}
+
+		// ── Structure mode ────────────────────────────────────────────────────
+		if ( _isStructureMode ) {
+			if ( _liveRoot && _elementId ) {
+				const svNode = _liveRoot.querySelector( '.wpbfe-sv-node[data-wp-builder-id="' + _elementId + '"]' );
+				if ( svNode ) {
+					// Sync the node-type chip and re-render the Attributes accordion
+					// if the node type has changed.
+					if ( newTag ) {
+						const tagChip = svNode.querySelector( '.wpbfe-sv-node-bar .wpbfe-chip--node' );
+						const prevTag = tagChip ? tagChip.textContent.toLowerCase() : '';
+						if ( newTag !== prevTag ) {
+							if ( _attrsSection ) {
+								renderNodeAttrs(
+									_attrsSection.querySelector( '.wpbfe-accordion-body-inner' ),
+									newTag,
+									{},
+									() => {},
+									CSS
+								);
+								_attrsSection.querySelectorAll( '[id^="wp-builder-node-attr-"]' ).forEach( ( ctrl ) => {
+									ctrl.dataset.attrName = ctrl.id.replace( 'wp-builder-node-attr-', '' );
+									ctrl.addEventListener( 'input',  markDirty );
+									ctrl.addEventListener( 'change', markDirty );
+								} );
+								const hasAttrs = !! _attrsSection.querySelector( '.wpbfe-accordion-body-inner' ).childElementCount;
+								_attrsSection.hidden = ! hasAttrs;
+								if ( hasAttrs && ! _attrsSection.classList.contains( 'is-open' ) ) {
+									const accBtn = _attrsSection.querySelector( '.wpbfe-accordion-header' );
+									if ( accBtn ) { accBtn.click(); }
+								}
+							}
+							if ( tagChip ) { tagChip.textContent = newTag.toUpperCase(); }
+						}
+					}
+
+					// Sync the element-ID chip in the structure tree.
+					if ( newId ) {
+						const idChip = svNode.querySelector( '.wpbfe-sv-node-bar .wpbfe-chip--id' );
+						if ( idChip ) { idChip.textContent = newId; }
+					}
+				}
+			}
+			if ( newId && _idChip ) { _idChip.textContent = newId; }
+			return;
+		}
+
+		// ── Rendered mode: live DOM updates ───────────────────────────────────
 		let el = findLiveDomElement();
 		if ( ! el ) { return; }
 
 		// ── Node type ─────────────────────────────────────────────────────────
-		if ( _nodeSelectCtrl ) {
-			const newTag     = _nodeSelectCtrl.value;
+		if ( newTag ) {
 			const currentTag = el.tagName.toLowerCase();
-			if ( newTag && newTag !== currentTag ) {
+			if ( newTag !== currentTag ) {
 				// Replace the element in the DOM with a new element of the
 				// correct tag, preserving all attributes and children.
 				const newEl = document.createElement( newTag );
@@ -1444,20 +1507,13 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 					}
 				}
 			}
-			if ( _nodeChip ) { _nodeChip.textContent = newTag.toUpperCase(); }
-			// Show or hide the content accordion for void nodes (e.g. img, input).
-			if ( _contentSection ) {
-				_contentSection.hidden = !! VOID_NODES[ newTag ];
-			}
+			// _nodeChip and _contentSection already updated above.
 		}
 
 		// ── Element ID ────────────────────────────────────────────────────────
-		if ( _idDisplayCtrl ) {
-			const newId = _idDisplayCtrl.value;
-			if ( newId && newId !== el.getAttribute( 'data-wp-builder-id' ) ) {
-				el.setAttribute( 'data-wp-builder-id', newId );
-				if ( _idChip ) { _idChip.textContent = newId; }
-			}
+		if ( newId && newId !== el.getAttribute( 'data-wp-builder-id' ) ) {
+			el.setAttribute( 'data-wp-builder-id', newId );
+			if ( _idChip ) { _idChip.textContent = newId; }
 		}
 
 		// ── Layout props ──────────────────────────────────────────────────────
