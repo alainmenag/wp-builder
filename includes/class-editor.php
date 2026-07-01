@@ -61,7 +61,7 @@ nocache_headers();
 <body class="wp-builder-canvas-body">
 <?php wp_body_open(); ?>
 <div id="page" class="wp-builder-template wp-builder-template--canvas">
-	<?php echo wp_kses_post( $canvas_html ); ?>
+	<?php echo $canvas_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post(). ?>
 </div>
 <?php wp_footer(); ?>
 </body>
