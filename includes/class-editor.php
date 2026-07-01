@@ -44,6 +44,32 @@ wp_safe_redirect( $this->get_preview_url( $post_id ) );
 exit;
 }
 
+/**
+ * Build a context array for a given post containing values needed by
+ * get_frontend_panel_schema() and enqueue_frontend_editor_assets().
+ *
+ * @param int $post_id Post ID.
+ * @return array {
+ *     @type bool   $is_template      Whether the post is a builder template CPT.
+ *     @type string $post_status      The post's current status.
+ *     @type string $preview_url      Frontend preview URL.
+ *     @type string $current_template Active page-template slug.
+ *     @type array  $page_templates   Available page templates (empty for templates).
+ * }
+ */
+private function get_post_context( int $post_id ): array {
+$post        = get_post( $post_id );
+$is_template = $post && self::TEMPLATE_CPT === $post->post_type;
+
+return array(
+'is_template'      => $is_template,
+'post_status'      => $post ? $post->post_status : 'draft',
+'preview_url'      => $this->get_preview_url( $post_id ),
+'current_template' => $is_template ? 'wp-builder-canvas' : ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ),
+'page_templates'   => $is_template ? array() : $this->get_available_page_templates( $post_id ),
+);
+}
+
 public function render_builder_page(): void {
 $post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 if ( $post_id ) {
