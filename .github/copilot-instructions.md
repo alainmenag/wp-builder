@@ -6,7 +6,7 @@ This file gives GitHub Copilot context about the project so suggestions stay con
 
 ## Project overview
 
-WP Builder is a lightweight WordPress page-builder plugin. It lets users build infinitely nestable container layouts on posts, pages, and reusable snippets through a full-screen admin editor. It has **no external PHP dependencies** and **no JavaScript build step**.
+WP Builder is a lightweight WordPress page-builder plugin. It lets users build infinitely nestable container layouts on posts, pages, and reusable snippets through a **frontend inline editor** loaded for logged-in users directly on the front end. It has **no external PHP dependencies** and **no JavaScript build step**.
 
 - **Plugin entry point:** `wp-builder.php` — a slim bootstrap that defines two constants and glob-loads every `includes/class-*.php` file, then instantiates `WP_Builder`.
 - **Main class:** `includes/class-wp-builder.php` — a `final class WP_Builder` that composes all functionality via PHP traits and registers every WordPress hook in its constructor.
@@ -23,25 +23,22 @@ wp-builder/
 ├── wp-builder.php                  # Bootstrap
 ├── includes/
 │   ├── class-wp-builder.php        # Main class + hook registration
-│   ├── class-admin.php             # Trait: menus, meta boxes, row actions, admin bar
-│   ├── class-ajax.php              # Trait: AJAX save layout + update title
-│   ├── class-editor.php            # Trait: full-screen editor routing, assets, HTML shell
+│   ├── class-admin.php             # Trait: admin menus, row actions, admin bar
+│   ├── class-ajax-frontend.php     # Trait: AJAX get/save element, get layout, add/delete element
+│   ├── class-editor.php            # Trait: action=builder redirect to front end; JSON export
 │   ├── class-elementor.php         # Trait: Elementor widget + editor styles
 │   ├── class-frontend.php          # Trait: shortcodes, front-end assets, content filter
 │   ├── class-layout.php            # Trait: load/save/sanitise/render layout data
 │   ├── class-page-chrome.php       # Trait: custom page layouts + routing
 │   └── class-post-types.php        # Trait: post meta, snippet CPT, rewrite rules
 ├── assets/
-│   ├── admin.css                   # Builder editor CSS (dark theme, CSS custom properties)
+│   ├── shared.css                  # Shared design tokens and reusable UI components (--wpb-*)
+│   ├── frontend-editor.css         # Frontend quick-editor panel styles (wpbfe- prefix)
 │   ├── js/
-│   │   ├── editor.js               # Entry point — composes all modules and boots the editor
+│   │   ├── frontend-editor.js      # Entry point — boots the frontend quick-editor (ES module IIFE)
 │   │   ├── constants.js            # Node glossary, void-node set, icon SVG strings
 │   │   ├── layout.js               # Layout data helpers (create, find, add, delete elements)
-│   │   ├── state.js                # Single mutable state object + state-mutation functions
-│   │   ├── canvas.js               # Stage rendering and DOM-level canvas interactions
-│   │   ├── inspector.js            # Inspector panel rendering and style editor
-│   │   ├── api.js                  # AJAX save-layout request and post-save reconciliation
-│   │   └── navigation.js           # Tab switching and accordion open/close
+│   │   └── dom-helpers.js          # Shared attribute-control rendering helpers
 │   ├── elementor-editor.css        # Elementor panel overrides
 │   └── frontend.css                # Front-end container layout styles
 ├── templates/
@@ -65,7 +62,7 @@ wp-builder/
 - **No direct database queries** — use the WordPress meta API (`get_post_meta`, `update_post_meta`), `WP_Query`, `wp_insert_post`, `wp_update_post`, etc.
 - **No new PHP dependencies** — do not suggest Composer packages.
 - **Traits only** — new logic belongs in a trait in `includes/class-*.php`. Register its hooks in `WP_Builder::__construct()`. Never put logic directly in the bootstrap.
-- **Constants** (`VERSION`, `META_KEY`, `MENU_SLUG`, `ACTION`, `NONCE_ACTION`, `TITLE_NONCE_ACTION`, `TEMPLATE_CPT`, `REWRITE_VERSION`, `REWRITE_VERSION_OPTION`) are declared `private const` in `class-wp-builder.php` and accessed as `self::CONSTANT_NAME` within the class/traits.
+- **Constants** (`VERSION`, `META_KEY`, `MENU_SLUG`, `ACTION`, `FRONTEND_GET_NONCE_ACTION`, `FRONTEND_SAVE_NONCE_ACTION`, `FRONTEND_GET_LAYOUT_NONCE_ACTION`, `FRONTEND_ADD_NONCE_ACTION`, `FRONTEND_DELETE_NONCE_ACTION`, `TEMPLATE_CPT`, `REWRITE_VERSION`, `REWRITE_VERSION_OPTION`) are declared `private const` in `class-wp-builder.php` and accessed as `self::CONSTANT_NAME` within the class/traits.
 - **Helper methods** shared across traits (`is_builder_request`, `get_builder_url`, `get_preview_url`, `get_builder_doc_title`, `supported_post_types`, `is_supported_post_type`) live in `class-wp-builder.php`.
 - **Internationalisation:** wrap every user-facing string in `__()`, `_e()`, `esc_html__()`, `esc_html_e()`, etc. Use the text domain `wp-builder`.
 
@@ -73,23 +70,20 @@ wp-builder/
 
 ## JavaScript conventions
 
-- **ES6 native modules** — the editor is split across `assets/js/` as native `import`/`export` ES modules. `assets/js/editor.js` is the entry point; PHP loads it with `type="module"` via `add_module_type_to_script_tag()`.
+- **ES6 native modules** — the editor is split across `assets/js/` as native ES modules. `assets/js/frontend-editor.js` is the entry point; PHP loads it with `type="module"` via `add_module_type_to_script_tag()`.
 - **No framework, no build step** — plain DOM APIs (`document.getElementById`, `addEventListener`, `classList`, etc.).
-- **Module dependencies:** `constants` and `layout` are leaf modules; `state` imports from `layout`; `canvas` and `inspector` import from `state` and `layout`; `api` imports from `state` and `layout`; `navigation` has no local imports; `editor.js` imports from all other modules.
-- **Global config** is injected by `wp_localize_script` as `window.wpBuilder` (see `class-editor.php` → `enqueue_builder_assets`). Because `wp_localize_script` emits a plain `var` declaration (no `type="module"`), `window.wpBuilder` is available globally when the deferred module executes. Access it as `const config = window.wpBuilder || {};`. The object exposes:
+- **Module dependencies:** `constants` and `layout` are leaf modules; `dom-helpers` imports from `constants`; `frontend-editor.js` imports from `constants`, `layout`, and `dom-helpers`.
+- **Global config** is injected by `wp_localize_script` as `window.wpBuilderFrontendEditor` (see `class-frontend.php` → `enqueue_frontend_editor_assets`). Because `wp_localize_script` emits a plain `var` declaration (no `type="module"`), `window.wpBuilderFrontendEditor` is available globally when the deferred module executes. Access it as `const config = window.wpBuilderFrontendEditor || {};`. The object exposes:
   - `ajaxUrl` — WordPress admin-ajax URL.
-  - `nonce` — nonce for `wp_builder_save_layout`.
-  - `titleNonce` — nonce for `wp_builder_update_title`.
-  - `postId` — integer post ID being edited.
-  - `postTitle` — current post title string.
-  - `isTemplate` — boolean; `true` when editing a `wp_builder_template` CPT (snippet).
-  - `postStatus` — current post status string (`publish`, `draft`, etc.).
-  - `layout` — full layout object (version 2 schema).
-  - `editUrl` — standard WordPress edit URL for the post.
-  - `previewUrl` — front-end preview/permalink URL.
-  - `pageTemplate` — active page-layout slug (e.g. `wp-builder-canvas`).
-  - `pageTemplates` — object mapping page-layout slugs to display names.
-  - `i18n` — translated UI strings object.
+  - `builderBaseUrl` — `wp-admin/post.php` base URL (used for the JSON export link).
+  - `getNonce` — nonce for `wp_builder_get_element`.
+  - `saveNonce` — nonce for `wp_builder_save_element`.
+  - `layoutNonce` — nonce for `wp_builder_get_layout`.
+  - `addNonce` — nonce for `wp_builder_add_element`.
+  - `deleteNonce` — nonce for `wp_builder_delete_element`.
+  - `isTemplate` — boolean; `true` when viewing a `wp_builder_template` CPT (snippet).
+  - `pageTemplate` — active page-layout slug (e.g. `wp-builder-canvas`). Empty string for snippets.
+  - `pageTemplates` — object mapping page-layout slugs to display names. Empty for snippets.
 - **AJAX calls** must send `action`, `nonce`, `post_id`, and the relevant payload to `config.ajaxUrl` using `fetch`.
 - **No new external libraries.**
 
@@ -98,7 +92,8 @@ wp-builder/
 ## CSS conventions
 
 - All class names are prefixed with `wp-builder-` (e.g. `.wp-builder-container`, `.wp-builder-panel`).
-- The editor stylesheet uses CSS custom properties declared on `:root` (see `assets/admin.css`). Reuse existing tokens (`--wpb-bg-*`, `--wpb-text-*`, `--wpb-accent`, etc.) rather than hard-coding colour values.
+- Shared design tokens (`--wpb-*`) live in `assets/shared.css`, loaded as a dependency of `frontend-editor.css`.
+- The frontend editor stylesheet (`assets/frontend-editor.css`) uses the `wpbfe-` prefix for editor-specific class names.
 - The frontend stylesheet (`assets/frontend.css`) is minimal — only layout rules for `.wp-builder-layout` and `.wp-builder-container`.
 
 ---
@@ -152,12 +147,14 @@ Each **element** (root and nested alike):
 | Hook | Handler | File |
 |------|---------|------|
 | `init` | `register_meta`, `register_template_post_type`, `register_shortcodes`, `maybe_flush_rewrite_rules` | post-types, frontend |
-| `add_meta_boxes` | `add_builder_meta_box` | admin |
 | `admin_menu` | `register_builder_page`, `register_template_menu` | admin |
 | `load-post-new.php` | `maybe_redirect_new_template` | admin |
 | `load-post.php` | `maybe_redirect_template_edit`, `maybe_render_builder_request` | admin, editor |
-| `wp_ajax_wp_builder_save_layout` | `ajax_save_layout` | ajax |
-| `wp_ajax_wp_builder_update_title` | `ajax_update_title` | ajax |
+| `wp_ajax_wp_builder_get_element` | `ajax_get_element` | ajax-frontend |
+| `wp_ajax_wp_builder_save_element` | `ajax_save_element` | ajax-frontend |
+| `wp_ajax_wp_builder_get_layout` | `ajax_get_layout` | ajax-frontend |
+| `wp_ajax_wp_builder_add_element` | `ajax_add_element` | ajax-frontend |
+| `wp_ajax_wp_builder_delete_element` | `ajax_delete_element` | ajax-frontend |
 | `wp_enqueue_scripts` | `enqueue_frontend_assets` | frontend |
 | `admin_bar_menu` | `add_admin_bar_nodes` | admin |
 | `post_row_actions` / `page_row_actions` / `wp_builder_template_row_actions` | `add_row_action` | admin |
@@ -178,19 +175,37 @@ All AJAX endpoints are registered on the standard WordPress admin-ajax handler (
 
 `GET wp-admin/post.php?post={id}&action=builder&view=json`
 
-Returns the sanitised layout object for the post as pretty-printed JSON (no nonce required beyond normal authentication). Useful for inspecting or exporting the stored layout.
+Returns the sanitised layout object for the post as pretty-printed JSON. Useful for inspecting or exporting the stored layout.
 
-### AJAX: save layout
+### AJAX: get element
 
-`POST wp-admin/admin-ajax.php` with `action=wp_builder_save_layout`
+`POST wp-admin/admin-ajax.php` with `action=wp_builder_get_element`
 
-Saves the layout, optionally updates the post status, post title, and page layout.
+Fetches a single element by ID along with the panel schema for the frontend quick-editor.
 
-### AJAX: update title
+### AJAX: save element
 
-`POST wp-admin/admin-ajax.php` with `action=wp_builder_update_title`
+`POST wp-admin/admin-ajax.php` with `action=wp_builder_save_element`
 
-Updates only the post title in real time.
+Updates a single element's properties, optionally updates post status/title/page layout, and returns re-rendered HTML.
+
+### AJAX: get layout
+
+`POST wp-admin/admin-ajax.php` with `action=wp_builder_get_layout`
+
+Returns the full layout object for a post.
+
+### AJAX: add element
+
+`POST wp-admin/admin-ajax.php` with `action=wp_builder_add_element`
+
+Appends a new default child element to a parent element and returns re-rendered HTML.
+
+### AJAX: delete element
+
+`POST wp-admin/admin-ajax.php` with `action=wp_builder_delete_element`
+
+Removes an element (and its descendants) from the layout and returns re-rendered HTML.
 
 ---
 
@@ -227,4 +242,4 @@ for f in assets/js/*.js; do node --check "$f"; done
 - Do **not** add logic to `wp-builder.php` beyond loading files and instantiating `WP_Builder`.
 - Do **not** register new hooks outside `WP_Builder::__construct()`.
 - Do **not** create new top-level PHP files — all new PHP code goes in a trait under `includes/`.
-- Do **not** add new JavaScript files outside `assets/js/` — new JS modules go there and must be imported by `editor.js`.
+- Do **not** add new JavaScript files outside `assets/js/` — new JS modules go there and must be imported by `frontend-editor.js`.

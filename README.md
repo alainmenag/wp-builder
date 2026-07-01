@@ -16,8 +16,9 @@ A lightweight, Elementor-inspired page builder plugin for WordPress. Build infin
 
 ## Features
 
-### Builder editor
-- Full-screen drag-free builder accessible from `wp-admin/post.php?post={id}&action=builder`.
+### Frontend quick-editor
+- Inline editor loaded directly on the front end for logged-in users with edit capabilities — no separate admin screen.
+- Visit any post/page/snippet on the front end while logged in to activate the editor panel.
 - **Container** element — the single, composable building block. Containers nest inside each other without a depth limit.
 - Each container exposes:
   - **ID** — editable element identifier; auto-regenerated if left blank.
@@ -28,8 +29,9 @@ A lightweight, Elementor-inspired page builder plugin for WordPress. Build infin
   - **Gap** — CSS gap value (e.g. `16px`, `1rem`).
   - **Custom CSS** — per-element scoped styles; use `self` to target the container.
   - **Node attributes** — tag-specific attributes (`src`, `href`, `alt`, `width`, `height`, etc.) for media and interactive elements.
+- **Add / delete** child elements directly from the editor panel.
 - **Export** — opens `?view=json` in a new tab to download the raw layout JSON.
-- **Post status** control (Published, Draft, Pending Review, Private) inside the editor.
+- **Post status** control (Published, Draft, Pending Review, Private) inside the editor panel.
 - **Page layout** selector (when editing posts/pages).
 - Admin bar **Builder** menu with quick links to all snippets.
 
@@ -64,15 +66,15 @@ When Elementor is active, a **Builder Snippet** widget appears in the Elementor 
 
 ## Usage
 
-### Opening the builder
-- From any post/page list: click the **Builder** row action.
-- From the classic post editor: click the **Builder** button in the sidebar meta box.
-- Direct URL: `wp-admin/post.php?post={id}&action=builder`
+### Opening the editor
+- Visit any post/page/snippet on the **front end** while logged in as a user with edit permissions — the quick-editor panel loads automatically.
+- From any post/page list: click the **Builder** row action to open the post's front-end URL with the editor panel active.
 - From the admin bar: **Builder → Edit** (when viewing a post on the front end).
+- Direct URL: `wp-admin/post.php?post={id}&action=builder` — redirects to the post's front-end URL.
 
 ### Creating a snippet
 1. Go to **Builder → Add New** in the admin sidebar.
-2. The editor opens automatically for the new snippet.
+2. The snippet's front-end preview opens with the editor panel active.
 3. Build your layout, set the title, set the status to **Published**, then **Save**.
 4. Copy the shortcode shown in the **Shortcode** panel to embed it elsewhere.
 
@@ -94,25 +96,22 @@ wp-builder/
 ├── wp-builder.php                  # Bootstrap: defines constants, loads includes, instantiates WP_Builder
 ├── includes/
 │   ├── class-wp-builder.php        # Main class — uses all traits, registers all hooks
-│   ├── class-admin.php             # Admin menus, meta boxes, row actions, admin bar
-│   ├── class-ajax.php              # AJAX handlers: save layout, update title
-│   ├── class-editor.php            # Full-screen builder editor: routing, asset enqueue, HTML shell
+│   ├── class-admin.php             # Admin menus, row actions, admin bar
+│   ├── class-ajax-frontend.php     # AJAX handlers: get/save element, get layout, add/delete element
+│   ├── class-editor.php            # Builder routing: redirects action=builder to the front end; JSON export
 │   ├── class-elementor.php         # Elementor widget registration + editor styles
 │   ├── class-frontend.php          # Shortcodes, front-end asset enqueue, content filter
 │   ├── class-layout.php            # Layout load/save/sanitise/render helpers
 │   ├── class-page-chrome.php       # Page layout registration + routing
 │   └── class-post-types.php        # Post meta registration, snippet CPT, rewrite rules
 ├── assets/
-│   ├── admin.css                   # Builder editor styles
+│   ├── shared.css                  # Shared design tokens and reusable UI components
+│   ├── frontend-editor.css         # Frontend quick-editor panel styles (wpbfe- prefix)
 │   ├── js/
-│   │   ├── editor.js               # Entry point — composes all modules and boots the editor
+│   │   ├── frontend-editor.js      # Entry point — boots the frontend quick-editor (ES module IIFE)
 │   │   ├── constants.js            # Node glossary, void-node set, icon SVG strings
 │   │   ├── layout.js               # Layout data helpers (create, find, add, delete elements)
-│   │   ├── state.js                # Single mutable state object + state-mutation functions
-│   │   ├── canvas.js               # Stage rendering and DOM-level canvas interactions
-│   │   ├── inspector.js            # Inspector panel rendering and style editor
-│   │   ├── api.js                  # AJAX save-layout request and post-save reconciliation
-│   │   └── navigation.js           # Tab switching and accordion open/close
+│   │   └── dom-helpers.js          # Shared attribute-control rendering helpers
 │   ├── elementor-editor.css        # Elementor panel styles
 │   └── frontend.css                # Front-end layout styles
 ├── templates/
