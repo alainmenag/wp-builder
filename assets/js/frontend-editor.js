@@ -1409,7 +1409,13 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		// ── HTML content ──────────────────────────────────────────────────────
 		if ( _htmlTextareaCtrl && ! _contentSection.hidden ) {
+			// Preserve nested builder child elements — they follow the content
+			// HTML in the DOM (PHP renders content first, then children).
+			const builderChildren = Array.from(
+				el.querySelectorAll( ':scope > [data-wp-builder-id]' )
+			);
 			el.innerHTML = _htmlTextareaCtrl.value;
+			builderChildren.forEach( ( child ) => el.appendChild( child ) );
 		}
 
 		// ── Custom style ──────────────────────────────────────────────────────
