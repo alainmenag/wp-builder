@@ -477,7 +477,7 @@ body.wpbfe-page-zoomed #page {
 	border-color: var(--wpb-accent-hover);
 }
 
-.wpbfe-sv-node.is-selected > .wpbfe-sv-node-bar > .wpbfe-sv-node-title {
+.wpbfe-sv-node.is-selected > .wpbfe-sv-node-bar > .wpbfe-sv-node-title .wpbfe-chip {
 	color: var(--wpb-accent);
 }
 
@@ -493,28 +493,22 @@ body.wpbfe-page-zoomed #page {
 /* ── Structure-view node title button ───────────────────────────────────── */
 
 .wpbfe-sv-node-title {
+	align-items: center;
 	background: transparent;
 	border: none;
-	color: var(--wpb-text-secondary);
 	cursor: pointer;
-	font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
-	font-size: 14px;
-	font-weight: 700;
-	letter-spacing: .04em;
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 6px;
 	min-height: 26px;
 	overflow: hidden;
 	padding: 4px 8px;
-	text-align: left;
-	text-overflow: ellipsis;
-	text-transform: uppercase;
-	white-space: nowrap;
 	width: 100%;
 }
 
 .wpbfe-sv-node-title:hover,
 .wpbfe-sv-node-title:focus {
 	background: var(--wpb-bg-node-title-hover);
-	color: var(--wpb-text-primary);
 	outline: none;
 }
 
