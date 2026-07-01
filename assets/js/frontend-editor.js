@@ -1274,6 +1274,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				_saveBtn.disabled = false;
 				setStatus( '', false );
 				populatePanel( data.element, data.post_title || '', data.post_status || '', data.page_template || '' );
+				// If in structure mode, keep the tree in sync with the fetched layout.
+				if ( _isStructureMode && data.layout ) {
+					renderStructureTree( data.layout, _liveRoot );
+				}
 			} )
 			.catch( ( err ) => {
 				setStatus( err.message || ( text.error || 'Error' ), true );
@@ -1410,19 +1414,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				// When in structure mode: update the saved snapshot and re-render the tree.
 				if ( _isStructureMode && payload.data.html ) {
 					_savedRenderedOuterHtml = payload.data.html;
-					// Refresh the layout from the server so node labels stay in sync.
-					const layoutForm = new window.FormData();
-					layoutForm.append( 'action',  'wp_builder_get_layout' );
-					layoutForm.append( 'nonce',   config.layoutNonce );
-					layoutForm.append( 'post_id', _postId );
-					window.fetch( config.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: layoutForm } )
-						.then( ( r ) => r.json() )
-						.then( ( lp ) => {
-							if ( lp && lp.success && lp.data && lp.data.layout ) {
-								renderStructureTree( lp.data.layout, _liveRoot );
-							}
-						} )
-						.catch( () => {} );
+					if ( payload.data.layout ) {
+						renderStructureTree( payload.data.layout, _liveRoot );
+					}
 				}
 			} )
 			.catch( ( err ) => {

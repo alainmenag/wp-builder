@@ -39,6 +39,7 @@ trait WP_Builder_Ajax_Frontend {
 
 		wp_send_json_success( array(
 			'element'       => $element,
+			'layout'        => $layout,
 			'post_title'    => get_the_title( $post_id ),
 			'post_status'   => get_post_status( $post_id ),
 			'page_template' => $this->get_frontend_page_template( $post_id ),
@@ -157,6 +158,7 @@ trait WP_Builder_Ajax_Frontend {
 		wp_send_json_success(
 			array(
 				'element'       => $sanitized,
+				'layout'        => $layout,
 				'html'          => $html,
 				'post_title'    => get_the_title( $post_id ),
 				'post_status'   => $post_obj ? $post_obj->post_status : '',
