@@ -42,6 +42,7 @@ trait WP_Builder_Ajax_Frontend {
 			'post_title'    => get_the_title( $post_id ),
 			'post_status'   => get_post_status( $post_id ),
 			'page_template' => $this->get_frontend_page_template( $post_id ),
+			'fields'        => $this->get_frontend_panel_schema( $post_id ),
 		) );
 	}
 
@@ -161,6 +162,203 @@ trait WP_Builder_Ajax_Frontend {
 				'post_status'   => $post_obj ? $post_obj->post_status : '',
 				'page_template' => $this->get_frontend_page_template( $post_id ),
 			)
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Schema
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Build the tab/accordion/field schema for the front-end quick-editor panel.
+	 *
+	 * The shape mirrors get_panel_schema() in class-editor-schema.php so the
+	 * JavaScript can use a single schema-driven renderer for both surfaces.
+	 *
+	 * Each tab entry:   key, label, accordions[].
+	 * Each accordion:   slug, label, open, fields[].
+	 * Each field:       type, id, label, and type-specific keys
+	 *                   (options, placeholder, attrs, hint).
+	 *
+	 * Field IDs use the wpbfe- prefix to match the references in
+	 * frontend-editor.js (e.g. wpbfe-node, wpbfe-post-title).
+	 *
+	 * @param int $post_id Post being edited.
+	 * @return array
+	 */
+	private function get_frontend_panel_schema( int $post_id ): array {
+		$ctx              = $this->get_post_context( $post_id );
+		$is_template      = $ctx['is_template'];
+		$page_templates   = $ctx['page_templates'];
+		$current_template = $ctx['current_template'];
+
+		// Settings accordion fields.
+		$settings_fields = array(
+			array(
+				'type'  => 'text',
+				'id'    => 'wpbfe-post-title',
+				'label' => __( 'Post Title', 'wp-builder' ),
+			),
+			array(
+				'type'    => 'select',
+				'id'      => 'wpbfe-post-status',
+				'label'   => __( 'Post Status', 'wp-builder' ),
+				'options' => array(
+					array( 'value' => 'publish', 'label' => __( 'Published',      'wp-builder' ) ),
+					array( 'value' => 'draft',   'label' => __( 'Draft',          'wp-builder' ) ),
+					array( 'value' => 'pending', 'label' => __( 'Pending Review', 'wp-builder' ) ),
+					array( 'value' => 'private', 'label' => __( 'Private',        'wp-builder' ) ),
+				),
+			),
+		);
+
+		if ( $is_template ) {
+			$settings_fields[] = array(
+				'type'    => 'select',
+				'id'      => 'wpbfe-page-template',
+				'label'   => __( 'Page Layout', 'wp-builder' ),
+				'attrs'   => array( 'disabled' => true ),
+				'options' => array(
+					array( 'value' => 'wp-builder-canvas', 'label' => __( 'Canvas Layout', 'wp-builder' ), 'selected' => true ),
+				),
+			);
+		} elseif ( ! empty( $page_templates ) ) {
+			$tmpl_options = array();
+			foreach ( $page_templates as $tmpl_slug => $tmpl_name ) {
+				$tmpl_options[] = array(
+					'value'    => $tmpl_slug,
+					'label'    => $tmpl_name,
+					'selected' => $current_template === $tmpl_slug,
+				);
+			}
+			$settings_fields[] = array(
+				'type'    => 'select',
+				'id'      => 'wpbfe-page-template',
+				'label'   => __( 'Page Layout', 'wp-builder' ),
+				'options' => $tmpl_options,
+			);
+		}
+
+		// Node tag options (same set as the full editor and constants.js).
+		$node_tags    = array(
+			'div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav',
+			'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'button',
+			'figure', 'figcaption', 'img', 'input', 'label', 'audio', 'video', 'source', 'iframe',
+		);
+		$node_options = array_map(
+			static function ( $tag ) { return array( 'value' => $tag, 'label' => $tag ); },
+			$node_tags
+		);
+
+		return array(
+			array(
+				'key'        => 'main',
+				'label'      => __( 'Main', 'wp-builder' ),
+				'accordions' => array(
+					array(
+						'slug'   => 'settings',
+						'label'  => __( 'Settings', 'wp-builder' ),
+						'open'   => true,
+						'fields' => $settings_fields,
+					),
+				),
+			),
+			array(
+				'key'        => 'element',
+				'label'      => __( 'Element', 'wp-builder' ),
+				'accordions' => array(
+					array(
+						'slug'   => 'identity',
+						'label'  => __( 'Identity', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'    => 'select',
+								'id'      => 'wpbfe-node',
+								'label'   => __( 'Node', 'wp-builder' ),
+								'options' => $node_options,
+							),
+							array(
+								'type'        => 'text',
+								'id'          => 'wpbfe-node-id',
+								'label'       => __( 'Element ID', 'wp-builder' ),
+								'placeholder' => __( 'e.g. my-element', 'wp-builder' ),
+							),
+						),
+					),
+					array(
+						'slug'   => 'content',
+						'label'  => __( 'Content', 'wp-builder' ),
+						'open'   => true,
+						'fields' => array(
+							array(
+								'type'  => 'textarea',
+								'id'    => 'wpbfe-html-content',
+								'label' => __( 'HTML Content', 'wp-builder' ),
+								'attrs' => array( 'rows' => '8' ),
+							),
+						),
+					),
+					array(
+						'slug'   => 'layout',
+						'label'  => __( 'Layout', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'    => 'select',
+								'id'      => 'wpbfe-flex-direction',
+								'label'   => __( 'Flex Direction', 'wp-builder' ),
+								'options' => array(
+									array( 'value' => '',       'label' => __( '— None —', 'wp-builder' ) ),
+									array( 'value' => 'row',    'label' => __( 'Row',      'wp-builder' ) ),
+									array( 'value' => 'column', 'label' => __( 'Column',   'wp-builder' ) ),
+								),
+							),
+							array(
+								'type'        => 'number',
+								'id'          => 'wpbfe-flex-grow',
+								'label'       => __( 'Flex Grow', 'wp-builder' ),
+								'placeholder' => '0',
+								'attrs'       => array( 'min' => '0', 'step' => '1' ),
+							),
+							array(
+								'type'        => 'text',
+								'id'          => 'wpbfe-gap',
+								'label'       => __( 'Gap', 'wp-builder' ),
+								'placeholder' => __( 'e.g. 16px', 'wp-builder' ),
+							),
+						),
+					),
+					array(
+						'slug'   => 'style',
+						'label'  => __( 'Style', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'  => 'textarea',
+								'id'    => 'wpbfe-custom-style',
+								'label' => __( 'Custom CSS', 'wp-builder' ),
+								'hint'  => sprintf(
+									/* translators: %1$s: opening code tag, %2$s: closing code tag */
+									__( 'Use %1$sself%2$s to target this element.', 'wp-builder' ),
+									'<code>',
+									'</code>'
+								),
+								'attrs' => array(
+									'rows'        => '6',
+									'placeholder' => "self {\n  background-color: red;\n}",
+								),
+							),
+						),
+					),
+					array(
+						'slug'   => 'attrs',
+						'label'  => __( 'Attributes', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(),
+					),
+				),
+			),
 		);
 	}
 
