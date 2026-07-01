@@ -64,8 +64,14 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 	/** @type {boolean} Whether structure mode is currently active. */
 	let _isStructureMode = false;
-	/** @type {string|null} The outerHTML snapshot of _liveRoot captured when entering structure mode; used to restore rendered view on exit. */
+	/**
+	 * @type {string|null} Snapshot of the rendered HTML captured when entering structure mode.
+	 * Includes the preceding sibling <style> block (if any) so that exitStructureMode() can
+	 * restore the full rendered state — including the root element's custom CSS — in one step.
+	 */
 	let _savedRenderedOuterHtml = null;
+	/** @type {HTMLStyleElement|null} The sibling <style> element for the root element's custom CSS, disabled while structure mode is active. */
+	let _suppressedStyleEl = null;
 	/** @type {HTMLButtonElement|null} The structure-view toggle button in the panel header. */
 	let _structureToggleBtn = null;
 	/** @type {Object|null} The last layout object received from a wp_builder_get_element response. */
@@ -882,8 +888,15 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	function enterStructureMode() {
 		if ( ! _liveRoot || ! _postId ) { return; }
 
-		// Snapshot the current rendered HTML so we can restore it on exit.
-		_savedRenderedOuterHtml = _liveRoot.outerHTML;
+		// Capture the preceding sibling <style> element (the root element's custom CSS block
+		// emitted by the PHP renderer). Include it in the snapshot so exitStructureMode()
+		// can restore the full rendered state in one step, then disable it so element styles
+		// are not applied while the structure tree is displayed.
+		const prevEl = _liveRoot.previousElementSibling;
+		_suppressedStyleEl = ( prevEl && prevEl.tagName === 'STYLE' ) ? prevEl : null;
+		const stylePrefix = _suppressedStyleEl ? _suppressedStyleEl.outerHTML : '';
+		_savedRenderedOuterHtml = stylePrefix + _liveRoot.outerHTML;
+		if ( _suppressedStyleEl ) { _suppressedStyleEl.disabled = true; }
 
 		// Activate structure mode and update the toggle button immediately.
 		_isStructureMode = true;
@@ -911,6 +924,15 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		const tpl = document.createElement( 'template' );
 		tpl.innerHTML = _savedRenderedOuterHtml.trim();
+
+		// Remove the disabled sibling <style> before inserting the snapshot.
+		// The snapshot already carries the correct <style> block (captured on enter
+		// and kept in sync by save/add/delete handlers), so no duplicate is created.
+		if ( _suppressedStyleEl ) {
+			_suppressedStyleEl.remove();
+			_suppressedStyleEl = null;
+		}
+
 		_liveRoot.parentNode.insertBefore( tpl.content, _liveRoot );
 		_liveRoot.remove();
 
@@ -933,6 +955,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	 */
 	function renderStructureTree( layout, rootEl ) {
 		rootEl.classList.add( 'wpbfe-structure-view' );
+		// Strip the element's inline layout style — it belongs on the node-body of the
+		// rendered tree, not on _liveRoot. exitStructureMode() restores the full snapshot.
+		rootEl.removeAttribute( 'style' );
 		// Remove all child nodes.
 		while ( rootEl.firstChild ) { rootEl.removeChild( rootEl.firstChild ); }
 		if ( layout && layout.children && layout.children[ 0 ] ) {
@@ -1006,6 +1031,19 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( children.length ) {
 			const body = document.createElement( 'div' );
 			body.className = 'wpbfe-sv-node-body';
+
+			// Mirror the element's layout props so children are arranged correctly.
+			// The CSS default (flex-direction:column, gap:8px) acts as a fallback.
+			const props = element.props || {};
+			const dir   = props.flexDirection;
+			const gap   = props.gap;
+			if ( dir === 'row' || dir === 'column' ) {
+				body.style.flexDirection = dir;
+			}
+			if ( gap ) {
+				body.style.gap = gap;
+			}
+
 			children.forEach( ( child ) => {
 				body.appendChild( renderStructureNode( child, depth + 1, false ) );
 			} );
