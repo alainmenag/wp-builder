@@ -12,7 +12,7 @@
  */
 
 import { VOID_NODES, ALLOWED_NODES, TEMPLATE_CPT } from './constants.js';
-import { normalizeNodeTag } from './layout.js';
+import { normalizeNodeTag, findElement } from './layout.js';
 import { renderNodeAttrs } from './dom-helpers.js';
 import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE, ICON_STRUCTURE } from './constants.js';
 
@@ -1131,7 +1131,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				}
 				// Update the snapshot so exitStructureMode() restores the current DOM.
 				if ( payload.data.html ) { _savedRenderedOuterHtml = payload.data.html; }
-				if ( payload.data.layout ) { renderStructureTree( payload.data.layout, _liveRoot ); }
+				if ( payload.data.layout ) {
+					_cachedLayout = payload.data.layout;
+					renderStructureTree( payload.data.layout, _liveRoot );
+				}
 				// Open the newly-created element in the panel.
 				if ( payload.data.new_element_id ) {
 					openPanel( _postId, payload.data.new_element_id, _liveRoot );
@@ -1162,7 +1165,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 						? payload.data.message : ( text.error || 'Error' ) );
 				}
 				if ( payload.data.html ) { _savedRenderedOuterHtml = payload.data.html; }
-				if ( payload.data.layout ) { renderStructureTree( payload.data.layout, _liveRoot ); }
+				if ( payload.data.layout ) {
+					_cachedLayout = payload.data.layout;
+					renderStructureTree( payload.data.layout, _liveRoot );
+				}
 				// Clear panel selection if the deleted element was open.
 				if ( elementId === _elementId ) {
 					_elementId = null;
@@ -1290,6 +1296,17 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		_postId    = postId;
 		_elementId = elementId;
 		_liveRoot  = liveRoot;
+
+		// If we already have the panel and a cached layout, find the element
+		// directly in the cache — no AJAX request needed.
+		if ( _panel && _cachedLayout ) {
+			const element = findElement( _cachedLayout.children || [], elementId );
+			if ( element ) {
+				positionAndShowPanel();
+				populatePanel( element );
+				return;
+			}
+		}
 
 		// If the panel already exists, show it with a loading state immediately.
 		// On first open the panel is built from the schema returned by fetchElement()
