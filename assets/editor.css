@@ -9,555 +9,532 @@
 /* ── Panel shell ────────────────────────────────────────────────────────── */
 
 .wpbe-panel {
-	background: var(--wpb-bg-page);
-	box-shadow: 0 4px 32px rgba(0, 0, 0, .55);
-	color: var(--wpb-text-primary);
-	display: none;
-	flex-direction: column;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-	font-size: 13px;
-	line-height: 1.5;
-	max-height: 100vh;
-	max-width: 600px;
-	min-height: 200px;
-	min-width: 280px;
-	overflow: auto;
-	position: fixed;
-	resize: both;
-	width: 340px;
-	z-index: 99999;
+background: var(--wpb-bg-page);
+box-shadow: 0 4px 32px rgba(0, 0, 0, .55);
+color: var(--wpb-text-primary);
+display: none;
+flex-direction: column;
+font-family: var(--wpb-font-ui);
+font-size: 13px;
+line-height: 1.5;
+max-height: 100vh;
+max-width: 600px;
+min-height: 200px;
+min-width: 280px;
+overflow: auto;
+position: fixed;
+resize: both;
+width: 340px;
+z-index: 99999;
 }
 
 .wpbe-panel.is-open {
-	display: flex;
+display: flex;
 }
 
 /* ── Docked (snapped full-height to an edge) ────────────────────────────── */
 
 .wpbe-panel.is-docked {
-	bottom: 0;
-	height: 100vh;
-	max-height: 100vh;
-	max-width: none;
-	resize: none;
-	top: 0;
+bottom: 0;
+height: 100vh;
+max-height: 100vh;
+max-width: none;
+resize: none;
+top: 0;
 }
 
-/* Right edge */
 .wpbe-panel.is-docked-right {
-	box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
-	left: auto;
-	right: 0;
+box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
+left: auto;
+right: 0;
 }
 
-/* Left edge */
 .wpbe-panel.is-docked-left {
-	box-shadow: 4px 0 24px rgba(0, 0, 0, .5);
-	left: 0;
-	right: auto;
+box-shadow: 4px 0 24px rgba(0, 0, 0, .5);
+left: 0;
+right: auto;
 }
 
 body.admin-bar .wpbe-panel.is-docked {
-	height: calc(100vh - 32px);
-	top: 32px;
+height: calc(100vh - 32px);
+top: 32px;
 }
 
 @media (max-width: 782px) {
-	body.admin-bar .wpbe-panel.is-docked {
-		height: calc(100vh - 46px);
-		top: 46px;
-	}
+body.admin-bar .wpbe-panel.is-docked {
+height: calc(100vh - 46px);
+top: 46px;
+}
 }
 
-/* ── Left-edge resize handle (docked-right mode only) ───────────────────── */
+/* ── Edge resize handles ────────────────────────────────────────────────── */
 
-.wpbe-resize-handle-left {
-	display: none;
+.wpbe-resize-handle-left,
+.wpbe-resize-handle-right {
+display: none;
 }
 
-.wpbe-panel.is-docked-right .wpbe-resize-handle-left {
-	bottom: 0;
-	cursor: ew-resize;
-	display: block;
-	left: 0;
-	position: absolute;
-	top: 0;
-	width: 5px;
+.wpbe-panel.is-docked-right .wpbe-resize-handle-left,
+.wpbe-panel.is-docked-left .wpbe-resize-handle-right {
+bottom: 0;
+cursor: ew-resize;
+display: block;
+position: absolute;
+top: 0;
+width: 5px;
 }
+
+.wpbe-panel.is-docked-right .wpbe-resize-handle-left { left: 0; }
+.wpbe-panel.is-docked-left  .wpbe-resize-handle-right { right: 0; }
 
 .wpbe-panel.is-docked-right .wpbe-resize-handle-left:hover,
-.wpbe-panel.is-resizing .wpbe-resize-handle-left {
-	background: var(--wpb-accent);
-	opacity: 0.4;
-}
-
-/* ── Right-edge resize handle (docked-left mode only) ───────────────────── */
-
-.wpbe-resize-handle-right {
-	display: none;
-}
-
-.wpbe-panel.is-docked-left .wpbe-resize-handle-right {
-	bottom: 0;
-	cursor: ew-resize;
-	display: block;
-	position: absolute;
-	right: 0;
-	top: 0;
-	width: 5px;
-}
-
-.wpbe-panel.is-docked-left .wpbe-resize-handle-right:hover,
+.wpbe-panel.is-docked-left  .wpbe-resize-handle-right:hover,
+.wpbe-panel.is-resizing .wpbe-resize-handle-left,
 .wpbe-panel.is-resizing .wpbe-resize-handle-right {
-	background: var(--wpb-accent);
-	opacity: 0.4;
+background: var(--wpb-accent);
+opacity: 0.4;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
 
 .wpbe-panel-header {
-	align-items: center;
-	background: var(--wpb-bg-elevated);
-	border-bottom: 1px solid var(--wpb-border-subtle);
-	cursor: grab;
-	display: flex;
-	flex-shrink: 0;
-	gap: 8px;
-	min-height: 48px;
-	padding: 8px 12px;
-	user-select: none;
+align-items: center;
+background: var(--wpb-bg-elevated);
+border-bottom: 1px solid var(--wpb-border-subtle);
+cursor: grab;
+display: flex;
+flex-shrink: 0;
+gap: 8px;
+min-height: 48px;
+padding: 8px 12px;
+user-select: none;
 }
 
 .wpbe-panel.is-dragging {
-	user-select: none;
+user-select: none;
 }
 
 .wpbe-panel button,
 .wpbe-panel a {
-	user-select: none;
-	border-radius: 0;
+border-radius: 0;
+user-select: none;
 }
 
 .wpbe-panel.is-dragging .wpbe-panel-header {
-	cursor: grabbing;
+cursor: grabbing;
 }
 
 .wpbe-panel-header-left {
-	align-items: center;
-	display: flex;
-	flex: 1;
-	flex-wrap: wrap;
-	gap: 6px;
-	min-width: 0;
-	overflow: hidden;
+align-items: center;
+display: flex;
+flex: 1;
+flex-wrap: wrap;
+gap: 6px;
+min-width: 0;
+overflow: hidden;
 }
 
+/* ── Chips ───────────────────────────────────────────────────────────────── */
+
 .wpbe-chip {
-	border-radius: 3px;
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: .04em;
-	overflow: hidden;
-	padding: 2px 6px;
-	text-overflow: ellipsis;
-	text-transform: uppercase;
-	white-space: nowrap;
+border-radius: 3px;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: .04em;
+overflow: hidden;
+padding: 2px 6px;
+text-overflow: ellipsis;
+text-transform: uppercase;
+white-space: nowrap;
 }
 
 .wpbe-chip--node {
-	background: var(--wpb-accent-dim);
-	color: #ffffff;
+background: var(--wpb-accent-dim);
+color: #ffffff;
 }
 
 .wpbe-chip--id {
-	color: var(--wpb-text-muted);
-	cursor: pointer;
-	font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
-	font-size: 12px;
-	font-weight: 900;
-	letter-spacing: 0;
-	text-transform: none;
+color: var(--wpb-text-muted);
+cursor: pointer;
+font-family: var(--wpb-font-mono);
+font-size: 12px;
+font-weight: 900;
+letter-spacing: 0;
+text-transform: none;
 }
 
+/* ── Footer-link icon buttons ───────────────────────────────────────────── */
+
 .wpbe-panel-footer-link {
-	align-items: center;
-	background: transparent !important;
-	border-radius: 0;
-	color: var(--wpb-text-muted);
-	cursor: pointer;
-	display: inline-flex;
-	flex-shrink: 0;
-	height: 44px;
-	justify-content: center;
-	text-decoration: none;
-	width: 44px;
-	padding: 12px;
-	border: none !important;
+align-items: center;
+background: transparent !important;
+border: none !important;
+border-radius: 0;
+color: var(--wpb-text-muted);
+cursor: pointer;
+display: inline-flex;
+flex-shrink: 0;
+height: 44px;
+justify-content: center;
+padding: 12px;
+text-decoration: none;
+width: 44px;
 }
 
 .wpbe-panel-footer-link:hover,
 .wpbe-panel-footer-link:focus {
-	color: var(--wpb-text-primary);
-	outline: none;
+color: var(--wpb-text-primary);
+outline: none;
 }
 
 .wpbe-tab-btn.wpbe-panel-footer-link.is-active {
-	background-color: var(--wpb-bg-page) !important;
-	color: #ffffff !important;
+background-color: var(--wpb-bg-page) !important;
+color: #ffffff !important;
 }
 
-.wpbe-close-btn {
-	background: transparent;
-	border: none;
-	border-radius: 3px;
-	color: var(--wpb-text-muted);
-	cursor: pointer;
-	flex-shrink: 0;
-	font-size: 18px;
-	height: 28px;
-	line-height: 1;
-	padding: 0;
-	width: 28px;
+/* ── Small icon buttons (28 × 28) shared base ───────────────────────────── */
+
+.wpbe-close-btn,
+.wpbe-structure-toggle-btn {
+background: transparent;
+border: none;
+border-radius: 3px;
+color: var(--wpb-text-muted);
+cursor: pointer;
+flex-shrink: 0;
+height: 28px;
+line-height: 1;
+padding: 0;
+width: 28px;
+}
+
+.wpbe-close-btn { font-size: 18px; }
+
+.wpbe-structure-toggle-btn {
+align-items: center;
+display: inline-flex;
+justify-content: center;
 }
 
 .wpbe-close-btn:hover,
-.wpbe-close-btn:focus {
-	background: var(--wpb-bg-control);
-	color: var(--wpb-text-primary);
-	outline: none;
+.wpbe-close-btn:focus,
+.wpbe-structure-toggle-btn:hover,
+.wpbe-structure-toggle-btn:focus {
+background: var(--wpb-bg-control);
+color: var(--wpb-text-primary);
+outline: none;
+}
+
+.wpbe-structure-toggle-btn.is-active {
+color: var(--wpb-accent-hover);
 }
 
 /* ── Body ───────────────────────────────────────────────────────────────── */
 
 .wpbe-panel-body {
-	display: flex;
-	flex-direction: column;
-	flex: 1;
-	gap: 0;
-	overflow-y: auto;
+display: flex;
+flex-direction: column;
+flex: 1;
+overflow-y: auto;
 }
 
 /* ── Accordion ──────────────────────────────────────────────────────────── */
 /* Base accordion rules live in shared.css; only panel-specific override here. */
 
 .wpbe-accordion-body-inner {
-	padding: 12px 14px;
+padding: 12px 14px;
 }
 
 /* ── Field groups ───────────────────────────────────────────────────────── */
 /* Base input/select rules live in shared.css; only panel-specific rules here. */
 
 .wpbe-field-group {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
+display: flex;
+flex-direction: column;
+gap: 4px;
 }
 
 .wpbe-label {
-	color: var(--wpb-text-muted);
-	display: block;
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: .03em;
-	text-transform: uppercase;
+color: var(--wpb-text-muted);
+display: block;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: .03em;
+text-transform: uppercase;
 }
 
 .wpbe-inspector-hint {
-	color: var(--wpb-text-muted);
-	font-size: 12px;
-	margin: 0 0 6px;
+color: var(--wpb-text-muted);
+font-size: 12px;
+margin: 0 0 6px;
 }
 
 .wpbe-inspector-hint code {
-	background: var(--wpb-bg-sunken);
-	border: 1px solid var(--wpb-border-muted);
-	border-radius: 3px;
-	font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
-	font-size: 11px;
-	padding: 1px 4px;
+background: var(--wpb-bg-sunken);
+border: 1px solid var(--wpb-border-muted);
+border-radius: 3px;
+font-family: var(--wpb-font-mono);
+font-size: 11px;
+padding: 1px 4px;
 }
 
 .wpbe-input[readonly] {
-	color: var(--wpb-text-muted);
-	cursor: default;
+color: var(--wpb-text-muted);
+cursor: default;
 }
 
 /* ── Textarea / code editor ─────────────────────────────────────────────── */
 /* Base textarea rules live in shared.css; only panel-specific rules here. */
 
 .wpbe-textarea--code {
-	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
-	font-size: 12px;
+font-family: var(--wpb-font-mono);
+font-size: 12px;
 }
 
 /* ── Shortcode pre ──────────────────────────────────────────────────────── */
 
 .wpbe-embed-code {
-	background: var(--wpb-bg-sunken);
-	border: 1px solid var(--wpb-border-default);
-	color: var(--wpb-text-primary);
-	font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
-	font-size: 12px;
-	line-height: 1.5;
-	margin: 0;
-	padding: 8px;
-	white-space: pre-wrap;
-	word-break: break-all;
+background: var(--wpb-bg-sunken);
+border: 1px solid var(--wpb-border-default);
+color: var(--wpb-text-primary);
+font-family: var(--wpb-font-mono);
+font-size: 12px;
+line-height: 1.5;
+margin: 0;
+padding: 8px;
+white-space: pre-wrap;
+word-break: break-all;
 }
 
-/* ── Secondary button (used by link/export fields) ──────────────────────── */
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+.wpbe-button-secondary,
+.wpbe-save-btn {
+transition: background-color 120ms ease, border-color 120ms ease;
+}
 
 .wpbe-button-secondary {
-	background: transparent;
-	border: 1px solid var(--wpb-border-default);
-	border-radius: 3px;
-	color: var(--wpb-text-primary);
-	cursor: pointer;
-	display: inline-block;
-	font: inherit;
-	font-size: 13px;
-	padding: 6px 14px;
-	text-align: center;
-	text-decoration: none;
-	transition: background-color 120ms ease, border-color 120ms ease;
+background: transparent;
+border: 1px solid var(--wpb-border-default);
+border-radius: 3px;
+color: var(--wpb-text-primary);
+cursor: pointer;
+display: inline-block;
+font: inherit;
+font-size: 13px;
+padding: 6px 14px;
+text-align: center;
+text-decoration: none;
 }
 
 .wpbe-button-secondary:hover,
 .wpbe-button-secondary:focus {
-	background: var(--wpb-bg-control);
-	border-color: var(--wpb-border-focus);
-	outline: none;
-}
-
-/* ── Footer ─────────────────────────────────────────────────────────────── */
-
-.wpbe-panel-footer {
-	align-items: center;
-	background: var(--wpb-bg-elevated);
-	display: flex;
-	flex-shrink: 0;
-	user-select: none;
-	gap: 10px;
-	padding: 0px;
-	justify-content: space-between;
-}
-
-/* ── Footer action buttons cluster (right side of footer) ───────────────── */
-
-.wpbe-footer-actions {
-	align-items: center;
-	display: flex;
-	gap: 0px;
+background: var(--wpb-bg-control);
+border-color: var(--wpb-blue);
+outline: none;
 }
 
 .wpbe-save-btn {
-	background: var(--wpb-accent);
-	border: none;
-	border-radius: 0;
-	color: #fff;
-	cursor: pointer;
-	font: inherit;
-	font-size: 13px;
-	font-weight: 600;
-	min-height: 44px;
-	padding: 6px 16px;
-	transition: background-color 120ms ease, border-color 120ms ease;
+background: var(--wpb-accent);
+border: none;
+border-radius: 0;
+color: #fff;
+cursor: pointer;
+font: inherit;
+font-size: 13px;
+font-weight: 600;
+min-height: 44px;
+padding: 6px 16px;
 }
 
 .wpbe-save-btn:hover,
 .wpbe-save-btn:focus {
-	background: var(--wpb-accent-hover);
-	border-color: var(--wpb-accent-hover);
-	outline: none;
+background: var(--wpb-accent-hover);
+border-color: var(--wpb-accent-hover);
+outline: none;
 }
 
 .wpbe-save-btn:disabled {
-	cursor: not-allowed;
-	opacity: .5;
+cursor: not-allowed;
+opacity: .5;
 }
 
 .wpbe-save-btn.has-unsaved-changes {
-	background: var(--wpb-danger);
+background: var(--wpb-danger);
 }
 
 .wpbe-save-btn.has-unsaved-changes:hover,
 .wpbe-save-btn.has-unsaved-changes:focus {
-	background: var(--wpb-danger-hover);
-	outline: none;
+background: var(--wpb-danger-hover);
+outline: none;
 }
 
 /* Status text lives inside the save button; label hides while status is shown. */
 
 .wpbe-save-status,
 .wpbe-save-status:not(:empty) + span {
-	display: none;
+display: none;
 }
 
 .wpbe-save-status:not(:empty) {
-	display: block;
+display: block;
 }
 
 .wpbe-save-btn.is-error .wpbe-save-status {
-	color: var(--wpb-danger-text);
+color: var(--wpb-danger-text);
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+
+.wpbe-panel-footer {
+align-items: center;
+background: var(--wpb-bg-elevated);
+display: flex;
+flex-shrink: 0;
+gap: 10px;
+justify-content: space-between;
+padding: 0;
+user-select: none;
+}
+
+/* ── Footer action buttons cluster (right side of footer) ───────────────── */
+
+.wpbe-footer-actions {
+align-items: center;
+display: flex;
 }
 
 /* ── Fit Page button ────────────────────────────────────────────────────── */
 
 .wpbe-fit-btn.is-active {
-	color: var(--wpb-accent);
+color: var(--wpb-accent);
 }
 
 .wpbe-fit-btn:disabled {
-	cursor: not-allowed;
-	opacity: .4;
+cursor: not-allowed;
+opacity: .4;
 }
 
 /* ── Fit-page zoom body state ───────────────────────────────────────────── */
 
 body.wpbe-page-zoomed {
-	overflow-x: hidden;
+overflow-x: hidden;
 }
 
 body.wpbe-page-zoomed #page {
-	will-change: transform;
+will-change: transform;
 }
 
 /* ── Hover highlight on editable elements ───────────────────────────────── */
 
 [data-wp-builder-id]:hover {
-	cursor: pointer;
+cursor: pointer;
 }
 
 [data-wp-builder-id]:hover:not(:has([data-wp-builder-id]:hover)) {
-	outline: 2px solid #fff;
-	outline-offset: 2px;
-	box-shadow: 0 0 0 6px #000;
-	z-index: 1;
+box-shadow: 0 0 0 6px #000;
+outline: 2px solid #fff;
+outline-offset: 2px;
+z-index: 1;
 }
 
 /* ── Structure-view toggle button ───────────────────────────────────────── */
-
-.wpbe-structure-toggle-btn {
-	background: transparent;
-	border: none;
-	border-radius: 3px;
-	color: var(--wpb-text-muted);
-	cursor: pointer;
-	flex-shrink: 0;
-	height: 28px;
-	line-height: 1;
-	padding: 0;
-	width: 28px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.wpbe-structure-toggle-btn:hover,
-.wpbe-structure-toggle-btn:focus {
-	background: var(--wpb-bg-control);
-	color: var(--wpb-text-primary);
-	outline: none;
-}
-
-.wpbe-structure-toggle-btn.is-active {
-	color: var(--wpb-accent-hover);
-}
+/* Base .wpbe-structure-toggle-btn rules sit in the "Small icon buttons" block above. */
 
 /* ── Structure-view container ───────────────────────────────────────────── */
 
 .wpbe-structure-view {
-	box-sizing: border-box;
-	color: var(--wpb-text-primary);
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-	min-height: 60px;
-	padding: 10px !important;
+box-sizing: border-box;
+color: var(--wpb-text-primary);
+font-family: var(--wpb-font-ui);
+min-height: 60px;
+padding: 10px !important;
 }
 
 /* Suppress the dashed hover outline inside the structure tree. */
 .wpbe-structure-view [data-wp-builder-id]:hover {
-	outline: none;
+outline: none;
 }
 
 /* ── Structure-view nodes ───────────────────────────────────────────────── */
 
 .wpbe-sv-node {
-	background: var(--wpb-bg-sunken);
-	border: 3px solid var(--wpb-border-muted);
-	width: 100%;
+background: var(--wpb-bg-sunken);
+border: 3px solid var(--wpb-border-muted);
+width: 100%;
 }
 
 .wpbe-sv-node.is-selected {
-	border-color: var(--wpb-accent-hover);
+border-color: var(--wpb-accent-hover);
 }
 
 /* ── Structure-view node bar ────────────────────────────────────────────── */
 
 .wpbe-sv-node-bar {
-	align-items: center;
-	background: var(--wpb-bg-raised);
-	display: flex;
-	min-height: 34px;
+align-items: center;
+background: var(--wpb-bg-raised);
+display: flex;
+min-height: 34px;
 }
 
 /* ── Structure-view node title button ───────────────────────────────────── */
 
 .wpbe-sv-node-title {
-	align-items: center;
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	display: flex;
-	flex-wrap: nowrap;
-	gap: 6px;
-	min-height: 26px;
-	overflow: hidden;
-	padding: 10px 12px;
-	width: 100%;
+align-items: center;
+background: transparent;
+border: none;
+cursor: pointer;
+display: flex;
+flex-wrap: nowrap;
+gap: 6px;
+min-height: 26px;
+overflow: hidden;
+padding: 10px 12px;
+width: 100%;
 }
 
 .wpbe-sv-node-title:hover,
 .wpbe-sv-node-title:focus {
-	background: var(--wpb-bg-node-title-hover);
-	outline: none;
+background: var(--wpb-bg-node-title-hover);
+outline: none;
 }
 
 /* ── Structure-view node action buttons (+/×) ───────────────────────────── */
 
 .wpbe-sv-node-action {
-	background: transparent;
-	border: 0;
-	border-radius: 0;
-	color: var(--wpb-text-secondary);
-	cursor: pointer;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	height: 34px;
-	line-height: 1;
-	padding: 0;
-	width: 34px;
+align-items: center;
+background: transparent;
+border: 0;
+border-radius: 0;
+color: var(--wpb-text-secondary);
+cursor: pointer;
+display: inline-flex;
+flex-shrink: 0;
+height: 34px;
+justify-content: center;
+line-height: 1;
+padding: 0;
+width: 34px;
 }
 
 .wpbe-sv-node-action:hover,
 .wpbe-sv-node-action:focus {
-	border-color: var(--wpb-accent-hover);
-	color: var(--wpb-accent-hover);
-	outline: none;
+border-color: var(--wpb-accent-hover);
+color: var(--wpb-accent-hover);
+outline: none;
 }
 
 .wpbe-sv-node-action--danger:hover,
 .wpbe-sv-node-action--danger:focus {
-	border-color: var(--wpb-danger-border);
-	color: var(--wpb-danger-text);
+border-color: var(--wpb-danger-border);
+color: var(--wpb-danger-text);
 }
 
 /* ── Structure-view node body (child list) ──────────────────────────────── */
 
 .wpbe-sv-node-body {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	padding: 4px;
+display: flex;
+flex-direction: column;
+gap: 4px;
+padding: 4px;
 }
