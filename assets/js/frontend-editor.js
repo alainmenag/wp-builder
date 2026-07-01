@@ -68,6 +68,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	let _savedRenderedOuterHtml = null;
 	/** @type {HTMLButtonElement|null} The structure-view toggle button in the panel header. */
 	let _structureToggleBtn = null;
+	/** @type {Object|null} The last layout object received from a wp_builder_get_element response. */
+	let _cachedLayout = null;
 
 	// -----------------------------------------------------------------------
 	// localStorage persistence
@@ -872,8 +874,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	}
 
 	/**
-	 * Enter structure mode: fetch the current layout and render the node tree
-	 * over the live _liveRoot element.
+	 * Enter structure mode: render the node tree over the live _liveRoot element.
+	 * Uses the layout already cached from the last wp_builder_get_element response.
+	 * Falls back to fetching the element (which also returns the layout) if the
+	 * cache is empty.
 	 */
 	function enterStructureMode() {
 		if ( ! _liveRoot || ! _postId ) { return; }
@@ -881,29 +885,22 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		// Snapshot the current rendered HTML so we can restore it on exit.
 		_savedRenderedOuterHtml = _liveRoot.outerHTML;
 
-		const form = new window.FormData();
-		form.append( 'action', 'wp_builder_get_layout' );
-		form.append( 'nonce',  config.layoutNonce );
-		form.append( 'post_id', _postId );
+		// Activate structure mode and update the toggle button immediately.
+		_isStructureMode = true;
+		if ( _structureToggleBtn ) {
+			_structureToggleBtn.classList.add( 'is-active' );
+			_structureToggleBtn.setAttribute( 'aria-label', text.renderedView || 'Rendered View' );
+			_structureToggleBtn.setAttribute( 'title',      text.renderedView || 'Rendered View' );
+		}
 
-		window.fetch( config.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: form } )
-			.then( ( r ) => r.json() )
-			.then( ( payload ) => {
-				if ( ! payload || ! payload.success ) {
-					throw new Error( payload && payload.data && payload.data.message
-						? payload.data.message : ( text.error || 'Error' ) );
-				}
-				_isStructureMode = true;
-				if ( _structureToggleBtn ) {
-					_structureToggleBtn.classList.add( 'is-active' );
-					_structureToggleBtn.setAttribute( 'aria-label', text.renderedView || 'Rendered View' );
-					_structureToggleBtn.setAttribute( 'title',      text.renderedView || 'Rendered View' );
-				}
-				renderStructureTree( payload.data.layout, _liveRoot );
-			} )
-			.catch( ( err ) => {
-				setStatus( err.message || ( text.error || 'Error' ), true );
-			} );
+		if ( _cachedLayout ) {
+			renderStructureTree( _cachedLayout, _liveRoot );
+		} else if ( _elementId ) {
+			// No cached layout yet — fetch the element; the response includes the
+			// layout and fetchElement will call renderStructureTree because
+			// _isStructureMode is now true.
+			fetchElement( _postId, _elementId );
+		}
 	}
 
 	/**
@@ -1273,6 +1270,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				}
 				_saveBtn.disabled = false;
 				setStatus( '', false );
+				if ( data.layout ) { _cachedLayout = data.layout; }
 				populatePanel( data.element, data.post_title || '', data.post_status || '', data.page_template || '' );
 				// If in structure mode, keep the tree in sync with the fetched layout.
 				if ( _isStructureMode && data.layout ) {
@@ -1406,6 +1404,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				if ( payload.data.element && payload.data.element.id ) {
 					_elementId = payload.data.element.id;
 				}
+				if ( payload.data.layout ) { _cachedLayout = payload.data.layout; }
 				if ( payload.data.post_title  !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = payload.data.post_title; }
 				if ( payload.data.post_status !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = payload.data.post_status; }
 				if ( payload.data.page_template !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = payload.data.page_template; }
