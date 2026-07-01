@@ -1411,11 +1411,21 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( _htmlTextareaCtrl && ! _contentSection.hidden ) {
 			// Preserve nested builder child elements — they follow the content
 			// HTML in the DOM (PHP renders content first, then children).
+			// Also preserve each child's preceding <style> sibling, because
+			// PHP emits a <style> block immediately before any element that has
+			// custom CSS, and that block lives inside the parent container.
 			const builderChildren = Array.from(
 				el.querySelectorAll( ':scope > [data-wp-builder-id]' )
-			);
+			).map( ( child ) => {
+				const prev    = child.previousElementSibling;
+				const childStyleEl = ( prev && prev.tagName === 'STYLE' ) ? prev : null;
+				return { child, childStyleEl };
+			} );
 			el.innerHTML = _htmlTextareaCtrl.value;
-			builderChildren.forEach( ( child ) => el.appendChild( child ) );
+			builderChildren.forEach( ( { child, childStyleEl } ) => {
+				if ( childStyleEl ) { el.appendChild( childStyleEl ); }
+				el.appendChild( child );
+			} );
 		}
 
 		// ── Custom style ──────────────────────────────────────────────────────
