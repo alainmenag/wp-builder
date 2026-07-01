@@ -426,8 +426,13 @@ body.wpbfe-page-zoomed #page {
 
 [data-wp-builder-id]:hover {
 	cursor: pointer;
-	outline: 2px dashed rgba(31, 111, 92, .6);
+}
+
+[data-wp-builder-id]:hover:not(:has([data-wp-builder-id]:hover)) {
+	outline: 2px solid #fff;
 	outline-offset: 2px;
+	box-shadow: 0 0 0 6px #000;
+	z-index: 1;
 }
 
 /* ── Structure-view toggle button ───────────────────────────────────────── */
