@@ -380,3 +380,146 @@ body.wpbfe-page-zoomed #page {
 	outline: 2px dashed rgba(31, 111, 92, .6);
 	outline-offset: 2px;
 }
+
+/* ── Structure-view toggle button ───────────────────────────────────────── */
+
+.wpbfe-structure-toggle-btn {
+	background: transparent;
+	border: none;
+	border-radius: 3px;
+	color: var(--wpb-text-muted);
+	cursor: pointer;
+	flex-shrink: 0;
+	height: 28px;
+	line-height: 1;
+	padding: 0;
+	width: 28px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.wpbfe-structure-toggle-btn:hover,
+.wpbfe-structure-toggle-btn:focus {
+	background: var(--wpb-bg-control);
+	color: var(--wpb-text-primary);
+	outline: none;
+}
+
+.wpbfe-structure-toggle-btn.is-active {
+	color: var(--wpb-accent-hover);
+}
+
+/* ── Structure-view container ───────────────────────────────────────────── */
+
+.wpbfe-structure-view {
+	background: var(--wpb-bg-page) !important;
+	box-sizing: border-box;
+	color: var(--wpb-text-primary);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	min-height: 60px;
+	padding: 10px !important;
+}
+
+/* Suppress the dashed hover outline inside the structure tree. */
+.wpbfe-structure-view [data-wp-builder-id]:hover {
+	outline: none;
+}
+
+/* ── Structure-view nodes ───────────────────────────────────────────────── */
+
+.wpbfe-sv-node {
+	background: var(--wpb-bg-sunken);
+	border: 1px solid var(--wpb-border-muted);
+	border-left: 3px solid var(--wpb-border-default);
+	width: 100%;
+}
+
+.wpbfe-sv-node.is-selected {
+	border-color: var(--wpb-accent-hover);
+	box-shadow: 0 0 0 2px rgba(var(--wpb-accent-rgb), 0.28);
+}
+
+.wpbfe-sv-node.is-selected > .wpbfe-sv-node-bar > .wpbfe-sv-node-title {
+	color: var(--wpb-accent);
+}
+
+/* ── Structure-view node bar ────────────────────────────────────────────── */
+
+.wpbfe-sv-node-bar {
+	align-items: center;
+	background: var(--wpb-bg-raised);
+	border-bottom: 1px solid var(--wpb-border-muted);
+	display: flex;
+	gap: 4px;
+	min-height: 34px;
+	padding: 4px;
+}
+
+/* ── Structure-view node title button ───────────────────────────────────── */
+
+.wpbfe-sv-node-title {
+	background: transparent;
+	border: none;
+	color: var(--wpb-text-secondary);
+	cursor: pointer;
+	font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	min-height: 26px;
+	overflow: hidden;
+	padding: 4px 8px;
+	text-align: left;
+	text-overflow: ellipsis;
+	text-transform: uppercase;
+	white-space: nowrap;
+	width: 100%;
+}
+
+.wpbfe-sv-node-title:hover,
+.wpbfe-sv-node-title:focus {
+	background: var(--wpb-bg-node-title-hover);
+	color: var(--wpb-text-primary);
+	outline: none;
+}
+
+/* ── Structure-view node action buttons (+/×) ───────────────────────────── */
+
+.wpbfe-sv-node-action {
+	background: var(--wpb-bg-control);
+	border: 1px solid var(--wpb-border-default);
+	border-radius: 0;
+	color: var(--wpb-text-secondary);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	height: 28px;
+	line-height: 1;
+	padding: 0;
+	width: 28px;
+}
+
+.wpbfe-sv-node-action:hover,
+.wpbfe-sv-node-action:focus {
+	border-color: var(--wpb-accent-hover);
+	color: var(--wpb-accent-hover);
+	outline: none;
+}
+
+.wpbfe-sv-node-action--danger:hover,
+.wpbfe-sv-node-action--danger:focus {
+	border-color: var(--wpb-danger-border);
+	color: var(--wpb-danger-text);
+}
+
+/* ── Structure-view node body (child list) ──────────────────────────────── */
+
+.wpbfe-sv-node-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 8px 8px 8px 16px;
+}
