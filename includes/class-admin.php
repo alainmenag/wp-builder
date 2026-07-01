@@ -94,49 +94,6 @@ trait WP_Builder_Admin {
 		exit;
 	}
 
-	public function add_builder_meta_box(): void {
-		foreach ( $this->supported_post_types() as $post_type ) {
-			if ( self::TEMPLATE_CPT === $post_type ) {
-				continue;
-			}
-
-			add_meta_box(
-				'wp-builder-launcher',
-				__( 'Builder', 'wp-builder' ),
-				array( $this, 'render_builder_meta_box' ),
-				$post_type,
-				'side',
-				'high'
-			);
-		}
-	}
-
-	public function render_builder_meta_box( WP_Post $post ): void {
-		if ( ! current_user_can( 'edit_post', $post->ID ) ) {
-			return;
-		}
-
-		$layout = $this->get_layout( $post->ID );
-		$count  = $this->count_elements( $layout['children'] );
-
-		printf(
-			'<p><a class="button button-primary button-large" href="%1$s">%2$s</a></p>',
-			esc_url( $this->get_builder_url( $post->ID ) ),
-			esc_html__( 'Builder', 'wp-builder' )
-		);
-
-		printf(
-			'<p class="description">%s</p>',
-			esc_html(
-				sprintf(
-					/* translators: %d: number of builder elements. */
-					_n( '%d builder element saved.', '%d builder elements saved.', $count, 'wp-builder' ),
-					$count
-				)
-			)
-		);
-	}
-
 	public function register_builder_page(): void {
 		add_submenu_page(
 			null,

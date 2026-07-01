@@ -6,9 +6,10 @@ exit;
 /**
  * Trait WP_Builder_Editor
  *
- * Handles routing and entry points for the full-screen builder editor.
- * Asset enqueueing lives in WP_Builder_Editor_Assets, the panel schema in
- * WP_Builder_Editor_Schema, and the HTML shell rendering in WP_Builder_Editor_Shell.
+ * Handles routing and entry points for the builder editor.
+ * Requests for action=builder are redirected to the frontend preview URL,
+ * where the front-end quick-editor (frontend-editor.js) is loaded for
+ * logged-in users with edit capabilities.
  */
 trait WP_Builder_Editor {
 
@@ -28,11 +29,6 @@ if ( ! current_user_can( 'edit_post', $post_id ) ) {
 wp_die( esc_html__( 'You do not have permission to edit this content.', 'wp-builder' ) );
 }
 
-// Populate the global $post so that admin-bar callbacks such as
-// wp_admin_bar_edit_menu() can call get_post() without returning null.
-$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-setup_postdata( $post );
-
 $view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 if ( 'json' === $view ) {
@@ -44,27 +40,13 @@ echo wp_json_encode( $this->get_layout( $post_id ), JSON_PRETTY_PRINT | JSON_UNE
 exit;
 }
 
-$this->enqueue_builder_assets( $post_id );
-
-status_header( 200 );
-nocache_headers();
-$this->render_builder_document( $post );
+wp_safe_redirect( $this->get_preview_url( $post_id ) );
 exit;
-}
-
-public function render_builder_page(): void {
-$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-if ( $post_id ) {
-wp_safe_redirect( $this->get_builder_url( $post_id ) );
-exit;
-}
-
-wp_die( esc_html__( 'No post selected for Builder.', 'wp-builder' ) );
 }
 
 /**
- * Build a context array for a given post containing the values that both
- * enqueue_builder_assets() and render_builder_shell() need.
+ * Build a context array for a given post containing values needed by
+ * get_frontend_panel_schema() and enqueue_frontend_editor_assets().
  *
  * @param int $post_id Post ID.
  * @return array {
@@ -88,20 +70,26 @@ return array(
 );
 }
 
+public function render_builder_page(): void {
+$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+if ( $post_id ) {
+wp_safe_redirect( $this->get_builder_url( $post_id ) );
+exit;
+}
+
+wp_die( esc_html__( 'No post selected for Builder.', 'wp-builder' ) );
+}
+
 /**
- * Add type="module" to the wp-builder-admin script tag so the browser
- * treats assets/js/editor.js as a native ES module.
- *
- * wp_localize_script emits a separate inline <script> block (no type
- * attribute) that sets var wpBuilder = {...} before this tag, so
- * window.wpBuilder is available when the deferred module executes.
+ * Add type="module" to the wp-builder-frontend-editor script tag so the
+ * browser treats assets/js/frontend-editor.js as a native ES module.
  *
  * @param string $tag    The full <script> tag HTML.
  * @param string $handle The registered script handle.
  * @return string
  */
 public function add_module_type_to_script_tag( string $tag, string $handle ): string {
-if ( 'wp-builder-admin' !== $handle && 'wp-builder-frontend-editor' !== $handle ) {
+if ( 'wp-builder-frontend-editor' !== $handle ) {
 return $tag;
 }
 // Strip any legacy type="text/javascript" attribute WordPress may add.
