@@ -58,7 +58,7 @@ for f in assets/js/*.js; do node --check "$f"; done
   - Tabs for indentation.
   - All output must be escaped (`esc_html`, `esc_attr`, `esc_url`, etc.).
   - All user input must be sanitised and nonces verified before processing.
-- **JavaScript** — ES6 native modules in `assets/js/`; no build tool or transpiler is used. `editor.js` is the entry point.
+- **JavaScript** — ES6 native modules in `assets/js/`; no build tool or transpiler is used. `frontend-editor.js` is the entry point.
 - **CSS** — BEM-style class names prefixed with `wp-builder-`.
 - Keep all PHP logic inside the appropriate trait in `includes/class-*.php`.
 - Do not introduce new dependencies (Composer packages, npm packages) without prior discussion.

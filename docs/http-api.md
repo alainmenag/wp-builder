@@ -1,16 +1,17 @@
 # WP Builder — HTTP API Reference
 
-WP Builder exposes two authenticated WordPress AJAX endpoints and one read-only JSON export URL. All endpoints require the user to be logged in.
+WP Builder exposes five authenticated WordPress AJAX endpoints and one read-only JSON export URL. All endpoints require the user to be logged in.
 
 ---
 
 ## Table of contents
 
 - [JSON export (read-only)](#json-export-read-only)
-- [AJAX: save layout](#ajax-save-layout)
-- [AJAX: update title](#ajax-update-title)
-- [AJAX: get element (front-end editor)](#ajax-get-element-front-end-editor)
-- [AJAX: save element (front-end editor)](#ajax-save-element-front-end-editor)
+- [AJAX: get element](#ajax-get-element)
+- [AJAX: save element](#ajax-save-element)
+- [AJAX: get layout](#ajax-get-layout)
+- [AJAX: add element](#ajax-add-element)
+- [AJAX: delete element](#ajax-delete-element)
 - [Error responses](#error-responses)
 
 ---
@@ -70,106 +71,7 @@ The response body is the full layout object, pretty-printed with `JSON_PRETTY_PR
 
 ---
 
-## AJAX: save layout
-
-Saves the layout JSON, and optionally updates the post status, post title, and page layout in a single request.
-
-**URL**
-
-```
-POST wp-admin/admin-ajax.php
-```
-
-**Authentication:** WordPress session cookie + nonce.
-
-**Request body** (`application/x-www-form-urlencoded`)
-
-| Field           | Type    | Required | Description |
-|-----------------|---------|----------|-------------|
-| `action`        | string  | Yes      | Must be `wp_builder_save_layout`. |
-| `nonce`         | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_save_layout')`. Injected into the page as `window.wpBuilder.nonce`. |
-| `post_id`       | integer | Yes      | ID of the post to save. |
-| `layout`        | string  | Yes      | JSON-encoded layout object (version 2 schema). |
-| `post_status`   | string  | No       | New post status. Accepted values: `publish`, `draft`, `pending`, `private`. Ignored if the user does not have `publish_post` capability when changing to `publish` or `private`. |
-| `title`         | string  | No       | New post title. Applied after the layout is saved. |
-| `page_template` | string  | No       | Page-layout slug to store in `_wp_page_template` meta. Not applied when saving a `wp_builder_template` CPT. |
-
-**Success response** — `200 OK`
-
-```json
-{
-  "success": true,
-  "data": {
-    "layout": { /* sanitised layout object */ },
-    "postStatus": "publish",
-    "postTitle": "My Page",
-    "docTitle": "Builder: My Page",
-    "previewUrl": "https://example.com/my-page/",
-    "pageTemplate": "wp-builder-canvas",
-    "message": "Layout saved."
-  }
-}
-```
-
-| Field          | Type   | Description |
-|----------------|--------|-------------|
-| `layout`       | object | The sanitised layout that was stored. |
-| `postStatus`   | string | The post's status after the save. |
-| `postTitle`    | string | The post's title after the save. |
-| `docTitle`     | string | Browser `<title>` string — `"Builder: {post title}"`. |
-| `previewUrl`   | string | Front-end URL to preview the post. For snippets this is the WordPress preview link; for other post types it is the permalink. |
-| `pageTemplate` | string | Active page-layout slug after the save, or `default` if none is set. |
-| `message`      | string | Localised confirmation string. |
-
-**Error responses** — see [Error responses](#error-responses).
-
----
-
-## AJAX: update title
-
-Updates only the post title. Called in real time as the user edits the title field in the builder header.
-
-**URL**
-
-```
-POST wp-admin/admin-ajax.php
-```
-
-**Authentication:** WordPress session cookie + nonce.
-
-**Request body** (`application/x-www-form-urlencoded`)
-
-| Field     | Type    | Required | Description |
-|-----------|---------|----------|-------------|
-| `action`  | string  | Yes      | Must be `wp_builder_update_title`. |
-| `nonce`   | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_update_title')`. Injected into the page as `window.wpBuilder.titleNonce`. |
-| `post_id` | integer | Yes      | ID of the post to update. |
-| `title`   | string  | Yes      | New post title (sanitised with `sanitize_text_field`). |
-
-**Success response** — `200 OK`
-
-```json
-{
-  "success": true,
-  "data": {
-    "title": "My Updated Title",
-    "docTitle": "Builder: My Updated Title",
-    "previewUrl": "https://example.com/my-updated-title/"
-  }
-}
-```
-
-| Field        | Type   | Description |
-|--------------|--------|-------------|
-| `title`      | string | The saved post title. |
-| `docTitle`   | string | Browser `<title>` string — `"Builder: {post title}"`. |
-| `previewUrl` | string | Front-end URL to preview the post. |
-
-**Error responses** — see [Error responses](#error-responses).
-
----
-
-## AJAX: get element (front-end editor)
+## AJAX: get element
 
 Fetches a single element's data by ID along with the panel schema needed to build the front-end quick-editor UI dynamically.
 
@@ -335,7 +237,7 @@ The `attrs` accordion (`slug: "attrs"`) always has an empty `fields` array; its 
 
 ---
 
-## AJAX: save element (front-end editor)
+## AJAX: save element
 
 Updates a single element in the layout and returns the re-rendered HTML.
 
@@ -387,6 +289,127 @@ POST wp-admin/admin-ajax.php
 | `post_title`    | string | Post title after the save. |
 | `post_status`   | string | Post status after the save. |
 | `page_template` | string | Active page-layout slug after the save. |
+
+**Error responses** — see [Error responses](#error-responses).
+
+---
+
+## AJAX: get layout
+
+Returns the full layout object for a post. Used by the structure-view panel to display the element tree.
+
+**URL**
+
+```
+POST wp-admin/admin-ajax.php
+```
+
+**Authentication:** WordPress session cookie + nonce.
+
+**Request body** (`application/x-www-form-urlencoded`)
+
+| Field     | Type    | Required | Description |
+|-----------|---------|----------|-------------|
+| `action`  | string  | Yes      | Must be `wp_builder_get_layout`. |
+| `nonce`   | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_get_layout')`. Injected as `window.wpBuilderFrontendEditor.layoutNonce`. |
+| `post_id` | integer | Yes      | ID of the post. |
+
+**Success response** — `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "layout": { "version": 2, "createdAt": 1718000000, "updatedAt": 1718001234, "children": [ /* … */ ] }
+  }
+}
+```
+
+**Error responses** — see [Error responses](#error-responses).
+
+---
+
+## AJAX: add element
+
+Appends a new default child element to an existing parent element and returns the re-rendered HTML.
+
+**URL**
+
+```
+POST wp-admin/admin-ajax.php
+```
+
+**Authentication:** WordPress session cookie + nonce.
+
+**Request body** (`application/x-www-form-urlencoded`)
+
+| Field       | Type    | Required | Description |
+|-------------|---------|----------|-------------|
+| `action`    | string  | Yes      | Must be `wp_builder_add_element`. |
+| `nonce`     | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_add_element')`. Injected as `window.wpBuilderFrontendEditor.addNonce`. |
+| `post_id`   | integer | Yes      | ID of the post. |
+| `parent_id` | string  | Yes      | Element ID of the parent to append the new child to. |
+
+**Success response** — `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "html":           "<div data-wp-builder-post-id=\"42\">…</div>",
+    "new_element_id": "wpb-lxyz13-abc789",
+    "layout":         { /* updated layout object */ }
+  }
+}
+```
+
+| Field            | Type   | Description |
+|------------------|--------|-------------|
+| `html`           | string | Re-rendered full layout HTML for the DOM swap on the front end. |
+| `new_element_id` | string | The generated ID of the newly created element. |
+| `layout`         | object | The updated layout object after the add. |
+
+**Error responses** — see [Error responses](#error-responses).
+
+---
+
+## AJAX: delete element
+
+Removes an element (and all its descendants) from the layout and returns the re-rendered HTML. The root element cannot be deleted.
+
+**URL**
+
+```
+POST wp-admin/admin-ajax.php
+```
+
+**Authentication:** WordPress session cookie + nonce.
+
+**Request body** (`application/x-www-form-urlencoded`)
+
+| Field        | Type    | Required | Description |
+|--------------|---------|----------|-------------|
+| `action`     | string  | Yes      | Must be `wp_builder_delete_element`. |
+| `nonce`      | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_delete_element')`. Injected as `window.wpBuilderFrontendEditor.deleteNonce`. |
+| `post_id`    | integer | Yes      | ID of the post. |
+| `element_id` | string  | Yes      | ID of the element to delete. |
+
+**Success response** — `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "html":   "<div data-wp-builder-post-id=\"42\">…</div>",
+    "layout": { /* updated layout object */ }
+  }
+}
+```
+
+| Field    | Type   | Description |
+|----------|--------|-------------|
+| `html`   | string | Re-rendered full layout HTML for the DOM swap on the front end. |
+| `layout` | object | The updated layout object after the delete. |
 
 **Error responses** — see [Error responses](#error-responses).
 
