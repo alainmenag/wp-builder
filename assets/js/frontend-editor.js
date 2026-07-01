@@ -955,6 +955,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	 */
 	function renderStructureTree( layout, rootEl ) {
 		rootEl.classList.add( 'wpbfe-structure-view' );
+		// Strip the element's inline layout style — it belongs on the node-body of the
+		// rendered tree, not on _liveRoot. exitStructureMode() restores the full snapshot.
+		rootEl.removeAttribute( 'style' );
 		// Remove all child nodes.
 		while ( rootEl.firstChild ) { rootEl.removeChild( rootEl.firstChild ); }
 		if ( layout && layout.children && layout.children[ 0 ] ) {
@@ -1028,6 +1031,19 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( children.length ) {
 			const body = document.createElement( 'div' );
 			body.className = 'wpbfe-sv-node-body';
+
+			// Mirror the element's layout props so children are arranged correctly.
+			// The CSS default (flex-direction:column, gap:8px) acts as a fallback.
+			const props = element.props || {};
+			const dir   = props.flexDirection;
+			const gap   = props.gap;
+			if ( dir === 'row' || dir === 'column' ) {
+				body.style.flexDirection = dir;
+			}
+			if ( gap ) {
+				body.style.gap = gap;
+			}
+
 			children.forEach( ( child ) => {
 				body.appendChild( renderStructureNode( child, depth + 1, false ) );
 			} );
