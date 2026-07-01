@@ -426,6 +426,9 @@ body.wpbfe-page-zoomed #page {
 
 [data-wp-builder-id]:hover {
 	cursor: pointer;
+}
+
+[data-wp-builder-id]:hover:not(:has([data-wp-builder-id]:hover)) {
 	outline: 2px dashed rgba(31, 111, 92, .6);
 	outline-offset: 2px;
 }
