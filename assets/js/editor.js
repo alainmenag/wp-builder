@@ -22,6 +22,15 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	const config = window.wpBuilderEditor;
 	if ( ! config ) { return; }
 
+	// Fallback: treat as builder mode if the URL has action=builder and post=,
+	// in case PHP did not set isBuilderMode (e.g. another enqueue overrode it).
+	if ( ! config.isBuilderMode ) {
+		const _p = new URLSearchParams( window.location.search );
+		if ( 'builder' === _p.get( 'action' ) && _p.get( 'post' ) ) {
+			config.isBuilderMode = true;
+		}
+	}
+
 	const text = config.i18n || {};
 
 	// -----------------------------------------------------------------------
