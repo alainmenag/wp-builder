@@ -1334,9 +1334,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( _isStructureMode ) {
 			exitStructureMode();
 		}
-		_postId    = null;
-		_elementId = null;
-		_liveRoot  = null;
+		_postId        = null;
+		_elementId     = null;
+		_liveRoot      = null;
+		_cachedLayout  = null;
 	}
 
 	function setStatus( msg, isError ) {
