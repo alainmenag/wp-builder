@@ -1368,6 +1368,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	 * Return the live DOM element currently open in the panel, or null when the
 	 * element cannot be found (e.g. structure mode is active).
 	 *
+	 * When a live-preview ID change has already updated the element's
+	 * data-wp-builder-id attribute to a new value, the original _elementId no
+	 * longer matches. In that case we fall back to the current value of the ID
+	 * input so subsequent applyLivePreview() calls still find the element.
+	 *
 	 * @returns {HTMLElement|null}
 	 */
 	function findLiveDomElement() {
@@ -1375,16 +1380,141 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( _liveRoot.getAttribute( 'data-wp-builder-id' ) === _elementId ) {
 			return _liveRoot;
 		}
-		return _liveRoot.querySelector( '[data-wp-builder-id="' + _elementId + '"]' );
+		const found = _liveRoot.querySelector( '[data-wp-builder-id="' + _elementId + '"]' );
+		if ( found ) { return found; }
+
+		// Fall back: the live-preview may have already updated data-wp-builder-id
+		// to the pending new ID typed by the user.
+		const pendingId = _idDisplayCtrl ? _idDisplayCtrl.value : '';
+		if ( pendingId && pendingId !== _elementId ) {
+			if ( _liveRoot.getAttribute( 'data-wp-builder-id' ) === pendingId ) {
+				return _liveRoot;
+			}
+			return _liveRoot.querySelector( '[data-wp-builder-id="' + pendingId + '"]' );
+		}
+		return null;
 	}
 
 	/**
 	 * Apply the current panel field values directly to the live DOM element so
 	 * changes appear in real time before the user saves.
+	 *
+	 * In structure mode there is no live DOM element to mutate, so only the
+	 * panel header chips, the content-section visibility, and the Attributes
+	 * accordion are updated — and the matching node row in the structure tree
+	 * has its own chips kept in sync.
 	 */
 	function applyLivePreview() {
-		const el = findLiveDomElement();
+		const newTag = _nodeSelectCtrl ? _nodeSelectCtrl.value : '';
+		const newId  = _idDisplayCtrl  ? _idDisplayCtrl.value  : '';
+
+		// ── Panel header chips + content-section visibility (both modes) ──────
+		if ( newTag ) {
+			if ( _nodeChip ) { _nodeChip.textContent = newTag.toUpperCase(); }
+			// Show or hide the content accordion for void nodes (e.g. img, input).
+			if ( _contentSection ) {
+				_contentSection.hidden = !! VOID_NODES[ newTag ];
+			}
+		}
+
+		// ── Structure mode ────────────────────────────────────────────────────
+		if ( _isStructureMode ) {
+			if ( _liveRoot && _elementId ) {
+				const svNode = _liveRoot.querySelector( '.wpbfe-sv-node[data-wp-builder-id="' + _elementId + '"]' );
+				if ( svNode ) {
+					// Sync the node-type chip and re-render the Attributes accordion
+					// if the node type has changed.
+					if ( newTag ) {
+						const tagChip = svNode.querySelector( '.wpbfe-sv-node-bar .wpbfe-chip--node' );
+						const prevTag = tagChip ? tagChip.textContent.toLowerCase() : '';
+						if ( newTag !== prevTag ) {
+							if ( _attrsSection ) {
+								renderNodeAttrs(
+									_attrsSection.querySelector( '.wpbfe-accordion-body-inner' ),
+									newTag,
+									{},
+									() => {},
+									CSS
+								);
+								_attrsSection.querySelectorAll( '[id^="wp-builder-node-attr-"]' ).forEach( ( ctrl ) => {
+									ctrl.dataset.attrName = ctrl.id.replace( 'wp-builder-node-attr-', '' );
+									ctrl.addEventListener( 'input',  markDirty );
+									ctrl.addEventListener( 'change', markDirty );
+								} );
+								const hasAttrs = !! _attrsSection.querySelector( '.wpbfe-accordion-body-inner' ).childElementCount;
+								_attrsSection.hidden = ! hasAttrs;
+								if ( hasAttrs && ! _attrsSection.classList.contains( 'is-open' ) ) {
+									const accBtn = _attrsSection.querySelector( '.wpbfe-accordion-header' );
+									if ( accBtn ) { accBtn.click(); }
+								}
+							}
+							if ( tagChip ) { tagChip.textContent = newTag.toUpperCase(); }
+						}
+					}
+
+					// Sync the element-ID chip in the structure tree.
+					if ( newId ) {
+						const idChip = svNode.querySelector( '.wpbfe-sv-node-bar .wpbfe-chip--id' );
+						if ( idChip ) { idChip.textContent = newId; }
+					}
+				}
+			}
+			if ( newId && _idChip ) { _idChip.textContent = newId; }
+			return;
+		}
+
+		// ── Rendered mode: live DOM updates ───────────────────────────────────
+		let el = findLiveDomElement();
 		if ( ! el ) { return; }
+
+		// ── Node type ─────────────────────────────────────────────────────────
+		if ( newTag ) {
+			const currentTag = el.tagName.toLowerCase();
+			if ( newTag !== currentTag ) {
+				// Replace the element in the DOM with a new element of the
+				// correct tag, preserving all attributes and children.
+				const newEl = document.createElement( newTag );
+				Array.from( el.attributes ).forEach( ( attr ) => {
+					newEl.setAttribute( attr.name, attr.value );
+				} );
+				while ( el.firstChild ) { newEl.appendChild( el.firstChild ); }
+				el.parentNode.replaceChild( newEl, el );
+				if ( _liveRoot === el ) { _liveRoot = newEl; }
+				el = newEl;
+
+				// Re-render the Attributes accordion for the new node type so the
+				// correct attribute fields appear immediately without requiring a save.
+				if ( _attrsSection ) {
+					renderNodeAttrs(
+						_attrsSection.querySelector( '.wpbfe-accordion-body-inner' ),
+						newTag,
+						{},
+						() => {},
+						CSS
+					);
+					// Wire data-attr-name and markDirty on the freshly rendered controls.
+					_attrsSection.querySelectorAll( '[id^="wp-builder-node-attr-"]' ).forEach( ( ctrl ) => {
+						ctrl.dataset.attrName = ctrl.id.replace( 'wp-builder-node-attr-', '' );
+						ctrl.addEventListener( 'input',  markDirty );
+						ctrl.addEventListener( 'change', markDirty );
+					} );
+					const hasAttrs = !! _attrsSection.querySelector( '.wpbfe-accordion-body-inner' ).childElementCount;
+					_attrsSection.hidden = ! hasAttrs;
+					// Auto-open the attrs accordion when the new node has attributes.
+					if ( hasAttrs && ! _attrsSection.classList.contains( 'is-open' ) ) {
+						const accBtn = _attrsSection.querySelector( '.wpbfe-accordion-header' );
+						if ( accBtn ) { accBtn.click(); }
+					}
+				}
+			}
+			// _nodeChip and _contentSection already updated above.
+		}
+
+		// ── Element ID ────────────────────────────────────────────────────────
+		if ( newId && newId !== el.getAttribute( 'data-wp-builder-id' ) ) {
+			el.setAttribute( 'data-wp-builder-id', newId );
+			if ( _idChip ) { _idChip.textContent = newId; }
+		}
 
 		// ── Layout props ──────────────────────────────────────────────────────
 		const flexDir  = _flexDirCtrl  ? _flexDirCtrl.value  : '';
@@ -1432,7 +1562,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		const styleValue = _styleEditor
 			? _styleEditor.codemirror.getValue()
 			: ( _styleTextareaCtrl ? _styleTextareaCtrl.value : '' );
-		const selector = '[data-wp-builder-id="' + _elementId + '"]';
+		// Use the element's current data-wp-builder-id (may have been updated
+		// by the element-ID live preview above) as the CSS selector scope.
+		const selector = '[data-wp-builder-id="' + ( el.getAttribute( 'data-wp-builder-id' ) || _elementId ) + '"]';
 
 		// The PHP renderer emits a <style> block immediately before the element.
 		let styleEl = el.previousElementSibling;
