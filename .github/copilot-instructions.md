@@ -73,7 +73,7 @@ wp-builder/
 - **ES6 native modules** — the editor is split across `assets/js/` as native ES modules. `assets/js/editor.js` is the entry point; PHP loads it with `type="module"` via `add_module_type_to_script_tag()`.
 - **No framework, no build step** — plain DOM APIs (`document.getElementById`, `addEventListener`, `classList`, etc.).
 - **Module dependencies:** `constants` and `layout` are leaf modules; `dom-helpers` imports from `constants`; `editor.js` imports from `constants`, `layout`, and `dom-helpers`.
-- **Global config** is injected by `wp_localize_script` as `window.wpBuilderEditor` (see `class-frontend.php` → `enqueue_frontend_editor_assets`). Because `wp_localize_script` emits a plain `var` declaration (no `type="module"`), `window.wpBuilderEditor` is available globally when the deferred module executes. Access it as `const config = window.wpBuilderEditor || {};`. The object exposes:
+- **Global config** is injected by `wp_localize_script` as `window.wpBuilderEditor` (see `class-frontend.php` → `enqueue_editor_assets`). Because `wp_localize_script` emits a plain `var` declaration (no `type="module"`), `window.wpBuilderEditor` is available globally when the deferred module executes. Access it as `const config = window.wpBuilderEditor || {};`. The object exposes:
   - `ajaxUrl` — WordPress admin-ajax URL.
   - `builderBaseUrl` — `wp-admin/post.php` base URL (used for the JSON export link).
   - `getNonce` — nonce for `wp_builder_get_element`.
@@ -150,11 +150,11 @@ Each **element** (root and nested alike):
 | `admin_menu` | `register_builder_page`, `register_template_menu` | admin |
 | `load-post-new.php` | `maybe_redirect_new_template` | admin |
 | `load-post.php` | `maybe_redirect_template_edit`, `maybe_render_builder_request` | admin, editor |
-| `wp_ajax_wp_builder_get_element` | `ajax_get_element` | ajax-frontend |
-| `wp_ajax_wp_builder_save_element` | `ajax_save_element` | ajax-frontend |
-| `wp_ajax_wp_builder_get_layout` | `ajax_get_layout` | ajax-frontend |
-| `wp_ajax_wp_builder_add_element` | `ajax_add_element` | ajax-frontend |
-| `wp_ajax_wp_builder_delete_element` | `ajax_delete_element` | ajax-frontend |
+| `wp_ajax_wp_builder_get_element` | `ajax_get_element` | ajax |
+| `wp_ajax_wp_builder_save_element` | `ajax_save_element` | ajax |
+| `wp_ajax_wp_builder_get_layout` | `ajax_get_layout` | ajax |
+| `wp_ajax_wp_builder_add_element` | `ajax_add_element` | ajax |
+| `wp_ajax_wp_builder_delete_element` | `ajax_delete_element` | ajax |
 | `wp_enqueue_scripts` | `enqueue_frontend_assets` | frontend |
 | `admin_bar_menu` | `add_admin_bar_nodes` | admin |
 | `post_row_actions` / `page_row_actions` / `wp_builder_template_row_actions` | `add_row_action` | admin |
