@@ -4,20 +4,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Trait WP_Builder_Ajax_Frontend
+ * Trait WP_Builder_Ajax
  *
  * Provides two AJAX endpoints used by the front-end element quick-editor:
  *   - wp_builder_get_element  — fetch a single element's data by ID.
  *   - wp_builder_save_element — update a single element and re-render the layout.
  */
-trait WP_Builder_Ajax_Frontend {
+trait WP_Builder_Ajax {
 
 	// -------------------------------------------------------------------------
 	// AJAX: get element
 	// -------------------------------------------------------------------------
 
 	public function ajax_get_element(): void {
-		check_ajax_referer( self::FRONTEND_GET_NONCE_ACTION, 'nonce' );
+		check_ajax_referer( self::GET_NONCE_ACTION, 'nonce' );
 
 		$post_id    = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 		$element_id = isset( $_POST['element_id'] ) ? sanitize_key( wp_unslash( $_POST['element_id'] ) ) : '';
@@ -52,7 +52,7 @@ trait WP_Builder_Ajax_Frontend {
 	// -------------------------------------------------------------------------
 
 	public function ajax_save_element(): void {
-		check_ajax_referer( self::FRONTEND_SAVE_NONCE_ACTION, 'nonce' );
+		check_ajax_referer( self::SAVE_NONCE_ACTION, 'nonce' );
 
 		$post_id    = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 		$element_id = isset( $_POST['element_id'] ) ? sanitize_key( wp_unslash( $_POST['element_id'] ) ) : '';
@@ -182,8 +182,8 @@ trait WP_Builder_Ajax_Frontend {
 	 * Each field:       type, id, label, and type-specific keys
 	 *                   (options, placeholder, attrs, hint).
 	 *
-	 * Field IDs use the wpbfe- prefix to match the references in
-	 * frontend-editor.js (e.g. wpbfe-node, wpbfe-post-title).
+	 * Field IDs use the wpbe- prefix to match the references in
+	 * editor.js (e.g. wpbe-node, wpbe-post-title).
 	 *
 	 * @param int $post_id Post being edited.
 	 * @return array
@@ -200,12 +200,12 @@ trait WP_Builder_Ajax_Frontend {
 		$settings_fields = array(
 			array(
 				'type'  => 'text',
-				'id'    => 'wpbfe-post-title',
+				'id'    => 'wpbe-post-title',
 				'label' => __( 'Post Title', 'wp-builder' ),
 			),
 			array(
 				'type'    => 'select',
-				'id'      => 'wpbfe-post-status',
+				'id'      => 'wpbe-post-status',
 				'label'   => __( 'Post Status', 'wp-builder' ),
 				'options' => array(
 					array( 'value' => 'publish', 'label' => __( 'Published',      'wp-builder' ) ),
@@ -219,7 +219,7 @@ trait WP_Builder_Ajax_Frontend {
 		if ( $is_template ) {
 			$settings_fields[] = array(
 				'type'    => 'select',
-				'id'      => 'wpbfe-page-template',
+				'id'      => 'wpbe-page-template',
 				'label'   => __( 'Page Layout', 'wp-builder' ),
 				'attrs'   => array( 'disabled' => true ),
 				'options' => array(
@@ -237,7 +237,7 @@ trait WP_Builder_Ajax_Frontend {
 			}
 			$settings_fields[] = array(
 				'type'    => 'select',
-				'id'      => 'wpbfe-page-template',
+				'id'      => 'wpbe-page-template',
 				'label'   => __( 'Page Layout', 'wp-builder' ),
 				'options' => $tmpl_options,
 			);
@@ -303,13 +303,13 @@ trait WP_Builder_Ajax_Frontend {
 						'fields' => array(
 							array(
 								'type'    => 'select',
-								'id'      => 'wpbfe-node',
+								'id'      => 'wpbe-node',
 								'label'   => __( 'Node', 'wp-builder' ),
 								'options' => $node_options,
 							),
 							array(
 								'type'        => 'text',
-								'id'          => 'wpbfe-node-id',
+								'id'          => 'wpbe-node-id',
 								'label'       => __( 'Element ID', 'wp-builder' ),
 								'placeholder' => __( 'e.g. my-element', 'wp-builder' ),
 							),
@@ -322,7 +322,7 @@ trait WP_Builder_Ajax_Frontend {
 						'fields' => array(
 							array(
 								'type'  => 'textarea',
-								'id'    => 'wpbfe-html-content',
+								'id'    => 'wpbe-html-content',
 								'label' => __( 'HTML Content', 'wp-builder' ),
 								'attrs' => array( 'rows' => '8' ),
 							),
@@ -335,7 +335,7 @@ trait WP_Builder_Ajax_Frontend {
 						'fields' => array(
 							array(
 								'type'    => 'select',
-								'id'      => 'wpbfe-flex-direction',
+								'id'      => 'wpbe-flex-direction',
 								'label'   => __( 'Flex Direction', 'wp-builder' ),
 								'options' => array(
 									array( 'value' => '',       'label' => __( '— None —', 'wp-builder' ) ),
@@ -345,14 +345,14 @@ trait WP_Builder_Ajax_Frontend {
 							),
 							array(
 								'type'        => 'number',
-								'id'          => 'wpbfe-flex-grow',
+								'id'          => 'wpbe-flex-grow',
 								'label'       => __( 'Flex Grow', 'wp-builder' ),
 								'placeholder' => '0',
 								'attrs'       => array( 'min' => '0', 'step' => '1' ),
 							),
 							array(
 								'type'        => 'text',
-								'id'          => 'wpbfe-gap',
+								'id'          => 'wpbe-gap',
 								'label'       => __( 'Gap', 'wp-builder' ),
 								'placeholder' => __( 'e.g. 16px', 'wp-builder' ),
 							),
@@ -365,7 +365,7 @@ trait WP_Builder_Ajax_Frontend {
 						'fields' => array(
 							array(
 								'type'  => 'textarea',
-								'id'    => 'wpbfe-custom-style',
+								'id'    => 'wpbe-custom-style',
 								'label' => __( 'Custom CSS', 'wp-builder' ),
 								'hint'  => sprintf(
 									/* translators: %1$s: opening code tag, %2$s: closing code tag */
@@ -479,7 +479,7 @@ trait WP_Builder_Ajax_Frontend {
 	// -------------------------------------------------------------------------
 
 	public function ajax_get_layout(): void {
-		check_ajax_referer( self::FRONTEND_GET_LAYOUT_NONCE_ACTION, 'nonce' );
+		check_ajax_referer( self::GET_LAYOUT_NONCE_ACTION, 'nonce' );
 
 		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 
@@ -500,7 +500,7 @@ trait WP_Builder_Ajax_Frontend {
 	// -------------------------------------------------------------------------
 
 	public function ajax_add_element(): void {
-		check_ajax_referer( self::FRONTEND_ADD_NONCE_ACTION, 'nonce' );
+		check_ajax_referer( self::ADD_NONCE_ACTION, 'nonce' );
 
 		$post_id   = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 		$parent_id = isset( $_POST['parent_id'] ) ? sanitize_key( wp_unslash( $_POST['parent_id'] ) ) : '';
@@ -560,7 +560,7 @@ trait WP_Builder_Ajax_Frontend {
 	// -------------------------------------------------------------------------
 
 	public function ajax_delete_element(): void {
-		check_ajax_referer( self::FRONTEND_DELETE_NONCE_ACTION, 'nonce' );
+		check_ajax_referer( self::DELETE_NONCE_ACTION, 'nonce' );
 
 		$post_id    = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 		$element_id = isset( $_POST['element_id'] ) ? sanitize_key( wp_unslash( $_POST['element_id'] ) ) : '';

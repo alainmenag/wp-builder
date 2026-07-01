@@ -24,7 +24,7 @@ wp-builder/
 ├── includes/
 │   ├── class-wp-builder.php        # Main class + hook registration
 │   ├── class-admin.php             # Trait: admin menus, row actions, admin bar
-│   ├── class-ajax-frontend.php     # Trait: AJAX get/save element, get layout, add/delete element
+│   ├── class-ajax.php     # Trait: AJAX get/save element, get layout, add/delete element
 │   ├── class-editor.php            # Trait: action=builder redirect to front end; JSON export
 │   ├── class-elementor.php         # Trait: Elementor widget + editor styles
 │   ├── class-frontend.php          # Trait: shortcodes, front-end assets, content filter
@@ -33,9 +33,9 @@ wp-builder/
 │   └── class-post-types.php        # Trait: post meta, snippet CPT, rewrite rules
 ├── assets/
 │   ├── shared.css                  # Shared design tokens and reusable UI components (--wpb-*)
-│   ├── frontend-editor.css         # Frontend quick-editor panel styles (wpbfe- prefix)
+│   ├── editor.css         # Frontend quick-editor panel styles (wpbe- prefix)
 │   ├── js/
-│   │   ├── frontend-editor.js      # Entry point — boots the frontend quick-editor (ES module IIFE)
+│   │   ├── editor.js      # Entry point — boots the frontend quick-editor (ES module IIFE)
 │   │   ├── constants.js            # Node glossary, void-node set, icon SVG strings
 │   │   ├── layout.js               # Layout data helpers (create, find, add, delete elements)
 │   │   └── dom-helpers.js          # Shared attribute-control rendering helpers
@@ -62,7 +62,7 @@ wp-builder/
 - **No direct database queries** — use the WordPress meta API (`get_post_meta`, `update_post_meta`), `WP_Query`, `wp_insert_post`, `wp_update_post`, etc.
 - **No new PHP dependencies** — do not suggest Composer packages.
 - **Traits only** — new logic belongs in a trait in `includes/class-*.php`. Register its hooks in `WP_Builder::__construct()`. Never put logic directly in the bootstrap.
-- **Constants** (`VERSION`, `META_KEY`, `MENU_SLUG`, `ACTION`, `FRONTEND_GET_NONCE_ACTION`, `FRONTEND_SAVE_NONCE_ACTION`, `FRONTEND_GET_LAYOUT_NONCE_ACTION`, `FRONTEND_ADD_NONCE_ACTION`, `FRONTEND_DELETE_NONCE_ACTION`, `TEMPLATE_CPT`, `REWRITE_VERSION`, `REWRITE_VERSION_OPTION`) are declared `private const` in `class-wp-builder.php` and accessed as `self::CONSTANT_NAME` within the class/traits.
+- **Constants** (`VERSION`, `META_KEY`, `MENU_SLUG`, `ACTION`, `GET_NONCE_ACTION`, `SAVE_NONCE_ACTION`, `GET_LAYOUT_NONCE_ACTION`, `ADD_NONCE_ACTION`, `DELETE_NONCE_ACTION`, `TEMPLATE_CPT`, `REWRITE_VERSION`, `REWRITE_VERSION_OPTION`) are declared `private const` in `class-wp-builder.php` and accessed as `self::CONSTANT_NAME` within the class/traits.
 - **Helper methods** shared across traits (`is_builder_request`, `get_builder_url`, `get_preview_url`, `get_builder_doc_title`, `supported_post_types`, `is_supported_post_type`) live in `class-wp-builder.php`.
 - **Internationalisation:** wrap every user-facing string in `__()`, `_e()`, `esc_html__()`, `esc_html_e()`, etc. Use the text domain `wp-builder`.
 
@@ -70,10 +70,10 @@ wp-builder/
 
 ## JavaScript conventions
 
-- **ES6 native modules** — the editor is split across `assets/js/` as native ES modules. `assets/js/frontend-editor.js` is the entry point; PHP loads it with `type="module"` via `add_module_type_to_script_tag()`.
+- **ES6 native modules** — the editor is split across `assets/js/` as native ES modules. `assets/js/editor.js` is the entry point; PHP loads it with `type="module"` via `add_module_type_to_script_tag()`.
 - **No framework, no build step** — plain DOM APIs (`document.getElementById`, `addEventListener`, `classList`, etc.).
-- **Module dependencies:** `constants` and `layout` are leaf modules; `dom-helpers` imports from `constants`; `frontend-editor.js` imports from `constants`, `layout`, and `dom-helpers`.
-- **Global config** is injected by `wp_localize_script` as `window.wpBuilderFrontendEditor` (see `class-frontend.php` → `enqueue_frontend_editor_assets`). Because `wp_localize_script` emits a plain `var` declaration (no `type="module"`), `window.wpBuilderFrontendEditor` is available globally when the deferred module executes. Access it as `const config = window.wpBuilderFrontendEditor || {};`. The object exposes:
+- **Module dependencies:** `constants` and `layout` are leaf modules; `dom-helpers` imports from `constants`; `editor.js` imports from `constants`, `layout`, and `dom-helpers`.
+- **Global config** is injected by `wp_localize_script` as `window.wpBuilderEditor` (see `class-frontend.php` → `enqueue_frontend_editor_assets`). Because `wp_localize_script` emits a plain `var` declaration (no `type="module"`), `window.wpBuilderEditor` is available globally when the deferred module executes. Access it as `const config = window.wpBuilderEditor || {};`. The object exposes:
   - `ajaxUrl` — WordPress admin-ajax URL.
   - `builderBaseUrl` — `wp-admin/post.php` base URL (used for the JSON export link).
   - `getNonce` — nonce for `wp_builder_get_element`.
@@ -92,8 +92,8 @@ wp-builder/
 ## CSS conventions
 
 - All class names are prefixed with `wp-builder-` (e.g. `.wp-builder-container`, `.wp-builder-panel`).
-- Shared design tokens (`--wpb-*`) live in `assets/shared.css`, loaded as a dependency of `frontend-editor.css`.
-- The frontend editor stylesheet (`assets/frontend-editor.css`) uses the `wpbfe-` prefix for editor-specific class names.
+- Shared design tokens (`--wpb-*`) live in `assets/shared.css`, loaded as a dependency of `editor.css`.
+- The frontend editor stylesheet (`assets/editor.css`) uses the `wpbe-` prefix for editor-specific class names.
 - The frontend stylesheet (`assets/frontend.css`) is minimal — only layout rules for `.wp-builder-layout` and `.wp-builder-container`.
 
 ---
@@ -242,4 +242,4 @@ for f in assets/js/*.js; do node --check "$f"; done
 - Do **not** add logic to `wp-builder.php` beyond loading files and instantiating `WP_Builder`.
 - Do **not** register new hooks outside `WP_Builder::__construct()`.
 - Do **not** create new top-level PHP files — all new PHP code goes in a trait under `includes/`.
-- Do **not** add new JavaScript files outside `assets/js/` — new JS modules go there and must be imported by `frontend-editor.js`.
+- Do **not** add new JavaScript files outside `assets/js/` — new JS modules go there and must be imported by `editor.js`.

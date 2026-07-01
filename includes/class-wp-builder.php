@@ -16,7 +16,7 @@ final class WP_Builder {
 	use WP_Builder_Post_Types;
 	use WP_Builder_Admin;
 	use WP_Builder_Editor;
-	use WP_Builder_Ajax_Frontend;
+	use WP_Builder_Ajax;
 	use WP_Builder_Frontend;
 	use WP_Builder_Page_Chrome;
 	use WP_Builder_Elementor;
@@ -25,11 +25,11 @@ final class WP_Builder {
 	private const META_KEY               = '_wp_builder_layout';
 	private const MENU_SLUG              = 'wp-builder';
 	private const ACTION                 = 'builder';
-	private const FRONTEND_GET_NONCE_ACTION      = 'wp_builder_get_element';
-	private const FRONTEND_SAVE_NONCE_ACTION     = 'wp_builder_save_element';
-	private const FRONTEND_GET_LAYOUT_NONCE_ACTION = 'wp_builder_get_layout';
-	private const FRONTEND_ADD_NONCE_ACTION      = 'wp_builder_add_element';
-	private const FRONTEND_DELETE_NONCE_ACTION   = 'wp_builder_delete_element';
+	private const GET_NONCE_ACTION      = 'wp_builder_get_element';
+	private const SAVE_NONCE_ACTION     = 'wp_builder_save_element';
+	private const GET_LAYOUT_NONCE_ACTION = 'wp_builder_get_layout';
+	private const ADD_NONCE_ACTION      = 'wp_builder_add_element';
+	private const DELETE_NONCE_ACTION   = 'wp_builder_delete_element';
 	private const TEMPLATE_CPT           = 'wp_builder_template';
 	private const REWRITE_VERSION        = '2';
 	private const REWRITE_VERSION_OPTION = 'wp_builder_rewrite_version';

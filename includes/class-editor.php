@@ -8,7 +8,7 @@ exit;
  *
  * Handles routing and entry points for the builder editor.
  * Requests for action=builder are redirected to the frontend preview URL,
- * where the front-end quick-editor (frontend-editor.js) is loaded for
+ * where the front-end quick-editor (editor.js) is loaded for
  * logged-in users with edit capabilities.
  */
 trait WP_Builder_Editor {
@@ -81,15 +81,15 @@ wp_die( esc_html__( 'No post selected for Builder.', 'wp-builder' ) );
 }
 
 /**
- * Add type="module" to the wp-builder-frontend-editor script tag so the
- * browser treats assets/js/frontend-editor.js as a native ES module.
+ * Add type="module" to the wp-builder-editor script tag so the
+ * browser treats assets/js/editor.js as a native ES module.
  *
  * @param string $tag    The full <script> tag HTML.
  * @param string $handle The registered script handle.
  * @return string
  */
 public function add_module_type_to_script_tag( string $tag, string $handle ): string {
-if ( 'wp-builder-frontend-editor' !== $handle ) {
+if ( 'wp-builder-editor' !== $handle ) {
 return $tag;
 }
 // Strip any legacy type="text/javascript" attribute WordPress may add.
