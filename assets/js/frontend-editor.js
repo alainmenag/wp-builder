@@ -1023,7 +1023,18 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		const titleBtn = document.createElement( 'button' );
 		titleBtn.type = 'button';
 		titleBtn.className = 'wpbfe-sv-node-title';
-		titleBtn.textContent = node.toUpperCase() + ' \u00b7 ' + ( element.id || '' );
+
+		const svNodeChip = document.createElement( 'span' );
+		svNodeChip.className = 'wpbfe-chip wpbfe-chip--node';
+		svNodeChip.textContent = node.toUpperCase();
+
+		const svIdChip = document.createElement( 'span' );
+		svIdChip.className = 'wpbfe-chip wpbfe-chip--id';
+		svIdChip.textContent = element.id || '';
+
+		titleBtn.appendChild( svNodeChip );
+		titleBtn.appendChild( svIdChip );
+
 		titleBtn.addEventListener( 'click', ( e ) => {
 			e.stopPropagation();
 			openPanel( _postId, element.id, _liveRoot );
