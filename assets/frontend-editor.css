@@ -290,6 +290,45 @@ body.admin-bar .wpbfe-panel.is-docked {
 	font-size: 12px;
 }
 
+/* ── Shortcode pre ──────────────────────────────────────────────────────── */
+
+.wpbfe-embed-code {
+	background: var(--wpb-bg-sunken);
+	border: 1px solid var(--wpb-border-default);
+	color: var(--wpb-text-primary);
+	font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	margin: 0;
+	padding: 8px;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+/* ── Secondary button (used by link/export fields) ──────────────────────── */
+
+.wpbfe-button-secondary {
+	background: transparent;
+	border: 1px solid var(--wpb-border-default);
+	border-radius: 3px;
+	color: var(--wpb-text-primary);
+	cursor: pointer;
+	display: inline-block;
+	font: inherit;
+	font-size: 13px;
+	padding: 6px 14px;
+	text-align: center;
+	text-decoration: none;
+	transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.wpbfe-button-secondary:hover,
+.wpbfe-button-secondary:focus {
+	background: var(--wpb-bg-control);
+	border-color: var(--wpb-border-focus);
+	outline: none;
+}
+
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 
 .wpbfe-panel-footer {
