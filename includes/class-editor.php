@@ -40,6 +40,13 @@ echo wp_json_encode( $this->get_layout( $post_id ), JSON_PRETTY_PRINT | JSON_UNE
 exit;
 }
 
+// Populate the global $post so WordPress core (e.g. admin-bar) can read
+// post_type without emitting "Attempt to read property on null" warnings.
+// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+global $post;
+$post = get_post( $post_id );
+setup_postdata( $post );
+
 // Render the builder canvas directly without an HTTP redirect.
 $this->enqueue_frontend_style();
 $this->enqueue_editor_assets( $post_id, true );
