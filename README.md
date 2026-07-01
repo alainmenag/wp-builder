@@ -97,7 +97,7 @@ wp-builder/
 ├── includes/
 │   ├── class-wp-builder.php        # Main class — uses all traits, registers all hooks
 │   ├── class-admin.php             # Admin menus, row actions, admin bar
-│   ├── class-ajax-frontend.php     # AJAX handlers: get/save element, get layout, add/delete element
+│   ├── class-ajax.php     # AJAX handlers: get/save element, get layout, add/delete element
 │   ├── class-editor.php            # Builder routing: redirects action=builder to the front end; JSON export
 │   ├── class-elementor.php         # Elementor widget registration + editor styles
 │   ├── class-frontend.php          # Shortcodes, front-end asset enqueue, content filter
@@ -106,9 +106,9 @@ wp-builder/
 │   └── class-post-types.php        # Post meta registration, snippet CPT, rewrite rules
 ├── assets/
 │   ├── shared.css                  # Shared design tokens and reusable UI components
-│   ├── frontend-editor.css         # Frontend quick-editor panel styles (wpbfe- prefix)
+│   ├── editor.css         # Frontend quick-editor panel styles (wpbe- prefix)
 │   ├── js/
-│   │   ├── frontend-editor.js      # Entry point — boots the frontend quick-editor (ES module IIFE)
+│   │   ├── editor.js      # Entry point — boots the frontend quick-editor (ES module IIFE)
 │   │   ├── constants.js            # Node glossary, void-node set, icon SVG strings
 │   │   ├── layout.js               # Layout data helpers (create, find, add, delete elements)
 │   │   └── dom-helpers.js          # Shared attribute-control rendering helpers

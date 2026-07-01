@@ -88,7 +88,7 @@ POST wp-admin/admin-ajax.php
 | Field        | Type    | Required | Description |
 |--------------|---------|----------|-------------|
 | `action`     | string  | Yes      | Must be `wp_builder_get_element`. |
-| `nonce`      | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_get_element')`. Injected as `window.wpBuilderFrontendEditor.getNonce`. |
+| `nonce`      | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_get_element')`. Injected as `window.wpBuilderEditor.getNonce`. |
 | `post_id`    | integer | Yes      | ID of the post containing the element. |
 | `element_id` | string  | Yes      | The `id` value of the element to fetch. |
 
@@ -127,7 +127,7 @@ POST wp-admin/admin-ajax.php
 
 ### `fields` panel schema
 
-`fields` is an array of **tab** descriptors. Each tab contains one or more **accordion** sections, and each accordion contains one or more **field** descriptors. The structure is used by `frontend-editor.js` to build the quick-editor panel DOM dynamically rather than hardcoding it client-side.
+`fields` is an array of **tab** descriptors. Each tab contains one or more **accordion** sections, and each accordion contains one or more **field** descriptors. The structure is used by `editor.js` to build the quick-editor panel DOM dynamically rather than hardcoding it client-side.
 
 ```json
 [
@@ -140,9 +140,9 @@ POST wp-admin/admin-ajax.php
         "label": "Settings",
         "open": true,
         "fields": [
-          { "type": "text",   "id": "wpbfe-post-title",  "label": "Post Title" },
+          { "type": "text",   "id": "wpbe-post-title",  "label": "Post Title" },
           {
-            "type": "select", "id": "wpbfe-post-status", "label": "Post Status",
+            "type": "select", "id": "wpbe-post-status", "label": "Post Status",
             "options": [
               { "value": "publish", "label": "Published" },
               { "value": "draft",   "label": "Draft" }
@@ -161,8 +161,8 @@ POST wp-admin/admin-ajax.php
         "label": "Identity",
         "open": false,
         "fields": [
-          { "type": "select", "id": "wpbfe-node",    "label": "Node",       "options": [{ "value": "div", "label": "div" }, "…"] },
-          { "type": "text",   "id": "wpbfe-node-id", "label": "Element ID", "placeholder": "e.g. my-element" }
+          { "type": "select", "id": "wpbe-node",    "label": "Node",       "options": [{ "value": "div", "label": "div" }, "…"] },
+          { "type": "text",   "id": "wpbe-node-id", "label": "Element ID", "placeholder": "e.g. my-element" }
         ]
       },
       {
@@ -170,7 +170,7 @@ POST wp-admin/admin-ajax.php
         "label": "Content",
         "open": true,
         "fields": [
-          { "type": "textarea", "id": "wpbfe-html-content", "label": "HTML Content", "attrs": { "rows": "8" } }
+          { "type": "textarea", "id": "wpbe-html-content", "label": "HTML Content", "attrs": { "rows": "8" } }
         ]
       },
       {
@@ -178,9 +178,9 @@ POST wp-admin/admin-ajax.php
         "label": "Layout",
         "open": false,
         "fields": [
-          { "type": "select", "id": "wpbfe-flex-direction", "label": "Flex Direction", "options": ["…"] },
-          { "type": "number", "id": "wpbfe-flex-grow",      "label": "Flex Grow",      "placeholder": "0", "attrs": { "min": "0", "step": "1" } },
-          { "type": "text",   "id": "wpbfe-gap",            "label": "Gap",            "placeholder": "e.g. 16px" }
+          { "type": "select", "id": "wpbe-flex-direction", "label": "Flex Direction", "options": ["…"] },
+          { "type": "number", "id": "wpbe-flex-grow",      "label": "Flex Grow",      "placeholder": "0", "attrs": { "min": "0", "step": "1" } },
+          { "type": "text",   "id": "wpbe-gap",            "label": "Gap",            "placeholder": "e.g. 16px" }
         ]
       },
       {
@@ -188,7 +188,7 @@ POST wp-admin/admin-ajax.php
         "label": "Style",
         "open": false,
         "fields": [
-          { "type": "textarea", "id": "wpbfe-custom-style", "label": "Custom CSS", "hint": "Use <code>self</code> to target this element.", "attrs": { "rows": "6", "placeholder": "self {\n  background-color: red;\n}" } }
+          { "type": "textarea", "id": "wpbe-custom-style", "label": "Custom CSS", "hint": "Use <code>self</code> to target this element.", "attrs": { "rows": "6", "placeholder": "self {\n  background-color: red;\n}" } }
         ]
       },
       {
@@ -214,7 +214,7 @@ POST wp-admin/admin-ajax.php
 
 | Key      | Type    | Description |
 |----------|---------|-------------|
-| `slug`   | string  | Appended to `wpbfe-accordion-` to form the accordion's DOM id. |
+| `slug`   | string  | Appended to `wpbe-accordion-` to form the accordion's DOM id. |
 | `label`  | string  | Translated display label. |
 | `open`   | boolean | Whether the accordion starts expanded. |
 | `fields` | array   | Ordered list of field descriptors. |
@@ -254,7 +254,7 @@ POST wp-admin/admin-ajax.php
 | Field            | Type    | Required | Description |
 |------------------|---------|----------|-------------|
 | `action`         | string  | Yes      | Must be `wp_builder_save_element`. |
-| `nonce`          | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_save_element')`. Injected as `window.wpBuilderFrontendEditor.saveNonce`. |
+| `nonce`          | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_save_element')`. Injected as `window.wpBuilderEditor.saveNonce`. |
 | `post_id`        | integer | Yes      | ID of the post. |
 | `element_id`     | string  | Yes      | Current element ID. |
 | `new_element_id` | string  | No       | New element ID (must be unique if different from `element_id`). |
@@ -311,7 +311,7 @@ POST wp-admin/admin-ajax.php
 | Field     | Type    | Required | Description |
 |-----------|---------|----------|-------------|
 | `action`  | string  | Yes      | Must be `wp_builder_get_layout`. |
-| `nonce`   | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_get_layout')`. Injected as `window.wpBuilderFrontendEditor.layoutNonce`. |
+| `nonce`   | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_get_layout')`. Injected as `window.wpBuilderEditor.layoutNonce`. |
 | `post_id` | integer | Yes      | ID of the post. |
 
 **Success response** — `200 OK`
@@ -346,7 +346,7 @@ POST wp-admin/admin-ajax.php
 | Field       | Type    | Required | Description |
 |-------------|---------|----------|-------------|
 | `action`    | string  | Yes      | Must be `wp_builder_add_element`. |
-| `nonce`     | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_add_element')`. Injected as `window.wpBuilderFrontendEditor.addNonce`. |
+| `nonce`     | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_add_element')`. Injected as `window.wpBuilderEditor.addNonce`. |
 | `post_id`   | integer | Yes      | ID of the post. |
 | `parent_id` | string  | Yes      | Element ID of the parent to append the new child to. |
 
@@ -390,7 +390,7 @@ POST wp-admin/admin-ajax.php
 | Field        | Type    | Required | Description |
 |--------------|---------|----------|-------------|
 | `action`     | string  | Yes      | Must be `wp_builder_delete_element`. |
-| `nonce`      | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_delete_element')`. Injected as `window.wpBuilderFrontendEditor.deleteNonce`. |
+| `nonce`      | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_delete_element')`. Injected as `window.wpBuilderEditor.deleteNonce`. |
 | `post_id`    | integer | Yes      | ID of the post. |
 | `element_id` | string  | Yes      | ID of the element to delete. |
 

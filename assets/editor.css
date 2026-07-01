@@ -1,14 +1,14 @@
 /**
- * WP Builder — Front-end Element Quick-Editor styles
+ * WP Builder — Editor styles
  *
  * Design tokens and shared component rules (accordion, form controls,
  * textarea) live in shared.css, which is loaded as a dependency.
- * This file contains only the front-end panel-specific styles.
+ * This file contains only the editor panel-specific styles.
  */
 
 /* ── Panel shell ────────────────────────────────────────────────────────── */
 
-.wpbfe-panel {
+.wpbe-panel {
 	background: var(--wpb-bg-page);
 	box-shadow: 0 4px 32px rgba(0, 0, 0, .55);
 	color: var(--wpb-text-primary);
@@ -28,13 +28,13 @@
 	z-index: 99999;
 }
 
-.wpbfe-panel.is-open {
+.wpbe-panel.is-open {
 	display: flex;
 }
 
 /* ── Docked (snapped full-height to an edge) ────────────────────────────── */
 
-.wpbfe-panel.is-docked {
+.wpbe-panel.is-docked {
 	bottom: 0;
 	height: 100vh;
 	max-height: 100vh;
@@ -44,26 +44,26 @@
 }
 
 /* Right edge */
-.wpbfe-panel.is-docked-right {
+.wpbe-panel.is-docked-right {
 	box-shadow: -4px 0 24px rgba(0, 0, 0, .5);
 	left: auto;
 	right: 0;
 }
 
 /* Left edge */
-.wpbfe-panel.is-docked-left {
+.wpbe-panel.is-docked-left {
 	box-shadow: 4px 0 24px rgba(0, 0, 0, .5);
 	left: 0;
 	right: auto;
 }
 
-body.admin-bar .wpbfe-panel.is-docked {
+body.admin-bar .wpbe-panel.is-docked {
 	height: calc(100vh - 32px);
 	top: 32px;
 }
 
 @media (max-width: 782px) {
-	body.admin-bar .wpbfe-panel.is-docked {
+	body.admin-bar .wpbe-panel.is-docked {
 		height: calc(100vh - 46px);
 		top: 46px;
 	}
@@ -71,11 +71,11 @@ body.admin-bar .wpbfe-panel.is-docked {
 
 /* ── Left-edge resize handle (docked-right mode only) ───────────────────── */
 
-.wpbfe-resize-handle-left {
+.wpbe-resize-handle-left {
 	display: none;
 }
 
-.wpbfe-panel.is-docked-right .wpbfe-resize-handle-left {
+.wpbe-panel.is-docked-right .wpbe-resize-handle-left {
 	bottom: 0;
 	cursor: ew-resize;
 	display: block;
@@ -85,19 +85,19 @@ body.admin-bar .wpbfe-panel.is-docked {
 	width: 5px;
 }
 
-.wpbfe-panel.is-docked-right .wpbfe-resize-handle-left:hover,
-.wpbfe-panel.is-resizing .wpbfe-resize-handle-left {
+.wpbe-panel.is-docked-right .wpbe-resize-handle-left:hover,
+.wpbe-panel.is-resizing .wpbe-resize-handle-left {
 	background: var(--wpb-accent);
 	opacity: 0.4;
 }
 
 /* ── Right-edge resize handle (docked-left mode only) ───────────────────── */
 
-.wpbfe-resize-handle-right {
+.wpbe-resize-handle-right {
 	display: none;
 }
 
-.wpbfe-panel.is-docked-left .wpbfe-resize-handle-right {
+.wpbe-panel.is-docked-left .wpbe-resize-handle-right {
 	bottom: 0;
 	cursor: ew-resize;
 	display: block;
@@ -107,15 +107,15 @@ body.admin-bar .wpbfe-panel.is-docked {
 	width: 5px;
 }
 
-.wpbfe-panel.is-docked-left .wpbfe-resize-handle-right:hover,
-.wpbfe-panel.is-resizing .wpbfe-resize-handle-right {
+.wpbe-panel.is-docked-left .wpbe-resize-handle-right:hover,
+.wpbe-panel.is-resizing .wpbe-resize-handle-right {
 	background: var(--wpb-accent);
 	opacity: 0.4;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
 
-.wpbfe-panel-header {
+.wpbe-panel-header {
 	align-items: center;
 	background: var(--wpb-bg-elevated);
 	border-bottom: 1px solid var(--wpb-border-subtle);
@@ -128,21 +128,21 @@ body.admin-bar .wpbfe-panel.is-docked {
 	user-select: none;
 }
 
-.wpbfe-panel.is-dragging {
+.wpbe-panel.is-dragging {
 	user-select: none;
 }
 
-.wpbfe-panel button,
-.wpbfe-panel a {
+.wpbe-panel button,
+.wpbe-panel a {
 	user-select: none;
 	border-radius: 0;
 }
 
-.wpbfe-panel.is-dragging .wpbfe-panel-header {
+.wpbe-panel.is-dragging .wpbe-panel-header {
 	cursor: grabbing;
 }
 
-.wpbfe-panel-header-left {
+.wpbe-panel-header-left {
 	align-items: center;
 	display: flex;
 	flex: 1;
@@ -152,7 +152,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 	overflow: hidden;
 }
 
-.wpbfe-chip {
+.wpbe-chip {
 	border-radius: 3px;
 	font-size: 11px;
 	font-weight: 700;
@@ -164,12 +164,12 @@ body.admin-bar .wpbfe-panel.is-docked {
 	white-space: nowrap;
 }
 
-.wpbfe-chip--node {
+.wpbe-chip--node {
 	background: var(--wpb-accent-dim);
 	color: #ffffff;
 }
 
-.wpbfe-chip--id {
+.wpbe-chip--id {
 	color: var(--wpb-text-muted);
 	cursor: pointer;
 	font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
@@ -179,7 +179,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 	text-transform: none;
 }
 
-.wpbfe-panel-footer-link {
+.wpbe-panel-footer-link {
 	align-items: center;
 	background: transparent !important;
 	border-radius: 0;
@@ -195,18 +195,18 @@ body.admin-bar .wpbfe-panel.is-docked {
 	border: none !important;
 }
 
-.wpbfe-panel-footer-link:hover,
-.wpbfe-panel-footer-link:focus {
+.wpbe-panel-footer-link:hover,
+.wpbe-panel-footer-link:focus {
 	color: var(--wpb-text-primary);
 	outline: none;
 }
 
-.wpbfe-tab-btn.wpbfe-panel-footer-link.is-active {
+.wpbe-tab-btn.wpbe-panel-footer-link.is-active {
 	background-color: var(--wpb-bg-page) !important;
 	color: #ffffff !important;
 }
 
-.wpbfe-close-btn {
+.wpbe-close-btn {
 	background: transparent;
 	border: none;
 	border-radius: 3px;
@@ -220,8 +220,8 @@ body.admin-bar .wpbfe-panel.is-docked {
 	width: 28px;
 }
 
-.wpbfe-close-btn:hover,
-.wpbfe-close-btn:focus {
+.wpbe-close-btn:hover,
+.wpbe-close-btn:focus {
 	background: var(--wpb-bg-control);
 	color: var(--wpb-text-primary);
 	outline: none;
@@ -229,7 +229,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 
 /* ── Body ───────────────────────────────────────────────────────────────── */
 
-.wpbfe-panel-body {
+.wpbe-panel-body {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
@@ -240,20 +240,20 @@ body.admin-bar .wpbfe-panel.is-docked {
 /* ── Accordion ──────────────────────────────────────────────────────────── */
 /* Base accordion rules live in shared.css; only panel-specific override here. */
 
-.wpbfe-accordion-body-inner {
+.wpbe-accordion-body-inner {
 	padding: 12px 14px;
 }
 
 /* ── Field groups ───────────────────────────────────────────────────────── */
 /* Base input/select rules live in shared.css; only panel-specific rules here. */
 
-.wpbfe-field-group {
+.wpbe-field-group {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 }
 
-.wpbfe-label {
+.wpbe-label {
 	color: var(--wpb-text-muted);
 	display: block;
 	font-size: 11px;
@@ -262,13 +262,13 @@ body.admin-bar .wpbfe-panel.is-docked {
 	text-transform: uppercase;
 }
 
-.wpbfe-inspector-hint {
+.wpbe-inspector-hint {
 	color: var(--wpb-text-muted);
 	font-size: 12px;
 	margin: 0 0 6px;
 }
 
-.wpbfe-inspector-hint code {
+.wpbe-inspector-hint code {
 	background: var(--wpb-bg-sunken);
 	border: 1px solid var(--wpb-border-muted);
 	border-radius: 3px;
@@ -277,7 +277,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 	padding: 1px 4px;
 }
 
-.wpbfe-input[readonly] {
+.wpbe-input[readonly] {
 	color: var(--wpb-text-muted);
 	cursor: default;
 }
@@ -285,14 +285,14 @@ body.admin-bar .wpbfe-panel.is-docked {
 /* ── Textarea / code editor ─────────────────────────────────────────────── */
 /* Base textarea rules live in shared.css; only panel-specific rules here. */
 
-.wpbfe-textarea--code {
+.wpbe-textarea--code {
 	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
 	font-size: 12px;
 }
 
 /* ── Shortcode pre ──────────────────────────────────────────────────────── */
 
-.wpbfe-embed-code {
+.wpbe-embed-code {
 	background: var(--wpb-bg-sunken);
 	border: 1px solid var(--wpb-border-default);
 	color: var(--wpb-text-primary);
@@ -307,7 +307,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 
 /* ── Secondary button (used by link/export fields) ──────────────────────── */
 
-.wpbfe-button-secondary {
+.wpbe-button-secondary {
 	background: transparent;
 	border: 1px solid var(--wpb-border-default);
 	border-radius: 3px;
@@ -322,8 +322,8 @@ body.admin-bar .wpbfe-panel.is-docked {
 	transition: background-color 120ms ease, border-color 120ms ease;
 }
 
-.wpbfe-button-secondary:hover,
-.wpbfe-button-secondary:focus {
+.wpbe-button-secondary:hover,
+.wpbe-button-secondary:focus {
 	background: var(--wpb-bg-control);
 	border-color: var(--wpb-border-focus);
 	outline: none;
@@ -331,7 +331,7 @@ body.admin-bar .wpbfe-panel.is-docked {
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 
-.wpbfe-panel-footer {
+.wpbe-panel-footer {
 	align-items: center;
 	background: var(--wpb-bg-elevated);
 	display: flex;
@@ -344,13 +344,13 @@ body.admin-bar .wpbfe-panel.is-docked {
 
 /* ── Footer action buttons cluster (right side of footer) ───────────────── */
 
-.wpbfe-footer-actions {
+.wpbe-footer-actions {
 	align-items: center;
 	display: flex;
 	gap: 0px;
 }
 
-.wpbfe-save-btn {
+.wpbe-save-btn {
 	background: var(--wpb-accent);
 	border: none;
 	border-radius: 0;
@@ -364,61 +364,61 @@ body.admin-bar .wpbfe-panel.is-docked {
 	transition: background-color 120ms ease, border-color 120ms ease;
 }
 
-.wpbfe-save-btn:hover,
-.wpbfe-save-btn:focus {
+.wpbe-save-btn:hover,
+.wpbe-save-btn:focus {
 	background: var(--wpb-accent-hover);
 	border-color: var(--wpb-accent-hover);
 	outline: none;
 }
 
-.wpbfe-save-btn:disabled {
+.wpbe-save-btn:disabled {
 	cursor: not-allowed;
 	opacity: .5;
 }
 
-.wpbfe-save-btn.has-unsaved-changes {
+.wpbe-save-btn.has-unsaved-changes {
 	background: var(--wpb-danger);
 }
 
-.wpbfe-save-btn.has-unsaved-changes:hover,
-.wpbfe-save-btn.has-unsaved-changes:focus {
+.wpbe-save-btn.has-unsaved-changes:hover,
+.wpbe-save-btn.has-unsaved-changes:focus {
 	background: var(--wpb-danger-hover);
 	outline: none;
 }
 
 /* Status text lives inside the save button; label hides while status is shown. */
 
-.wpbfe-save-status,
-.wpbfe-save-status:not(:empty) + span {
+.wpbe-save-status,
+.wpbe-save-status:not(:empty) + span {
 	display: none;
 }
 
-.wpbfe-save-status:not(:empty) {
+.wpbe-save-status:not(:empty) {
 	display: block;
 }
 
-.wpbfe-save-btn.is-error .wpbfe-save-status {
+.wpbe-save-btn.is-error .wpbe-save-status {
 	color: var(--wpb-danger-text);
 }
 
 /* ── Fit Page button ────────────────────────────────────────────────────── */
 
-.wpbfe-fit-btn.is-active {
+.wpbe-fit-btn.is-active {
 	color: var(--wpb-accent);
 }
 
-.wpbfe-fit-btn:disabled {
+.wpbe-fit-btn:disabled {
 	cursor: not-allowed;
 	opacity: .4;
 }
 
 /* ── Fit-page zoom body state ───────────────────────────────────────────── */
 
-body.wpbfe-page-zoomed {
+body.wpbe-page-zoomed {
 	overflow-x: hidden;
 }
 
-body.wpbfe-page-zoomed #page {
+body.wpbe-page-zoomed #page {
 	will-change: transform;
 }
 
@@ -437,7 +437,7 @@ body.wpbfe-page-zoomed #page {
 
 /* ── Structure-view toggle button ───────────────────────────────────────── */
 
-.wpbfe-structure-toggle-btn {
+.wpbe-structure-toggle-btn {
 	background: transparent;
 	border: none;
 	border-radius: 3px;
@@ -453,20 +453,20 @@ body.wpbfe-page-zoomed #page {
 	justify-content: center;
 }
 
-.wpbfe-structure-toggle-btn:hover,
-.wpbfe-structure-toggle-btn:focus {
+.wpbe-structure-toggle-btn:hover,
+.wpbe-structure-toggle-btn:focus {
 	background: var(--wpb-bg-control);
 	color: var(--wpb-text-primary);
 	outline: none;
 }
 
-.wpbfe-structure-toggle-btn.is-active {
+.wpbe-structure-toggle-btn.is-active {
 	color: var(--wpb-accent-hover);
 }
 
 /* ── Structure-view container ───────────────────────────────────────────── */
 
-.wpbfe-structure-view {
+.wpbe-structure-view {
 	box-sizing: border-box;
 	color: var(--wpb-text-primary);
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -475,25 +475,25 @@ body.wpbfe-page-zoomed #page {
 }
 
 /* Suppress the dashed hover outline inside the structure tree. */
-.wpbfe-structure-view [data-wp-builder-id]:hover {
+.wpbe-structure-view [data-wp-builder-id]:hover {
 	outline: none;
 }
 
 /* ── Structure-view nodes ───────────────────────────────────────────────── */
 
-.wpbfe-sv-node {
+.wpbe-sv-node {
 	background: var(--wpb-bg-sunken);
 	border: 3px solid var(--wpb-border-muted);
 	width: 100%;
 }
 
-.wpbfe-sv-node.is-selected {
+.wpbe-sv-node.is-selected {
 	border-color: var(--wpb-accent-hover);
 }
 
 /* ── Structure-view node bar ────────────────────────────────────────────── */
 
-.wpbfe-sv-node-bar {
+.wpbe-sv-node-bar {
 	align-items: center;
 	background: var(--wpb-bg-raised);
 	display: flex;
@@ -502,7 +502,7 @@ body.wpbfe-page-zoomed #page {
 
 /* ── Structure-view node title button ───────────────────────────────────── */
 
-.wpbfe-sv-node-title {
+.wpbe-sv-node-title {
 	align-items: center;
 	background: transparent;
 	border: none;
@@ -516,15 +516,15 @@ body.wpbfe-page-zoomed #page {
 	width: 100%;
 }
 
-.wpbfe-sv-node-title:hover,
-.wpbfe-sv-node-title:focus {
+.wpbe-sv-node-title:hover,
+.wpbe-sv-node-title:focus {
 	background: var(--wpb-bg-node-title-hover);
 	outline: none;
 }
 
 /* ── Structure-view node action buttons (+/×) ───────────────────────────── */
 
-.wpbfe-sv-node-action {
+.wpbe-sv-node-action {
 	background: transparent;
 	border: 0;
 	border-radius: 0;
@@ -540,22 +540,22 @@ body.wpbfe-page-zoomed #page {
 	width: 34px;
 }
 
-.wpbfe-sv-node-action:hover,
-.wpbfe-sv-node-action:focus {
+.wpbe-sv-node-action:hover,
+.wpbe-sv-node-action:focus {
 	border-color: var(--wpb-accent-hover);
 	color: var(--wpb-accent-hover);
 	outline: none;
 }
 
-.wpbfe-sv-node-action--danger:hover,
-.wpbfe-sv-node-action--danger:focus {
+.wpbe-sv-node-action--danger:hover,
+.wpbe-sv-node-action--danger:focus {
 	border-color: var(--wpb-danger-border);
 	color: var(--wpb-danger-text);
 }
 
 /* ── Structure-view node body (child list) ──────────────────────────────── */
 
-.wpbfe-sv-node-body {
+.wpbe-sv-node-body {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;

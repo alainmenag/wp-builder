@@ -1,5 +1,5 @@
 /**
- * WP Builder — Front-end Element Quick-Editor
+ * WP Builder — Element Quick-Editor
  *
  * When a logged-in editor clicks any [data-wp-builder-id] element on the
  * front end, a slide-out panel appears with that element's settings
@@ -19,7 +19,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 ( () => {
 	'use strict';
 
-	const config = window.wpBuilderFrontendEditor;
+	const config = window.wpBuilderEditor;
 	if ( ! config ) { return; }
 
 	const text = config.i18n || {};
@@ -149,13 +149,13 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	/** @type {HTMLElement|null} The label <span> inside _saveBtn (shows "Save" / "Unsave"). */
 	let _saveLbl = null;
 
-	// CSS class names used by this panel (wpbfe- prefix to avoid conflicts
+	// CSS class names used by this panel (wpbe- prefix to avoid conflicts
 	// with the admin editor stylesheet loaded inside the builder iframe).
 	const CSS = {
-		select:     'wpbfe-select',
-		input:      'wpbfe-input',
-		fieldGroup: 'wpbfe-field-group',
-		label:      'wpbfe-label',
+		select:     'wpbe-select',
+		input:      'wpbe-input',
+		fieldGroup: 'wpbe-field-group',
+		label:      'wpbe-label',
 	};
 
 	// -----------------------------------------------------------------------
@@ -164,20 +164,20 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 	function createAccordion( labelText, startOpen ) {
 		const section = document.createElement( 'div' );
-		section.className = 'wpbfe-accordion' + ( startOpen ? ' is-open' : '' );
+		section.className = 'wpbe-accordion' + ( startOpen ? ' is-open' : '' );
 
 		const btn = document.createElement( 'button' );
 		btn.type = 'button';
-		btn.className = 'wpbfe-accordion-header';
+		btn.className = 'wpbe-accordion-header';
 		btn.setAttribute( 'aria-expanded', startOpen ? 'true' : 'false' );
 		btn.addEventListener( 'click', () => {
 			const isOpen = section.classList.contains( 'is-open' );
 			// Collapse all other open accordions in the panel (one-at-a-time).
 			if ( _panel && ! isOpen ) {
-				_panel.querySelectorAll( '.wpbfe-accordion.is-open' ).forEach( ( other ) => {
+				_panel.querySelectorAll( '.wpbe-accordion.is-open' ).forEach( ( other ) => {
 					if ( other === section ) { return; }
 					other.classList.remove( 'is-open' );
-					const otherBtn = other.querySelector( '.wpbfe-accordion-header' );
+					const otherBtn = other.querySelector( '.wpbe-accordion-header' );
 					if ( otherBtn ) { otherBtn.setAttribute( 'aria-expanded', 'false' ); }
 				} );
 			}
@@ -189,7 +189,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		labelSpan.textContent = labelText;
 
 		const chevron = document.createElement( 'span' );
-		chevron.className = 'wpbfe-accordion-chevron';
+		chevron.className = 'wpbe-accordion-chevron';
 		chevron.setAttribute( 'aria-hidden', 'true' );
 
 		btn.appendChild( labelSpan );
@@ -197,9 +197,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		section.appendChild( btn );
 
 		const body = document.createElement( 'div' );
-		body.className = 'wpbfe-accordion-body';
+		body.className = 'wpbe-accordion-body';
 		const inner = document.createElement( 'div' );
-		inner.className = 'wpbfe-accordion-body-inner';
+		inner.className = 'wpbe-accordion-body-inner';
 		body.appendChild( inner );
 		section.appendChild( body );
 
@@ -208,11 +208,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 	function createFieldGroup( labelText, controlFactory, fieldId ) {
 		const group   = document.createElement( 'div' );
-		group.className = 'wpbfe-field-group';
+		group.className = 'wpbe-field-group';
 		const control = controlFactory();
 		if ( fieldId ) { control.id = fieldId; }
 		const lbl     = document.createElement( 'label' );
-		lbl.className   = 'wpbfe-label';
+		lbl.className   = 'wpbe-label';
 		lbl.textContent = labelText;
 		if ( control.id ) { lbl.htmlFor = control.id; }
 		group.appendChild( lbl );
@@ -229,13 +229,13 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	 * @param {string|null}      section Accordion ID suffix (e.g. 'identity') or null.
 	 * @param {string}           [field] Element ID to focus after opening.
 	 */
-	function navigateFrontend( tab, section, field ) {
+	function navigateEditor( tab, section, field ) {
 		switchTab( tab );
 
 		if ( section ) {
-			const accordion = document.getElementById( 'wpbfe-accordion-' + section );
+			const accordion = document.getElementById( 'wpbe-accordion-' + section );
 			if ( accordion && ! accordion.classList.contains( 'is-open' ) ) {
-				const accHeader = accordion.querySelector( '.wpbfe-accordion-header' );
+				const accHeader = accordion.querySelector( '.wpbe-accordion-header' );
 				if ( accHeader ) { accHeader.click(); }
 			}
 		}
@@ -327,8 +327,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	 * behaviour (e.g. the id-field sanitise-on-blur listener).
 	 */
 	const FIELD_REFS = {
-		'wpbfe-node':           ( ctrl ) => { _nodeSelectCtrl           = ctrl; },
-		'wpbfe-node-id':        ( ctrl ) => {
+		'wpbe-node':           ( ctrl ) => { _nodeSelectCtrl           = ctrl; },
+		'wpbe-node-id':        ( ctrl ) => {
 			_idDisplayCtrl = ctrl;
 			ctrl.addEventListener( 'blur', () => {
 				const sanitized = ctrl.value.toLowerCase()
@@ -339,14 +339,14 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				ctrl.value = sanitized || _elementId || '';
 			} );
 		},
-		'wpbfe-html-content':   ( ctrl ) => { _htmlTextareaCtrl         = ctrl; },
-		'wpbfe-flex-direction': ( ctrl ) => { _flexDirCtrl              = ctrl; },
-		'wpbfe-flex-grow':      ( ctrl ) => { _flexGrowCtrl             = ctrl; },
-		'wpbfe-gap':            ( ctrl ) => { _gapCtrl                  = ctrl; },
-		'wpbfe-custom-style':   ( ctrl ) => { _styleTextareaCtrl        = ctrl; },
-		'wpbfe-post-title':     ( ctrl ) => { _mainTitleDisplay         = ctrl; },
-		'wpbfe-post-status':    ( ctrl ) => { _mainStatusDisplay        = ctrl; },
-		'wpbfe-page-template':  ( ctrl ) => { _mainPageTemplateDisplay  = ctrl; },
+		'wpbe-html-content':   ( ctrl ) => { _htmlTextareaCtrl         = ctrl; },
+		'wpbe-flex-direction': ( ctrl ) => { _flexDirCtrl              = ctrl; },
+		'wpbe-flex-grow':      ( ctrl ) => { _flexGrowCtrl             = ctrl; },
+		'wpbe-gap':            ( ctrl ) => { _gapCtrl                  = ctrl; },
+		'wpbe-custom-style':   ( ctrl ) => { _styleTextareaCtrl        = ctrl; },
+		'wpbe-post-title':     ( ctrl ) => { _mainTitleDisplay         = ctrl; },
+		'wpbe-post-status':    ( ctrl ) => { _mainStatusDisplay        = ctrl; },
+		'wpbe-page-template':  ( ctrl ) => { _mainPageTemplateDisplay  = ctrl; },
 	};
 
 	/**
@@ -399,14 +399,14 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			}
 			case 'textarea': {
 				const ta     = document.createElement( 'textarea' );
-				ta.className = 'wpbfe-textarea';
+				ta.className = 'wpbe-textarea';
 				applyAttrs( ta, field.attrs );
 				controlEl = ta;
 				break;
 			}
 			case 'pre': {
 				const pre        = document.createElement( 'pre' );
-				pre.className    = 'wpbfe-embed-code';
+				pre.className    = 'wpbe-embed-code';
 				pre.textContent  = field.content || '';
 				const group      = document.createElement( 'div' );
 				group.className  = CSS.fieldGroup;
@@ -422,7 +422,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			}
 			case 'link': {
 				const a        = document.createElement( 'a' );
-				a.className    = 'wpbfe-button-secondary';
+				a.className    = 'wpbe-button-secondary';
 				a.href         = field.href || '#';
 				a.textContent  = field.label || '';
 				applyAttrs( a, field.attrs );
@@ -451,7 +451,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		// Insert optional hint paragraph between the label and the control.
 		if ( field.hint ) {
 			const hint     = document.createElement( 'p' );
-			hint.className = 'wpbfe-inspector-hint';
+			hint.className = 'wpbe-inspector-hint';
 			hint.innerHTML = field.hint;
 			group.insertBefore( hint, control );
 		}
@@ -465,7 +465,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	}
 
 	/**
-	 * Build a .wpbfe-tab-panel div and all its accordion sections from a
+	 * Build a .wpbe-tab-panel div and all its accordion sections from a
 	 * schema tab descriptor. Sets the relevant module-level tab-panel and
 	 * accordion variables as a side-effect.
 	 *
@@ -474,7 +474,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	 */
 	function renderTabPanelFromSchema( tab ) {
 		const tabPanel       = document.createElement( 'div' );
-		tabPanel.className   = 'wpbfe-tab-panel';
+		tabPanel.className   = 'wpbe-tab-panel';
 		tabPanel.dataset.tab = tab.key;
 
 		// Element tab is the default active view; main tab starts hidden.
@@ -483,7 +483,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		for ( const accordion of ( tab.accordions || [] ) ) {
 			const accEl = createAccordion( accordion.label, !! accordion.open );
-			accEl.id    = 'wpbfe-accordion-' + accordion.slug;
+			accEl.id    = 'wpbe-accordion-' + accordion.slug;
 
 			// Store accordion references needed by populatePanel().
 			if ( 'content' === accordion.slug ) { _contentSection = accEl; }
@@ -491,7 +491,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 			// Refresh CodeMirror when the style accordion re-opens.
 			if ( 'style' === accordion.slug ) {
-				const accBtn = accEl.querySelector( '.wpbfe-accordion-header' );
+				const accBtn = accEl.querySelector( '.wpbe-accordion-header' );
 				if ( accBtn ) {
 					accBtn.addEventListener( 'click', () => {
 						if ( _styleEditor && accEl.classList.contains( 'is-open' ) ) {
@@ -501,7 +501,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				}
 			}
 
-			const inner = accEl.querySelector( '.wpbfe-accordion-body-inner' );
+			const inner = accEl.querySelector( '.wpbe-accordion-body-inner' );
 			for ( const field of ( accordion.fields || [] ) ) {
 				const rendered = renderFieldFromSchema( field );
 				if ( rendered ) { inner.appendChild( rendered.group ); }
@@ -520,28 +520,28 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	function createPanel( schema ) {
 		// Panel shell
 		_panel = document.createElement( 'div' );
-		_panel.className = 'wpbfe-panel';
+		_panel.className = 'wpbe-panel';
 		_panel.setAttribute( 'role', 'dialog' );
 		_panel.setAttribute( 'aria-label', text.attributes || 'Element settings' );
 
 		// Header
 		const header      = document.createElement( 'div' );
-		header.className  = 'wpbfe-panel-header';
+		header.className  = 'wpbe-panel-header';
 		const headerLeft  = document.createElement( 'div' );
-		headerLeft.className = 'wpbfe-panel-header-left';
+		headerLeft.className = 'wpbe-panel-header-left';
 
 		_nodeChip = document.createElement( 'span' );
-		_nodeChip.className = 'wpbfe-chip wpbfe-chip--node';
+		_nodeChip.className = 'wpbe-chip wpbe-chip--node';
 		_nodeChip.style.cursor = 'pointer';
 		_nodeChip.addEventListener( 'click', () => {
 			scrollBuilderElementIntoView( _elementId );
-			navigateFrontend( 'element', 'identity', 'wpbfe-node' );
+			navigateEditor( 'element', 'identity', 'wpbe-node' );
 		} );
 
 		// Structure-view toggle button — placed to the left of the node chip.
 		_structureToggleBtn = document.createElement( 'button' );
 		_structureToggleBtn.type = 'button';
-		_structureToggleBtn.className = 'wpbfe-structure-toggle-btn';
+		_structureToggleBtn.className = 'wpbe-structure-toggle-btn';
 		_structureToggleBtn.setAttribute( 'aria-label', text.structureView || 'Structure View' );
 		_structureToggleBtn.setAttribute( 'title',      text.structureView || 'Structure View' );
 		_structureToggleBtn.innerHTML = ICON_STRUCTURE;
@@ -549,10 +549,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		headerLeft.appendChild( _structureToggleBtn );
 		_idChip = document.createElement( 'span' );
-		_idChip.className = 'wpbfe-chip wpbfe-chip--id';
+		_idChip.className = 'wpbe-chip wpbe-chip--id';
 		_idChip.style.cursor = 'pointer';
 		_idChip.addEventListener( 'click', () => {
-			navigateFrontend( 'element', 'identity', 'wpbfe-node-id' );
+			navigateEditor( 'element', 'identity', 'wpbe-node-id' );
 		} );
 		headerLeft.appendChild( _nodeChip );
 		headerLeft.appendChild( _idChip );
@@ -561,7 +561,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		if ( ! config.isTemplate ) {
 			const closeBtn = document.createElement( 'button' );
-			closeBtn.className = 'wpbfe-close-btn';
+			closeBtn.className = 'wpbe-close-btn';
 			closeBtn.type      = 'button';
 			closeBtn.setAttribute( 'aria-label', text.close || 'Close' );
 			closeBtn.innerHTML = '&#x2715;';
@@ -572,7 +572,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		// Body — schema-driven tab panels.
 		const body = document.createElement( 'div' );
-		body.className = 'wpbfe-panel-body';
+		body.className = 'wpbe-panel-body';
 		for ( const tab of ( schema || [] ) ) {
 			body.appendChild( renderTabPanelFromSchema( tab ) );
 		}
@@ -580,12 +580,12 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		// Footer
 		const footer = document.createElement( 'div' );
-		footer.className = 'wpbfe-panel-footer';
+		footer.className = 'wpbe-panel-footer';
 
 		// Tab switcher buttons — built from the schema so the order and keys
 		// stay in sync with the server-defined tabs.
 		const tabBtnsGroup = document.createElement( 'div' );
-		tabBtnsGroup.className = 'wpbfe-tab-btns';
+		tabBtnsGroup.className = 'wpbe-tab-btns';
 		_tabBtns = [];
 
 		const tabIconMap = { 'main': ICON_ELEMENT, 'element': ICON_POST };
@@ -593,7 +593,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			const btn       = document.createElement( 'button' );
 			btn.type        = 'button';
 			btn.dataset.tab = tab.key;
-			btn.className   = 'wpbfe-tab-btn wpbfe-panel-footer-link' + ( 'element' === tab.key ? ' is-active' : '' );
+			btn.className   = 'wpbe-tab-btn wpbe-panel-footer-link' + ( 'element' === tab.key ? ' is-active' : '' );
 			btn.innerHTML   = tabIconMap[ tab.key ] || '';
 			btn.style.fill  = '#ffffff';
 			btn.addEventListener( 'click', ( () => {
@@ -607,10 +607,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		// Action buttons — right side of footer.
 		const footerActions = document.createElement( 'div' );
-		footerActions.className = 'wpbfe-footer-actions';
+		footerActions.className = 'wpbe-footer-actions';
 
 		_editLink = document.createElement( 'a' );
-		_editLink.className = 'wpbfe-edit-link wpbfe-panel-footer-link';
+		_editLink.className = 'wpbe-edit-link wpbe-panel-footer-link';
 		_editLink.target    = '_blank';
 		_editLink.rel       = 'noopener noreferrer';
 		_editLink.setAttribute( 'aria-label', text.editInBuilder || 'Edit in Builder' );
@@ -619,7 +619,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		_fitBtn = document.createElement( 'button' );
 		_fitBtn.type      = 'button';
-		_fitBtn.className = 'wpbfe-fit-btn wpbfe-panel-footer-link';
+		_fitBtn.className = 'wpbe-fit-btn wpbe-panel-footer-link';
 		_fitBtn.setAttribute( 'aria-label', text.fitPage || 'Fit Page' );
 		_fitBtn.setAttribute( 'title', text.fitPage || 'Fit Page' );
 		_fitBtn.disabled  = ! _isDocked;
@@ -628,10 +628,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		_saveBtn = document.createElement( 'button' );
 		_saveBtn.type      = 'button';
-		_saveBtn.className = 'wpbfe-save-btn';
+		_saveBtn.className = 'wpbe-save-btn';
 
 		_statusMsg = document.createElement( 'span' );
-		_statusMsg.className = 'wpbfe-save-status';
+		_statusMsg.className = 'wpbe-save-status';
 		_statusMsg.setAttribute( 'role', 'status' );
 		_statusMsg.setAttribute( 'aria-live', 'polite' );
 
@@ -652,11 +652,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		// Left-edge resize handle (used when docked right).
 		const resizeHandle = document.createElement( 'div' );
-		resizeHandle.className = 'wpbfe-resize-handle-left';
+		resizeHandle.className = 'wpbe-resize-handle-left';
 
 		// Right-edge resize handle (used when docked left).
 		const resizeHandleRight = document.createElement( 'div' );
-		resizeHandleRight.className = 'wpbfe-resize-handle-right';
+		resizeHandleRight.className = 'wpbe-resize-handle-right';
 
 		_panel.appendChild( footer );
 		_panel.appendChild( resizeHandle );
@@ -683,7 +683,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	}
 
 	function initDrag() {
-		const header = _panel.querySelector( '.wpbfe-panel-header' );
+		const header = _panel.querySelector( '.wpbe-panel-header' );
 		let dragging = false;
 		let startX, startY, startLeft, startTop;
 		/** clientX recorded at the moment a docked-drag begins. */
@@ -787,8 +787,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	// -----------------------------------------------------------------------
 
 	function initResize() {
-		const handleLeft  = _panel.querySelector( '.wpbfe-resize-handle-left' );
-		const handleRight = _panel.querySelector( '.wpbfe-resize-handle-right' );
+		const handleLeft  = _panel.querySelector( '.wpbe-resize-handle-left' );
+		const handleRight = _panel.querySelector( '.wpbe-resize-handle-right' );
 
 		let resizing     = false;
 		let resizingSide = null; // 'left' | 'right'
@@ -858,7 +858,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		_pageZoomScale               = scale;
 		pageEl.style.transform       = 'scale(' + scale + ')';
 		pageEl.style.transformOrigin = _dockedSide === 'left' ? 'top right' : 'top left';
-		document.body.classList.add( 'wpbfe-page-zoomed' );
+		document.body.classList.add( 'wpbe-page-zoomed' );
 		// Only re-scroll on explicit user toggle; skip on panel-open / resize
 		// re-applications so we don't jump the page away from the clicked element.
 		if ( compensateScroll ) {
@@ -883,7 +883,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			pageEl.style.transformOrigin = '';
 		}
 		_pageZoomScale = 1;
-		document.body.classList.remove( 'wpbfe-page-zoomed' );
+		document.body.classList.remove( 'wpbe-page-zoomed' );
 		window.scrollTo( { top: Math.max( 0, newScrollTop ), behavior: 'instant' } );
 		if ( _fitBtn ) {
 			_fitBtn.classList.remove( 'is-active' );
@@ -993,7 +993,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	 * @param {HTMLElement} rootEl The [data-wp-builder-post-id] root element.
 	 */
 	function renderStructureTree( layout, rootEl ) {
-		rootEl.classList.add( 'wpbfe-structure-view' );
+		rootEl.classList.add( 'wpbe-structure-view' );
 		// Strip the element's inline layout style — it belongs on the node-body of the
 		// rendered tree, not on _liveRoot. exitStructureMode() restores the full snapshot.
 		rootEl.removeAttribute( 'style' );
@@ -1017,24 +1017,24 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		const isVoid = !! VOID_NODES[ node ];
 
 		const wrapper = document.createElement( 'div' );
-		wrapper.className = 'wpbfe-sv-node' + ( element.id === _elementId ? ' is-selected' : '' );
+		wrapper.className = 'wpbe-sv-node' + ( element.id === _elementId ? ' is-selected' : '' );
 		wrapper.dataset.wpBuilderId = element.id;
-		wrapper.style.setProperty( '--wpbfe-sv-depth', depth );
+		wrapper.style.setProperty( '--wpbe-sv-depth', depth );
 
 		// ── Bar ──────────────────────────────────────────────────────────────
 		const bar = document.createElement( 'div' );
-		bar.className = 'wpbfe-sv-node-bar';
+		bar.className = 'wpbe-sv-node-bar';
 
 		const titleBtn = document.createElement( 'button' );
 		titleBtn.type = 'button';
-		titleBtn.className = 'wpbfe-sv-node-title';
+		titleBtn.className = 'wpbe-sv-node-title';
 
 		const svNodeChip = document.createElement( 'span' );
-		svNodeChip.className = 'wpbfe-chip wpbfe-chip--node';
+		svNodeChip.className = 'wpbe-chip wpbe-chip--node';
 		svNodeChip.textContent = node.toUpperCase();
 
 		const svIdChip = document.createElement( 'span' );
-		svIdChip.className = 'wpbfe-chip wpbfe-chip--id';
+		svIdChip.className = 'wpbe-chip wpbe-chip--id';
 		svIdChip.textContent = element.id || '';
 
 		titleBtn.appendChild( svNodeChip );
@@ -1049,7 +1049,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( ! isVoid ) {
 			const addBtn = document.createElement( 'button' );
 			addBtn.type = 'button';
-			addBtn.className = 'wpbfe-sv-node-action';
+			addBtn.className = 'wpbe-sv-node-action';
 			addBtn.setAttribute( 'aria-label', text.addChild || 'Add child element' );
 			addBtn.setAttribute( 'title',      text.addChild || 'Add child element' );
 			addBtn.innerHTML = ICON_ADD;
@@ -1063,7 +1063,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( ! isRoot ) {
 			const delBtn = document.createElement( 'button' );
 			delBtn.type = 'button';
-			delBtn.className = 'wpbfe-sv-node-action wpbfe-sv-node-action--danger';
+			delBtn.className = 'wpbe-sv-node-action wpbe-sv-node-action--danger';
 			delBtn.setAttribute( 'aria-label', text.deleteElement || 'Delete element' );
 			delBtn.setAttribute( 'title',      text.deleteElement || 'Delete element' );
 			delBtn.innerHTML = ICON_REMOVE;
@@ -1080,7 +1080,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		const children = element.children || [];
 		if ( children.length ) {
 			const body = document.createElement( 'div' );
-			body.className = 'wpbfe-sv-node-body';
+			body.className = 'wpbe-sv-node-body';
 
 			// Mirror the element's layout props so children are arranged correctly.
 			// The CSS default (flex-direction:column, gap:8px) acts as a fallback.
@@ -1110,7 +1110,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	 */
 	function syncStructureSelection( id ) {
 		if ( ! _liveRoot ) { return; }
-		_liveRoot.querySelectorAll( '.wpbfe-sv-node' ).forEach( ( node ) => {
+		_liveRoot.querySelectorAll( '.wpbe-sv-node' ).forEach( ( node ) => {
 			node.classList.toggle( 'is-selected', node.dataset.wpBuilderId === id );
 		} );
 	}
@@ -1211,7 +1211,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		// When called from openPanel() the panel is still display:none at this point;
 		// openPanel() handles zoom after adding the is-open class.
 		if ( _isPageZoomed && _panel.classList.contains( 'is-open' ) ) {
-			const zoomAlreadyApplied = document.body.classList.contains( 'wpbfe-page-zoomed' );
+			const zoomAlreadyApplied = document.body.classList.contains( 'wpbe-page-zoomed' );
 			applyPageZoom( ! zoomAlreadyApplied );
 		}
 	}
@@ -1292,7 +1292,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			// Compensate scroll only when zoom is transitioning OFF→ON.
 			// If zoom is already visually applied (e.g. switching between elements
 			// while the panel stays open), the scroll position is already correct.
-			const zoomAlreadyApplied = document.body.classList.contains( 'wpbfe-page-zoomed' );
+			const zoomAlreadyApplied = document.body.classList.contains( 'wpbe-page-zoomed' );
 			applyPageZoom( ! zoomAlreadyApplied );
 		}
 	}
@@ -1420,17 +1420,17 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		// ── Structure mode ────────────────────────────────────────────────────
 		if ( _isStructureMode ) {
 			if ( _liveRoot && _elementId ) {
-				const svNode = _liveRoot.querySelector( '.wpbfe-sv-node[data-wp-builder-id="' + _elementId + '"]' );
+				const svNode = _liveRoot.querySelector( '.wpbe-sv-node[data-wp-builder-id="' + _elementId + '"]' );
 				if ( svNode ) {
 					// Sync the node-type chip and re-render the Attributes accordion
 					// if the node type has changed.
 					if ( newTag ) {
-						const tagChip = svNode.querySelector( '.wpbfe-sv-node-bar .wpbfe-chip--node' );
+						const tagChip = svNode.querySelector( '.wpbe-sv-node-bar .wpbe-chip--node' );
 						const prevTag = tagChip ? tagChip.textContent.toLowerCase() : '';
 						if ( newTag !== prevTag ) {
 							if ( _attrsSection ) {
 								renderNodeAttrs(
-									_attrsSection.querySelector( '.wpbfe-accordion-body-inner' ),
+									_attrsSection.querySelector( '.wpbe-accordion-body-inner' ),
 									newTag,
 									{},
 									() => {},
@@ -1441,10 +1441,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 									ctrl.addEventListener( 'input',  markDirty );
 									ctrl.addEventListener( 'change', markDirty );
 								} );
-								const hasAttrs = !! _attrsSection.querySelector( '.wpbfe-accordion-body-inner' ).childElementCount;
+								const hasAttrs = !! _attrsSection.querySelector( '.wpbe-accordion-body-inner' ).childElementCount;
 								_attrsSection.hidden = ! hasAttrs;
 								if ( hasAttrs && ! _attrsSection.classList.contains( 'is-open' ) ) {
-									const accBtn = _attrsSection.querySelector( '.wpbfe-accordion-header' );
+									const accBtn = _attrsSection.querySelector( '.wpbe-accordion-header' );
 									if ( accBtn ) { accBtn.click(); }
 								}
 							}
@@ -1454,7 +1454,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 					// Sync the element-ID chip in the structure tree.
 					if ( newId ) {
-						const idChip = svNode.querySelector( '.wpbfe-sv-node-bar .wpbfe-chip--id' );
+						const idChip = svNode.querySelector( '.wpbe-sv-node-bar .wpbe-chip--id' );
 						if ( idChip ) { idChip.textContent = newId; }
 					}
 				}
@@ -1486,7 +1486,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				// correct attribute fields appear immediately without requiring a save.
 				if ( _attrsSection ) {
 					renderNodeAttrs(
-						_attrsSection.querySelector( '.wpbfe-accordion-body-inner' ),
+						_attrsSection.querySelector( '.wpbe-accordion-body-inner' ),
 						newTag,
 						{},
 						() => {},
@@ -1498,11 +1498,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 						ctrl.addEventListener( 'input',  markDirty );
 						ctrl.addEventListener( 'change', markDirty );
 					} );
-					const hasAttrs = !! _attrsSection.querySelector( '.wpbfe-accordion-body-inner' ).childElementCount;
+					const hasAttrs = !! _attrsSection.querySelector( '.wpbe-accordion-body-inner' ).childElementCount;
 					_attrsSection.hidden = ! hasAttrs;
 					// Auto-open the attrs accordion when the new node has attributes.
 					if ( hasAttrs && ! _attrsSection.classList.contains( 'is-open' ) ) {
-						const accBtn = _attrsSection.querySelector( '.wpbfe-accordion-header' );
+						const accBtn = _attrsSection.querySelector( '.wpbe-accordion-header' );
 						if ( accBtn ) { accBtn.click(); }
 					}
 				}
@@ -1685,7 +1685,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		// Render node-specific attribute fields via the shared helper.
 		renderNodeAttrs(
-			_attrsSection.querySelector( '.wpbfe-accordion-body-inner' ),
+			_attrsSection.querySelector( '.wpbe-accordion-body-inner' ),
 			node,
 			element.attrs || {},
 			( name, value ) => {
@@ -1699,7 +1699,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			const attrName = ctrl.id.replace( 'wp-builder-node-attr-', '' );
 			ctrl.dataset.attrName = attrName;
 		} );
-		_attrsSection.hidden = ! _attrsSection.querySelector( '.wpbfe-accordion-body-inner' ).childElementCount;
+		_attrsSection.hidden = ! _attrsSection.querySelector( '.wpbe-accordion-body-inner' ).childElementCount;
 
 		// Populate the Main tab's post-level fields when values are provided.
 		if ( postTitle !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = postTitle; }

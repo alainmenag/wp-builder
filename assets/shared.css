@@ -2,7 +2,7 @@
  * WP Builder — Shared design tokens and base component styles
  *
  * Loaded by both the full-screen builder editor (admin.css) and the
- * front-end quick-editor (frontend-editor.css) so each file only needs
+ * editor (editor.css) so each file only needs
  * to contain its own context-specific rules.
  */
 
@@ -51,7 +51,7 @@
 /* ── Accordion ──────────────────────────────────────────────────────────── */
 
 .wp-builder-accordion-header,
-.wpbfe-accordion-header {
+.wpbe-accordion-header {
 	align-items: center;
 	background: var(--wpb-accent-dim);
 	border: 0;
@@ -73,21 +73,21 @@
 
 .wp-builder-accordion-header:hover,
 .wp-builder-accordion-header:focus,
-.wpbfe-accordion-header:hover,
-.wpbfe-accordion-header:focus {
+.wpbe-accordion-header:hover,
+.wpbe-accordion-header:focus {
 	background: var(--wpb-accent);
 	color: var(--wpb-text-inverse);
 	outline: none;
 }
 
 .wp-builder-accordion.is-open .wp-builder-accordion-header,
-.wpbfe-accordion.is-open .wpbfe-accordion-header {
+.wpbe-accordion.is-open .wpbe-accordion-header {
 	background: var(--wpb-accent);
 	color: var(--wpb-text-inverse);
 }
 
 .wp-builder-accordion-chevron,
-.wpbfe-accordion-chevron {
+.wpbe-accordion-chevron {
 	border-right: 2px solid currentColor;
 	border-top: 2px solid currentColor;
 	display: block;
@@ -98,22 +98,22 @@
 }
 
 .wp-builder-accordion.is-open .wp-builder-accordion-chevron,
-.wpbfe-accordion.is-open .wpbfe-accordion-chevron {
+.wpbe-accordion.is-open .wpbe-accordion-chevron {
 	transform: rotate(-45deg);
 }
 
 .wp-builder-accordion-body,
-.wpbfe-accordion-body {
+.wpbe-accordion-body {
 	display: none;
 }
 
 .wp-builder-accordion.is-open .wp-builder-accordion-body,
-.wpbfe-accordion.is-open .wpbfe-accordion-body {
+.wpbe-accordion.is-open .wpbe-accordion-body {
 	display: block;
 }
 
 .wp-builder-accordion-body-inner,
-.wpbfe-accordion-body-inner {
+.wpbe-accordion-body-inner {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
@@ -123,8 +123,8 @@
 
 .wp-builder-select,
 .wp-builder-input,
-.wpbfe-select,
-.wpbfe-input {
+.wpbe-select,
+.wpbe-input {
 	background: var(--wpb-bg-control);
 	border: 1px solid var(--wpb-border-default);
 	border-radius: 0;
@@ -139,32 +139,32 @@
 
 .wp-builder-select:focus,
 .wp-builder-input:focus,
-.wpbfe-select:focus,
-.wpbfe-input:focus {
+.wpbe-select:focus,
+.wpbe-input:focus {
 	border-color: var(--wpb-blue);
 	outline: none;
 }
 
 .wp-builder-select option,
-.wpbfe-select option {
+.wpbe-select option {
 	background: var(--wpb-bg-control);
 }
 
 .wp-builder-select:disabled,
-.wpbfe-select:disabled {
+.wpbe-select:disabled {
 	color: var(--wpb-text-disabled);
 	opacity: 1;
 }
 
 .wp-builder-select:disabled option,
-.wpbfe-select:disabled option {
+.wpbe-select:disabled option {
 	color: var(--wpb-text-disabled) !important;
 }
 
 /* ── Textarea / code editor ─────────────────────────────────────────────── */
 
 .wp-builder-html-editor,
-.wpbfe-textarea {
+.wpbe-textarea {
 	background: var(--wpb-bg-sunken);
 	border: 1px solid var(--wpb-border-default);
 	border-radius: 0;
@@ -179,20 +179,20 @@
 }
 
 .wp-builder-html-editor:focus,
-.wpbfe-textarea:focus {
+.wpbe-textarea:focus {
 	border-color: var(--wpb-blue);
 	outline: none;
 }
 
 .wp-builder-html-editor::placeholder,
-.wpbfe-textarea::placeholder {
+.wpbe-textarea::placeholder {
 	color: var(--wpb-text-disabled);
 }
 
 /* ── CodeMirror ─────────────────────────────────────────────────────────── */
 
 .wp-builder-field-group .CodeMirror-placeholder,
-.wpbfe-field-group .CodeMirror-placeholder {
+.wpbe-field-group .CodeMirror-placeholder {
 	opacity: .25;
 }
 

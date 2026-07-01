@@ -41,7 +41,7 @@ trait WP_Builder_Frontend {
 		}
 
 		$this->enqueue_frontend_style();
-		$this->enqueue_frontend_editor_assets( $post_id );
+		$this->enqueue_editor_assets( $post_id );
 
 		return $this->render_element( $this->get_layout_root_element( $post_id ), $css_classes, $post_id );
 	}
@@ -61,7 +61,7 @@ trait WP_Builder_Frontend {
 		}
 
 		$this->enqueue_frontend_style();
-		$this->enqueue_frontend_editor_assets( $post_id );
+		$this->enqueue_editor_assets( $post_id );
 	}
 
 	public function render_builder_content( string $content ): string {
@@ -90,13 +90,13 @@ trait WP_Builder_Frontend {
 		);
 	}
 
-	private function enqueue_frontend_editor_assets( int $post_id = 0 ): void {
+	private function enqueue_editor_assets( int $post_id = 0 ): void {
 		if ( ! is_user_logged_in() || ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
 
 		// Guard against duplicate registration on pages with multiple shortcodes.
-		if ( wp_script_is( 'wp-builder-frontend-editor', 'enqueued' ) ) {
+		if ( wp_script_is( 'wp-builder-editor', 'enqueued' ) ) {
 			return;
 		}
 
@@ -117,15 +117,15 @@ trait WP_Builder_Frontend {
 		);
 
 		wp_enqueue_style(
-			'wp-builder-frontend-editor',
-			WP_BUILDER_URL . 'assets/frontend-editor.css',
+			'wp-builder-editor',
+			WP_BUILDER_URL . 'assets/editor.css',
 			array( 'code-editor', 'wp-builder-shared' ),
 			self::VERSION
 		);
 
 		wp_enqueue_script(
-			'wp-builder-frontend-editor',
-			WP_BUILDER_URL . 'assets/js/frontend-editor.js',
+			'wp-builder-editor',
+			WP_BUILDER_URL . 'assets/js/editor.js',
 			array( 'code-editor' ),
 			self::VERSION,
 			true
@@ -135,16 +135,16 @@ trait WP_Builder_Frontend {
 		$is_cpt      = $post_obj && self::TEMPLATE_CPT === $post_obj->post_type;
 
 		wp_localize_script(
-			'wp-builder-frontend-editor',
-			'wpBuilderFrontendEditor',
+			'wp-builder-editor',
+			'wpBuilderEditor',
 			array(
 				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 				'builderBaseUrl' => admin_url( 'post.php' ),
-				'getNonce'       => wp_create_nonce( self::FRONTEND_GET_NONCE_ACTION ),
-				'saveNonce'      => wp_create_nonce( self::FRONTEND_SAVE_NONCE_ACTION ),
-				'layoutNonce'    => wp_create_nonce( self::FRONTEND_GET_LAYOUT_NONCE_ACTION ),
-				'addNonce'       => wp_create_nonce( self::FRONTEND_ADD_NONCE_ACTION ),
-				'deleteNonce'    => wp_create_nonce( self::FRONTEND_DELETE_NONCE_ACTION ),
+				'getNonce'       => wp_create_nonce( self::GET_NONCE_ACTION ),
+				'saveNonce'      => wp_create_nonce( self::SAVE_NONCE_ACTION ),
+				'layoutNonce'    => wp_create_nonce( self::GET_LAYOUT_NONCE_ACTION ),
+				'addNonce'       => wp_create_nonce( self::ADD_NONCE_ACTION ),
+				'deleteNonce'    => wp_create_nonce( self::DELETE_NONCE_ACTION ),
 				'isTemplate'     => is_singular( self::TEMPLATE_CPT ),
 				'pageTemplate'   => ( $post_id && ! $is_cpt ) ? ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ) : '',
 				'pageTemplates'  => ( $post_id && ! $is_cpt ) ? $this->get_available_page_templates( $post_id ) : array(),
