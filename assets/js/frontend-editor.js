@@ -277,7 +277,192 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		if ( _elementTabPanel ) { _elementTabPanel.hidden = key !== 'element'; }
 	}
 
-	function createPanel() {
+	// -----------------------------------------------------------------------
+	// Schema-driven field renderers
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Apply a plain attrs object (from the server schema) to a DOM element.
+	 * Boolean values are assigned as DOM properties; all other values are set
+	 * as HTML attributes so they reach both properties and the rendered markup.
+	 *
+	 * @param {HTMLElement} el    Target element.
+	 * @param {Object|null} attrs Key/value map of attributes to apply.
+	 */
+	function applyAttrs( el, attrs ) {
+		if ( ! attrs ) { return; }
+		for ( const [ k, v ] of Object.entries( attrs ) ) {
+			if ( typeof v === 'boolean' ) {
+				el[ k ] = v;
+			} else {
+				el.setAttribute( k, v );
+			}
+		}
+	}
+
+	/**
+	 * Maps each schema field id to a function that assigns the rendered control
+	 * element to the appropriate module-level variable and wires any special
+	 * behaviour (e.g. the id-field sanitise-on-blur listener).
+	 */
+	const FIELD_REFS = {
+		'wpbfe-node':           ( ctrl ) => { _nodeSelectCtrl           = ctrl; },
+		'wpbfe-node-id':        ( ctrl ) => {
+			_idDisplayCtrl = ctrl;
+			ctrl.addEventListener( 'blur', () => {
+				const sanitized = ctrl.value.toLowerCase()
+					.replace( /\s+/g, '-' )
+					.replace( /[^a-z0-9_-]/g, '' )
+					.replace( /-+/g, '-' )
+					.replace( /^-+|-+$/g, '' );
+				ctrl.value = sanitized || _elementId || '';
+			} );
+		},
+		'wpbfe-html-content':   ( ctrl ) => { _htmlTextareaCtrl         = ctrl; },
+		'wpbfe-flex-direction': ( ctrl ) => { _flexDirCtrl              = ctrl; },
+		'wpbfe-flex-grow':      ( ctrl ) => { _flexGrowCtrl             = ctrl; },
+		'wpbfe-gap':            ( ctrl ) => { _gapCtrl                  = ctrl; },
+		'wpbfe-custom-style':   ( ctrl ) => { _styleTextareaCtrl        = ctrl; },
+		'wpbfe-post-title':     ( ctrl ) => { _mainTitleDisplay         = ctrl; },
+		'wpbfe-post-status':    ( ctrl ) => { _mainStatusDisplay        = ctrl; },
+		'wpbfe-page-template':  ( ctrl ) => { _mainPageTemplateDisplay  = ctrl; },
+	};
+
+	/**
+	 * Build a single field's DOM from a schema field descriptor.
+	 * Calls createFieldGroup() and wires the control to its module-level
+	 * variable via FIELD_REFS.
+	 *
+	 * Supported types: text, number, select, textarea, container.
+	 *
+	 * @param {Object} field Field descriptor from the server schema.
+	 * @returns {{group: HTMLElement, control: HTMLElement}|null}
+	 */
+	function renderFieldFromSchema( field ) {
+		const type = field.type || '';
+
+		// Container — a plain wrapper div with no field-group chrome.
+		if ( 'container' === type ) {
+			const div = document.createElement( 'div' );
+			if ( field.id    ) { div.id        = field.id; }
+			if ( field.class ) { div.className = field.class; }
+			if ( field.hidden ) { div.hidden   = true; }
+			return { group: div, control: div };
+		}
+
+		let controlEl = null;
+		switch ( type ) {
+			case 'text':
+			case 'number': {
+				const inp       = document.createElement( 'input' );
+				inp.className   = CSS.input;
+				inp.type        = ( 'number' === type ) ? 'number' : 'text';
+				if ( field.placeholder ) { inp.placeholder = field.placeholder; }
+				applyAttrs( inp, field.attrs );
+				controlEl = inp;
+				break;
+			}
+			case 'select': {
+				const sel     = document.createElement( 'select' );
+				sel.className = CSS.select;
+				for ( const opt of ( field.options || [] ) ) {
+					const o       = document.createElement( 'option' );
+					o.value       = opt.value;
+					o.textContent = opt.label;
+					if ( opt.selected ) { o.selected = true; }
+					sel.appendChild( o );
+				}
+				applyAttrs( sel, field.attrs );
+				controlEl = sel;
+				break;
+			}
+			case 'textarea': {
+				const ta     = document.createElement( 'textarea' );
+				ta.className = 'wpbfe-textarea';
+				applyAttrs( ta, field.attrs );
+				controlEl = ta;
+				break;
+			}
+			default:
+				return null;
+		}
+
+		const { group, control } = createFieldGroup(
+			field.label || '',
+			() => controlEl,
+			field.id || null
+		);
+
+		// Insert optional hint paragraph between the label and the control.
+		if ( field.hint ) {
+			const hint     = document.createElement( 'p' );
+			hint.className = 'wpbfe-inspector-hint';
+			hint.innerHTML = field.hint;
+			group.insertBefore( hint, control );
+		}
+
+		// Wire the control to its module-level variable and any special behaviour.
+		if ( field.id && FIELD_REFS[ field.id ] ) {
+			FIELD_REFS[ field.id ]( control );
+		}
+
+		return { group, control };
+	}
+
+	/**
+	 * Build a .wpbfe-tab-panel div and all its accordion sections from a
+	 * schema tab descriptor. Sets the relevant module-level tab-panel and
+	 * accordion variables as a side-effect.
+	 *
+	 * @param {Object} tab Tab descriptor from the server schema.
+	 * @returns {HTMLElement}
+	 */
+	function renderTabPanelFromSchema( tab ) {
+		const tabPanel       = document.createElement( 'div' );
+		tabPanel.className   = 'wpbfe-tab-panel';
+		tabPanel.dataset.tab = tab.key;
+
+		// Element tab is the default active view; main tab starts hidden.
+		if ( 'main'    === tab.key ) { tabPanel.hidden = true;  _mainTabPanel    = tabPanel; }
+		if ( 'element' === tab.key ) {                          _elementTabPanel = tabPanel; }
+
+		for ( const accordion of ( tab.accordions || [] ) ) {
+			const accEl = createAccordion( accordion.label, !! accordion.open );
+			accEl.id    = 'wpbfe-accordion-' + accordion.slug;
+
+			// Store accordion references needed by populatePanel().
+			if ( 'content' === accordion.slug ) { _contentSection = accEl; }
+			if ( 'attrs'   === accordion.slug ) { _attrsSection   = accEl; }
+
+			// Refresh CodeMirror when the style accordion re-opens.
+			if ( 'style' === accordion.slug ) {
+				const accBtn = accEl.querySelector( '.wpbfe-accordion-header' );
+				if ( accBtn ) {
+					accBtn.addEventListener( 'click', () => {
+						if ( _styleEditor && accEl.classList.contains( 'is-open' ) ) {
+							_styleEditor.codemirror.refresh();
+						}
+					} );
+				}
+			}
+
+			const inner = accEl.querySelector( '.wpbfe-accordion-body-inner' );
+			for ( const field of ( accordion.fields || [] ) ) {
+				const rendered = renderFieldFromSchema( field );
+				if ( rendered ) { inner.appendChild( rendered.group ); }
+			}
+
+			tabPanel.appendChild( accEl );
+		}
+
+		return tabPanel;
+	}
+
+	// -----------------------------------------------------------------------
+	// Panel construction (runs once on first open)
+	// -----------------------------------------------------------------------
+
+	function createPanel( schema ) {
 		// Panel shell
 		_panel = document.createElement( 'div' );
 		_panel.className = 'wpbfe-panel';
@@ -319,253 +504,39 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		}
 		_panel.appendChild( header );
 
-		// Body
+		// Body — schema-driven tab panels.
 		const body = document.createElement( 'div' );
 		body.className = 'wpbfe-panel-body';
-
-		// ── Main tab panel (post-level info, hidden by default) ────────────
-		_mainTabPanel = document.createElement( 'div' );
-		_mainTabPanel.className  = 'wpbfe-tab-panel';
-		_mainTabPanel.dataset.tab = 'main';
-		_mainTabPanel.hidden     = true;
-
-		const mainInner = document.createElement( 'div' );
-		mainInner.className = 'wpbfe-accordion-body-inner';
-
-		const titleField = createFieldGroup( text.postTitle || 'Post Title', () => {
-			const inp = document.createElement( 'input' );
-			inp.className = 'wpbfe-input';
-			inp.type      = 'text';
-			return inp;
-		}, 'wpbfe-post-title' );
-		_mainTitleDisplay = titleField.control;
-		mainInner.appendChild( titleField.group );
-
-		const statusField = createFieldGroup( text.postStatus || 'Post Status', () => {
-			const sel = document.createElement( 'select' );
-			sel.className = 'wpbfe-select';
-			for ( const [ val, lbl ] of [
-				[ 'publish', text.statusPublish  || 'Publish'        ],
-				[ 'draft',   text.statusDraft    || 'Draft'          ],
-				[ 'pending', text.statusPending  || 'Pending Review' ],
-				[ 'private', text.statusPrivate  || 'Private'        ],
-			] ) {
-				const opt = document.createElement( 'option' );
-				opt.value = val;
-				opt.textContent = lbl;
-				sel.appendChild( opt );
-			}
-			return sel;
-		}, 'wpbfe-post-status' );
-		_mainStatusDisplay = statusField.control;
-		mainInner.appendChild( statusField.group );
-
-		if ( config.isTemplate ) {
-			// Snippet CPTs always use Canvas Layout — show a read-only field
-			// that matches the disabled dropdown in the backend editor.
-			const pageTemplateField = createFieldGroup( text.pageLayout || 'Page Layout', () => {
-				const sel = document.createElement( 'select' );
-				sel.className = 'wpbfe-select';
-				const opt = document.createElement( 'option' );
-				opt.value       = 'wp-builder-canvas';
-				opt.textContent = text.canvasLayout || 'Canvas Layout';
-				opt.selected    = true;
-				sel.appendChild( opt );
-				sel.value    = 'wp-builder-canvas';
-				sel.disabled = true;
-				return sel;
-			}, 'wpbfe-page-template' );
-			_mainPageTemplateDisplay = pageTemplateField.control;
-			mainInner.appendChild( pageTemplateField.group );
-		} else if ( config.pageTemplates && Object.keys( config.pageTemplates ).length ) {
-			const pageTemplateField = createFieldGroup( text.pageLayout || 'Page Layout', () => {
-				const sel = document.createElement( 'select' );
-				sel.className = 'wpbfe-select';
-				for ( const [ val, lbl ] of Object.entries( config.pageTemplates ) ) {
-					const opt = document.createElement( 'option' );
-					opt.value       = val;
-					opt.textContent = lbl;
-					sel.appendChild( opt );
-				}
-				return sel;
-			}, 'wpbfe-page-template' );
-			_mainPageTemplateDisplay = pageTemplateField.control;
-			if ( config.pageTemplate ) {
-				_mainPageTemplateDisplay.value = config.pageTemplate;
-			}
-			mainInner.appendChild( pageTemplateField.group );
+		for ( const tab of ( schema || [] ) ) {
+			body.appendChild( renderTabPanelFromSchema( tab ) );
 		}
-
-		_mainTabPanel.appendChild( mainInner );
-		body.appendChild( _mainTabPanel );
-
-		// ── Element tab panel (all element accordions) ─────────────────────
-		_elementTabPanel = document.createElement( 'div' );
-		_elementTabPanel.className  = 'wpbfe-tab-panel';
-		_elementTabPanel.dataset.tab = 'element';
-
-		// Identity section
-		const identityAcc   = createAccordion( text.identity || 'Identity', false );
-		identityAcc.id      = 'wpbfe-accordion-identity';
-		const identityInner = identityAcc.querySelector( '.wpbfe-accordion-body-inner' );
-
-		const nodeField = createFieldGroup( text.node || 'Node', () => {
-			const sel = document.createElement( 'select' );
-			sel.className = 'wpbfe-select';
-			for ( const n of ALLOWED_NODES ) {
-				const opt = document.createElement( 'option' );
-				opt.value = n;
-				opt.textContent = n;
-				sel.appendChild( opt );
-			}
-			return sel;
-		}, 'wpbfe-node' );
-		_nodeSelectCtrl = nodeField.control;
-		identityInner.appendChild( nodeField.group );
-
-		const idField = createFieldGroup( text.elementId || 'Element ID', () => {
-			const inp = document.createElement( 'input' );
-			inp.className = 'wpbfe-input';
-			inp.type      = 'text';
-			return inp;
-		}, 'wpbfe-node-id' );
-		_idDisplayCtrl = idField.control;
-		_idDisplayCtrl.addEventListener( 'blur', () => {
-			const sanitized = _idDisplayCtrl.value.toLowerCase()
-				.replace( /\s+/g, '-' )
-				.replace( /[^a-z0-9_-]/g, '' )
-				.replace( /-+/g, '-' )
-				.replace( /^-+|-+$/g, '' );
-			_idDisplayCtrl.value = sanitized || _elementId || '';
-		} );
-		identityInner.appendChild( idField.group );
-		_elementTabPanel.appendChild( identityAcc );
-
-		// Content section
-		_contentSection        = createAccordion( text.content || 'Content', true );
-		_contentSection.id     = 'wpbfe-accordion-content';
-		const contentInner     = _contentSection.querySelector( '.wpbfe-accordion-body-inner' );
-		const htmlField        = createFieldGroup( text.htmlContent || 'HTML Content', () => {
-			const ta = document.createElement( 'textarea' );
-			ta.className = 'wpbfe-textarea';
-			ta.rows      = 8;
-			return ta;
-		}, 'wpbfe-html-content' );
-		_htmlTextareaCtrl = htmlField.control;
-		contentInner.appendChild( htmlField.group );
-		_elementTabPanel.appendChild( _contentSection );
-
-		// Layout section
-		const layoutAcc   = createAccordion( text.layout || 'Layout', false );
-		layoutAcc.id      = 'wpbfe-accordion-layout';
-		const layoutInner = layoutAcc.querySelector( '.wpbfe-accordion-body-inner' );
-
-		const flexDirField = createFieldGroup( text.flexDirection || 'Flex Direction', () => {
-			const sel = document.createElement( 'select' );
-			sel.className = 'wpbfe-select';
-			for ( const [ val, lbl ] of [ [ '', '\u2014 None \u2014' ], [ 'row', 'Row' ], [ 'column', 'Column' ] ] ) {
-				const opt = document.createElement( 'option' );
-				opt.value = val;
-				opt.textContent = lbl;
-				sel.appendChild( opt );
-			}
-			return sel;
-		}, 'wpbfe-flex-direction' );
-		_flexDirCtrl = flexDirField.control;
-		layoutInner.appendChild( flexDirField.group );
-
-		const flexGrowField = createFieldGroup( text.flexGrow || 'Flex Grow', () => {
-			const inp = document.createElement( 'input' );
-			inp.className   = 'wpbfe-input';
-			inp.type        = 'number';
-			inp.min         = '0';
-			inp.step        = '1';
-			inp.placeholder = '0';
-			return inp;
-		}, 'wpbfe-flex-grow' );
-		_flexGrowCtrl = flexGrowField.control;
-		layoutInner.appendChild( flexGrowField.group );
-
-		const gapField = createFieldGroup( text.gap || 'Gap', () => {
-			const inp = document.createElement( 'input' );
-			inp.className   = 'wpbfe-input';
-			inp.type        = 'text';
-			inp.placeholder = 'e.g. 16px';
-			return inp;
-		}, 'wpbfe-gap' );
-		_gapCtrl = gapField.control;
-		layoutInner.appendChild( gapField.group );
-		_elementTabPanel.appendChild( layoutAcc );
-
-		// Style section
-		const styleAcc   = createAccordion( text.style || 'Style', false );
-		styleAcc.id      = 'wpbfe-accordion-style';
-		const styleInner = styleAcc.querySelector( '.wpbfe-accordion-body-inner' );
-		const STYLE_PLACEHOLDER = "self {\n  background-color: red;\n}";
-		const styleField = createFieldGroup( text.customStyle || 'Custom CSS', () => {
-			const ta = document.createElement( 'textarea' );
-			ta.className   = 'wpbfe-textarea';
-			ta.rows        = 6;
-			ta.placeholder = STYLE_PLACEHOLDER;
-			return ta;
-		}, 'wpbfe-custom-style' );
-		_styleTextareaCtrl = styleField.control;
-		// Insert the hint paragraph between the label and the textarea.
-		if ( text.customStyleHint ) {
-			const hint = document.createElement( 'p' );
-			hint.className = 'wpbfe-inspector-hint';
-			hint.innerHTML = text.customStyleHint;
-			styleField.group.insertBefore( hint, _styleTextareaCtrl );
-		}
-		styleInner.appendChild( styleField.group );
-		_elementTabPanel.appendChild( styleAcc );
-
-		// Refresh CodeMirror when the style accordion opens so it renders
-		// correctly after being initialised inside a hidden container.
-		// Mirrors the equivalent fix in navigation.js for the full editor.
-		const styleAccBtn = styleAcc.querySelector( '.wpbfe-accordion-header' );
-		styleAccBtn.addEventListener( 'click', () => {
-			if ( _styleEditor && styleAcc.classList.contains( 'is-open' ) ) {
-				_styleEditor.codemirror.refresh();
-			}
-		} );
-
-		// Attributes section — rendered dynamically in populatePanel
-		_attrsSection    = createAccordion( text.attributes || 'Attributes', false );
-		_attrsSection.id = 'wpbfe-accordion-attrs';
-		_elementTabPanel.appendChild( _attrsSection );
-
-		body.appendChild( _elementTabPanel );
-
 		_panel.appendChild( body );
 
 		// Footer
 		const footer = document.createElement( 'div' );
 		footer.className = 'wpbfe-panel-footer';
 
-		// Tab switcher buttons — left side of footer.
+		// Tab switcher buttons — built from the schema so the order and keys
+		// stay in sync with the server-defined tabs.
 		const tabBtnsGroup = document.createElement( 'div' );
 		tabBtnsGroup.className = 'wpbfe-tab-btns';
+		_tabBtns = [];
 
-		const tabMainBtn = document.createElement( 'button' );
-		tabMainBtn.type          = 'button';
-		tabMainBtn.className     = 'wpbfe-tab-btn wpbfe-panel-footer-link';
-		tabMainBtn.dataset.tab   = 'main';
-		tabMainBtn.innerHTML = ICON_ELEMENT;
-		tabMainBtn.style.fill = '#ffffff';
-		tabMainBtn.addEventListener( 'click', () => switchTab( 'main' ) );
-
-		const tabElementBtn = document.createElement( 'button' );
-		tabElementBtn.type        = 'button';
-		tabElementBtn.className   = 'wpbfe-tab-btn wpbfe-panel-footer-link is-active';
-		tabElementBtn.dataset.tab = 'element';
-		tabElementBtn.innerHTML = ICON_POST;
-		tabElementBtn.style.fill = '#ffffff';
-		tabElementBtn.addEventListener( 'click', () => switchTab( 'element' ) );
-
-		tabBtnsGroup.appendChild( tabMainBtn );
-		tabBtnsGroup.appendChild( tabElementBtn );
-		_tabBtns = [ tabMainBtn, tabElementBtn ];
+		const tabIconMap = { 'main': ICON_ELEMENT, 'element': ICON_POST };
+		for ( const tab of ( schema || [] ) ) {
+			const btn       = document.createElement( 'button' );
+			btn.type        = 'button';
+			btn.dataset.tab = tab.key;
+			btn.className   = 'wpbfe-tab-btn wpbfe-panel-footer-link' + ( 'element' === tab.key ? ' is-active' : '' );
+			btn.innerHTML   = tabIconMap[ tab.key ] || '';
+			btn.style.fill  = '#ffffff';
+			btn.addEventListener( 'click', ( () => {
+				const key = tab.key;
+				return () => switchTab( key );
+			} )() );
+			tabBtnsGroup.appendChild( btn );
+			_tabBtns.push( btn );
+		}
 		footer.appendChild( tabBtnsGroup );
 
 		// Action buttons — right side of footer.
@@ -586,7 +557,6 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		_fitBtn.setAttribute( 'aria-label', text.fitPage || 'Fit Page' );
 		_fitBtn.setAttribute( 'title', text.fitPage || 'Fit Page' );
 		_fitBtn.disabled  = ! _isDocked;
-		// Scale / fit icon — two arrows pointing inward horizontally.
 		_fitBtn.innerHTML = ICON_FIT;
 		_fitBtn.addEventListener( 'click', togglePageZoom );
 
@@ -627,7 +597,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		document.body.appendChild( _panel );
 		initDrag();
 		initResize();
-		initStyleEditor();
+		// initStyleEditor() is called by the caller (fetchElement) after createPanel() returns.
 	}
 
 	// -----------------------------------------------------------------------
@@ -936,13 +906,12 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 	// Panel open / close
 	// -----------------------------------------------------------------------
 
-	function openPanel( postId, elementId, liveRoot ) {
-		_postId    = postId;
-		_elementId = elementId;
-		_liveRoot  = liveRoot;
-
-		if ( ! _panel ) { createPanel(); }
-
+	/**
+	 * Position the panel according to persisted dock/float state and mark it
+	 * as open. Called both when re-opening an already-built panel and when
+	 * showing it for the first time after schema-driven creation.
+	 */
+	function positionAndShowPanel() {
 		if ( _isDocked ) {
 			// Apply docked state (CSS handles position; restore any saved width).
 			dockTo( _dockedSide );
@@ -965,10 +934,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			if ( _fitBtn ) { _fitBtn.disabled = true; }
 		}
 
-		_editLink.href    = `/?post_type=${TEMPLATE_CPT}&p=${encodeURIComponent( postId )}`;
-		_saveBtn.disabled = true;
-		setStatus( text.loading || 'Loading\u2026', false );
-
+		_editLink.href = `/?post_type=${TEMPLATE_CPT}&p=${encodeURIComponent( _postId )}`;
 		_panel.classList.add( 'is-open' );
 
 		// Restore persisted zoom (only valid when docked).
@@ -978,6 +944,21 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			// while the panel stays open), the scroll position is already correct.
 			const zoomAlreadyApplied = document.body.classList.contains( 'wpbfe-page-zoomed' );
 			applyPageZoom( ! zoomAlreadyApplied );
+		}
+	}
+
+	function openPanel( postId, elementId, liveRoot ) {
+		_postId    = postId;
+		_elementId = elementId;
+		_liveRoot  = liveRoot;
+
+		// If the panel already exists, show it with a loading state immediately.
+		// On first open the panel is built from the schema returned by fetchElement()
+		// and shown once the AJAX request completes.
+		if ( _panel ) {
+			positionAndShowPanel();
+			_saveBtn.disabled = true;
+			setStatus( text.loading || 'Loading\u2026', false );
 		}
 
 		fetchElement( postId, elementId );
@@ -1020,9 +1001,17 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 					throw new Error( payload && payload.data && payload.data.message
 						? payload.data.message : ( text.error || 'Error' ) );
 				}
-				populatePanel( payload.data.element, payload.data.post_title || '', payload.data.post_status || '', payload.data.page_template || '' );
+				const data = payload.data;
+				// On the very first open the panel doesn't exist yet — build it
+				// from the schema returned by the server, then position and show it.
+				if ( ! _panel ) {
+					createPanel( data.fields || [] );
+					initStyleEditor();
+					positionAndShowPanel();
+				}
 				_saveBtn.disabled = false;
 				setStatus( '', false );
+				populatePanel( data.element, data.post_title || '', data.post_status || '', data.page_template || '' );
 			} )
 			.catch( ( err ) => {
 				setStatus( err.message || ( text.error || 'Error' ), true );
