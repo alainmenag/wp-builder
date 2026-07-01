@@ -11,7 +11,7 @@
  * dom-helpers.js rather than duplicating them.
  */
 
-import { VOID_NODES, ALLOWED_NODES, TEMPLATE_CPT } from './constants.js';
+import { VOID_NODES, ALLOWED_NODES, EDITOR_CPT } from './constants.js';
 import { normalizeNodeTag, findElement } from './layout.js';
 import { renderNodeAttrs } from './dom-helpers.js';
 import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE, ICON_STRUCTURE } from './constants.js';
@@ -559,7 +559,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		header.appendChild( headerLeft );
 
-		if ( ! config.isTemplate ) {
+		if ( ! config.isBuilderMode ) {
 			const closeBtn = document.createElement( 'button' );
 			closeBtn.className = 'wpbe-close-btn';
 			closeBtn.type      = 'button';
@@ -643,7 +643,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		_saveBtn.appendChild( saveLbl );
 		_saveBtn.addEventListener( 'click', saveElement );
 
-		if ( ! config.isTemplate ) {
+		if ( ! config.isBuilderMode ) {
 			footerActions.appendChild( _editLink );
 		}
 		footerActions.appendChild( _fitBtn );
@@ -1284,7 +1284,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			if ( _fitBtn ) { _fitBtn.disabled = true; }
 		}
 
-		_editLink.href = `/?post_type=${TEMPLATE_CPT}&p=${encodeURIComponent( _postId )}`;
+		_editLink.href = `/wp-admin/post.php?post=${encodeURIComponent( _postId )}&action=${EDITOR_CPT}`;
 		_panel.classList.add( 'is-open' );
 
 		// Restore persisted zoom (only valid when docked).
@@ -1821,7 +1821,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			);
 		} );
 
-		if ( config.isTemplate ) {
+		if ( config.isBuilderMode ) {
 			autoOpenForTemplate();
 		}
 	}

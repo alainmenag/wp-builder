@@ -65,6 +65,20 @@ trait WP_Builder_Post_Types {
 		}
 	}
 
+	public function maybe_redirect_template_frontend(): void {
+		if ( ! is_singular( self::TEMPLATE_CPT ) ) {
+			return;
+		}
+
+		$post_id = get_queried_object_id();
+		if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		wp_safe_redirect( $this->get_builder_url( $post_id ) );
+		exit;
+	}
+
 	public function template_post_type_link( string $url, WP_Post $post ): string {
 		if ( self::TEMPLATE_CPT !== $post->post_type ) {
 			return $url;

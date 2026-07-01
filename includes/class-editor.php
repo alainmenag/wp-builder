@@ -40,7 +40,34 @@ echo wp_json_encode( $this->get_layout( $post_id ), JSON_PRETTY_PRINT | JSON_UNE
 exit;
 }
 
-wp_safe_redirect( $this->get_preview_url( $post_id ) );
+// Render the builder canvas directly without an HTTP redirect.
+$this->enqueue_frontend_style();
+$this->enqueue_editor_assets( $post_id, true );
+
+$root_element = $this->get_layout_root_element( $post_id );
+$canvas_html  = $this->render_element( $root_element, 'wp-builder-layout', $post_id );
+
+status_header( 200 );
+nocache_headers();
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+?>
+<!doctype html>
+<html <?php language_attributes(); ?>>
+<head>
+	<meta charset="<?php bloginfo( 'charset' ); ?>">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<?php wp_head(); ?>
+</head>
+<body class="wp-builder-canvas-body">
+<?php wp_body_open(); ?>
+<div id="page" class="wp-builder-template wp-builder-template--canvas">
+	<?php echo $canvas_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post(). ?>
+</div>
+<?php wp_footer(); ?>
+</body>
+</html>
+<?php
+// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 exit;
 }
 

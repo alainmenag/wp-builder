@@ -55,6 +55,7 @@ final class WP_Builder {
 		add_filter( 'page_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( self::TEMPLATE_CPT . '_row_actions', array( $this, 'add_row_action' ), 10, 2 );
 		add_filter( 'post_type_link', array( $this, 'template_post_type_link' ), 10, 2 );
+		add_action( 'template_redirect', array( $this, 'maybe_redirect_template_frontend' ) );
 		add_filter( 'the_content', array( $this, 'render_builder_content' ), 20 );
 		add_filter( 'theme_page_templates', array( $this, 'register_page_templates' ), 10, 4 );
 		add_filter( 'theme_post_templates', array( $this, 'register_page_templates' ), 10, 4 );
