@@ -157,7 +157,6 @@ body.admin-bar .wpbfe-panel.is-docked {
 	font-size: 11px;
 	font-weight: 700;
 	letter-spacing: .04em;
-	max-width: 140px;
 	overflow: hidden;
 	padding: 2px 6px;
 	text-overflow: ellipsis;
@@ -167,15 +166,15 @@ body.admin-bar .wpbfe-panel.is-docked {
 
 .wpbfe-chip--node {
 	background: var(--wpb-accent-dim);
-	color: var(--wpb-accent-hover);
+	color: #ffffff;
 }
 
 .wpbfe-chip--id {
 	color: var(--wpb-text-muted);
 	cursor: pointer;
 	font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
-	font-size: 10px;
-	font-weight: 400;
+	font-size: 12px;
+	font-weight: 900;
 	letter-spacing: 0;
 	text-transform: none;
 }
@@ -475,10 +474,6 @@ body.wpbfe-page-zoomed #page {
 
 .wpbfe-sv-node.is-selected {
 	border-color: var(--wpb-accent-hover);
-}
-
-.wpbfe-sv-node.is-selected > .wpbfe-sv-node-bar > .wpbfe-sv-node-title .wpbfe-chip {
-	color: var(--wpb-accent);
 }
 
 /* ── Structure-view node bar ────────────────────────────────────────────── */
