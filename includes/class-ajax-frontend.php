@@ -193,6 +193,8 @@ trait WP_Builder_Ajax_Frontend {
 		$is_template      = $ctx['is_template'];
 		$page_templates   = $ctx['page_templates'];
 		$current_template = $ctx['current_template'];
+		$shortcode        = '[wp_builder id=\'' . absint( $post_id ) . '\']';
+		$export_url       = add_query_arg( 'view', 'json', $this->get_builder_url( $post_id ) );
 
 		// Settings accordion fields.
 		$settings_fields = array(
@@ -262,6 +264,31 @@ trait WP_Builder_Ajax_Frontend {
 						'label'  => __( 'Settings', 'wp-builder' ),
 						'open'   => true,
 						'fields' => $settings_fields,
+					),
+					array(
+						'slug'   => 'shortcode',
+						'label'  => __( 'Shortcode', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'    => 'pre',
+								'label'   => __( 'Shortcode', 'wp-builder' ),
+								'content' => $shortcode,
+							),
+						),
+					),
+					array(
+						'slug'   => 'data',
+						'label'  => __( 'Data', 'wp-builder' ),
+						'open'   => false,
+						'fields' => array(
+							array(
+								'type'  => 'link',
+								'label' => __( 'Export', 'wp-builder' ),
+								'href'  => $export_url,
+								'attrs' => array( 'target' => '_blank', 'rel' => 'noreferrer', 'style' => 'width: 100%;' ),
+							),
+						),
 					),
 				),
 			),

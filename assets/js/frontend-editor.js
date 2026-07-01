@@ -400,6 +400,40 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				controlEl = ta;
 				break;
 			}
+			case 'pre': {
+				const pre        = document.createElement( 'pre' );
+				pre.className    = 'wpbfe-embed-code';
+				pre.textContent  = field.content || '';
+				const group      = document.createElement( 'div' );
+				group.className  = CSS.fieldGroup;
+				if ( field.id ) { group.id = field.id; }
+				if ( field.label ) {
+					const lbl        = document.createElement( 'label' );
+					lbl.className    = CSS.label;
+					lbl.textContent  = field.label;
+					group.appendChild( lbl );
+				}
+				group.appendChild( pre );
+				return { group, control: pre };
+			}
+			case 'link': {
+				const a        = document.createElement( 'a' );
+				a.className    = 'wpbfe-button-secondary';
+				a.href         = field.href || '#';
+				a.textContent  = field.label || '';
+				applyAttrs( a, field.attrs );
+				if ( field.id ) { a.id = field.id; }
+				const group      = document.createElement( 'div' );
+				group.className  = CSS.fieldGroup;
+				if ( field.label ) {
+					const lbl        = document.createElement( 'label' );
+					lbl.className    = CSS.label;
+					lbl.textContent  = field.label;
+					group.appendChild( lbl );
+				}
+				group.appendChild( a );
+				return { group, control: a };
+			}
 			default:
 				return null;
 		}
