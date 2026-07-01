@@ -1839,7 +1839,13 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	function autoOpenForTemplate() {
 		const rootEl = document.querySelector( '[data-wp-builder-post-id]' );
 		if ( ! rootEl ) { return; }
-		const firstEl = rootEl.querySelector( '[data-wp-builder-id]' );
+		// rootEl itself carries data-wp-builder-id (both attributes are emitted on
+		// the same DOM node by render_element()). querySelector() does not match
+		// the element it is called on, so we check rootEl first, then fall back
+		// to the first descendant that has the attribute.
+		const firstEl = rootEl.hasAttribute( 'data-wp-builder-id' )
+			? rootEl
+			: rootEl.querySelector( '[data-wp-builder-id]' );
 		if ( ! firstEl ) { return; }
 		openPanel(
 			rootEl.getAttribute( 'data-wp-builder-post-id' ),
