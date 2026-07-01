@@ -376,6 +376,16 @@ body.admin-bar .wpbfe-panel.is-docked {
 	opacity: .5;
 }
 
+.wpbfe-save-btn.has-unsaved-changes {
+	background: var(--wpb-danger);
+}
+
+.wpbfe-save-btn.has-unsaved-changes:hover,
+.wpbfe-save-btn.has-unsaved-changes:focus {
+	background: var(--wpb-danger-hover);
+	outline: none;
+}
+
 /* Status text lives inside the save button; label hides while status is shown. */
 
 .wpbfe-save-status,

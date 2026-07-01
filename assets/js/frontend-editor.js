@@ -144,6 +144,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	let _styleEditor              = null;
 	// True while setValue() is being called programmatically to suppress onChange.
 	let _styleEditorSuppressChange = false;
+	/** @type {boolean} Whether the panel has unsaved changes pending. */
+	let _hasUnsavedChanges = false;
+	/** @type {HTMLElement|null} The label <span> inside _saveBtn (shows "Save" / "Unsave"). */
+	let _saveLbl = null;
 
 	// CSS class names used by this panel (wpbfe- prefix to avoid conflicts
 	// with the admin editor stylesheet loaded inside the builder iframe).
@@ -633,6 +637,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		const saveLbl = document.createElement( 'span' );
 		saveLbl.textContent = text.save || 'Save';
+		_saveLbl = saveLbl;
 
 		_saveBtn.appendChild( _statusMsg );
 		_saveBtn.appendChild( saveLbl );
@@ -1343,6 +1348,140 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	}
 
 	// -----------------------------------------------------------------------
+	// Unsaved-changes tracking + live preview
+	// -----------------------------------------------------------------------
+
+	function markDirty() {
+		if ( _hasUnsavedChanges ) { return; }
+		_hasUnsavedChanges = true;
+		if ( _saveBtn ) { _saveBtn.classList.add( 'has-unsaved-changes' ); }
+		if ( _saveLbl ) { _saveLbl.textContent = text.unsaved || 'Unsaved'; }
+	}
+
+	function markClean() {
+		_hasUnsavedChanges = false;
+		if ( _saveBtn ) { _saveBtn.classList.remove( 'has-unsaved-changes' ); }
+		if ( _saveLbl ) { _saveLbl.textContent = text.save || 'Save'; }
+	}
+
+	/**
+	 * Return the live DOM element currently open in the panel, or null when the
+	 * element cannot be found (e.g. structure mode is active).
+	 *
+	 * @returns {HTMLElement|null}
+	 */
+	function findLiveDomElement() {
+		if ( ! _elementId || ! _liveRoot || _isStructureMode ) { return null; }
+		if ( _liveRoot.getAttribute( 'data-wp-builder-id' ) === _elementId ) {
+			return _liveRoot;
+		}
+		return _liveRoot.querySelector( '[data-wp-builder-id="' + _elementId + '"]' );
+	}
+
+	/**
+	 * Apply the current panel field values directly to the live DOM element so
+	 * changes appear in real time before the user saves.
+	 */
+	function applyLivePreview() {
+		const el = findLiveDomElement();
+		if ( ! el ) { return; }
+
+		// ── Layout props ──────────────────────────────────────────────────────
+		const flexDir  = _flexDirCtrl  ? _flexDirCtrl.value  : '';
+		const flexGrow = _flexGrowCtrl ? _flexGrowCtrl.value : '';
+		const gap      = _gapCtrl      ? _gapCtrl.value      : '';
+
+		if ( flexDir === 'row' || flexDir === 'column' ) {
+			el.style.display       = 'flex';
+			el.style.flexDirection = flexDir;
+		} else {
+			el.style.display       = '';
+			el.style.flexDirection = '';
+		}
+
+		if ( flexGrow !== '' && ! isNaN( parseFloat( flexGrow ) ) ) {
+			el.style.flexGrow = flexGrow;
+		} else {
+			el.style.flexGrow = '';
+		}
+
+		el.style.gap = gap || '';
+
+		// ── HTML content ──────────────────────────────────────────────────────
+		if ( _htmlTextareaCtrl && ! _contentSection.hidden ) {
+			// Preserve nested builder child elements — they follow the content
+			// HTML in the DOM (PHP renders content first, then children).
+			// Also preserve each child's preceding <style> sibling, because
+			// PHP emits a <style> block immediately before any element that has
+			// custom CSS, and that block lives inside the parent container.
+			const builderChildren = Array.from(
+				el.querySelectorAll( ':scope > [data-wp-builder-id]' )
+			).map( ( child ) => {
+				const prev    = child.previousElementSibling;
+				const childStyleEl = ( prev && prev.tagName === 'STYLE' ) ? prev : null;
+				return { child, childStyleEl };
+			} );
+			el.innerHTML = _htmlTextareaCtrl.value;
+			builderChildren.forEach( ( { child, childStyleEl } ) => {
+				if ( childStyleEl ) { el.appendChild( childStyleEl ); }
+				el.appendChild( child );
+			} );
+		}
+
+		// ── Custom style ──────────────────────────────────────────────────────
+		const styleValue = _styleEditor
+			? _styleEditor.codemirror.getValue()
+			: ( _styleTextareaCtrl ? _styleTextareaCtrl.value : '' );
+		const selector = '[data-wp-builder-id="' + _elementId + '"]';
+
+		// The PHP renderer emits a <style> block immediately before the element.
+		let styleEl = el.previousElementSibling;
+		if ( ! styleEl || styleEl.tagName !== 'STYLE' ) {
+			styleEl = null;
+		}
+		if ( styleValue ) {
+			if ( ! styleEl ) {
+				styleEl = document.createElement( 'style' );
+				el.parentNode.insertBefore( styleEl, el );
+			}
+			styleEl.textContent = styleValue.replace( /\bself\b/g, selector );
+		} else if ( styleEl ) {
+			styleEl.remove();
+		}
+	}
+
+	/**
+	 * Attach input/change listeners to all panel controls so that any user edit
+	 * triggers markDirty() and applyLivePreview(). Called once after createPanel().
+	 */
+	function initChangeListeners() {
+		const onFieldChange = () => {
+			markDirty();
+			applyLivePreview();
+		};
+
+		const fieldControls = [
+			_nodeSelectCtrl, _idDisplayCtrl, _htmlTextareaCtrl,
+			_flexDirCtrl, _flexGrowCtrl, _gapCtrl, _styleTextareaCtrl,
+			_mainTitleDisplay, _mainStatusDisplay, _mainPageTemplateDisplay,
+		];
+		fieldControls.forEach( ( ctrl ) => {
+			if ( ! ctrl ) { return; }
+			ctrl.addEventListener( 'input',  onFieldChange );
+			ctrl.addEventListener( 'change', onFieldChange );
+		} );
+
+		// CodeMirror fires its own change event (not a DOM input event).
+		if ( _styleEditor ) {
+			_styleEditor.codemirror.on( 'change', () => {
+				if ( _styleEditorSuppressChange ) { return; }
+				markDirty();
+				applyLivePreview();
+			} );
+		}
+	}
+
+	// -----------------------------------------------------------------------
 	// Fetch element
 	// -----------------------------------------------------------------------
 
@@ -1366,6 +1505,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				if ( ! _panel ) {
 					createPanel( data.fields || [] );
 					initStyleEditor();
+					initChangeListeners();
 					positionAndShowPanel();
 				}
 				_saveBtn.disabled = false;
@@ -1438,6 +1578,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( _isStructureMode ) {
 			syncStructureSelection( element.id || '' );
 		}
+
+		// Loading fresh data from the server — no pending unsaved changes.
+		markClean();
 	}
 
 	// -----------------------------------------------------------------------
@@ -1509,6 +1652,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				if ( payload.data.post_status !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = payload.data.post_status; }
 				if ( payload.data.page_template !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = payload.data.page_template; }
 				setStatus( text.saved || 'Saved', false );
+				markClean();
 
 				// When in structure mode: update the saved snapshot and re-render the tree.
 				if ( _isStructureMode && payload.data.html ) {

@@ -155,6 +155,8 @@ trait WP_Builder_Frontend {
 					'style'         => __( 'Style', 'wp-builder' ),
 					'attributes'    => __( 'Attributes', 'wp-builder' ),
 					'save'          => __( 'Save', 'wp-builder' ),
+					'unsave'        => __( 'Unsave', 'wp-builder' ),
+					'unsaved'       => __( 'Unsaved', 'wp-builder' ),
 					'saving'        => __( 'Saving...', 'wp-builder' ),
 					'saved'         => __( 'Saved', 'wp-builder' ),
 					'close'         => __( 'Close', 'wp-builder' ),
