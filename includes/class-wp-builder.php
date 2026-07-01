@@ -16,10 +16,6 @@ final class WP_Builder {
 	use WP_Builder_Post_Types;
 	use WP_Builder_Admin;
 	use WP_Builder_Editor;
-	use WP_Builder_Editor_Assets;
-	use WP_Builder_Editor_Schema;
-	use WP_Builder_Editor_Shell;
-	use WP_Builder_Ajax;
 	use WP_Builder_Ajax_Frontend;
 	use WP_Builder_Frontend;
 	use WP_Builder_Page_Chrome;
@@ -29,8 +25,6 @@ final class WP_Builder {
 	private const META_KEY               = '_wp_builder_layout';
 	private const MENU_SLUG              = 'wp-builder';
 	private const ACTION                 = 'builder';
-	private const NONCE_ACTION           = 'wp_builder_save_layout';
-	private const TITLE_NONCE_ACTION     = 'wp_builder_update_title';
 	private const FRONTEND_GET_NONCE_ACTION      = 'wp_builder_get_element';
 	private const FRONTEND_SAVE_NONCE_ACTION     = 'wp_builder_save_element';
 	private const FRONTEND_GET_LAYOUT_NONCE_ACTION = 'wp_builder_get_layout';
@@ -45,14 +39,11 @@ final class WP_Builder {
 		add_action( 'init', array( $this, 'register_template_post_type' ) );
 		add_action( 'init', array( $this, 'register_shortcodes' ) );
 		add_action( 'init', array( $this, 'maybe_flush_rewrite_rules' ), 20 );
-		add_action( 'add_meta_boxes', array( $this, 'add_builder_meta_box' ) );
 		add_action( 'admin_menu', array( $this, 'register_builder_page' ) );
 		add_action( 'admin_menu', array( $this, 'register_template_menu' ) );
 		add_action( 'load-post-new.php', array( $this, 'maybe_redirect_new_template' ) );
 		add_action( 'load-post.php', array( $this, 'maybe_redirect_template_edit' ) );
 		add_action( 'load-post.php', array( $this, 'maybe_render_builder_request' ) );
-		add_action( 'wp_ajax_wp_builder_save_layout', array( $this, 'ajax_save_layout' ) );
-		add_action( 'wp_ajax_wp_builder_update_title', array( $this, 'ajax_update_title' ) );
 		add_action( 'wp_ajax_wp_builder_get_element', array( $this, 'ajax_get_element' ) );
 		add_action( 'wp_ajax_wp_builder_save_element', array( $this, 'ajax_save_element' ) );
 		add_action( 'wp_ajax_wp_builder_get_layout', array( $this, 'ajax_get_layout' ) );
