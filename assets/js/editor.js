@@ -559,7 +559,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 
 		header.appendChild( headerLeft );
 
-		if ( ! config.isTemplate ) {
+		if ( ! config.isBuilderMode ) {
 			const closeBtn = document.createElement( 'button' );
 			closeBtn.className = 'wpbe-close-btn';
 			closeBtn.type      = 'button';
@@ -643,7 +643,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		_saveBtn.appendChild( saveLbl );
 		_saveBtn.addEventListener( 'click', saveElement );
 
-		if ( ! config.isTemplate ) {
+		if ( ! config.isBuilderMode ) {
 			footerActions.appendChild( _editLink );
 		}
 		footerActions.appendChild( _fitBtn );
