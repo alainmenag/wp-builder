@@ -70,10 +70,12 @@ final class WP_Builder {
 	// -------------------------------------------------------------------------
 
 	private function is_builder_request(): bool {
-		$action = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$action  = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		return is_admin()
-			&& self::ACTION === $action;
+			&& self::ACTION === $action
+			&& $post_id > 0;
 	}
 
 	private function get_builder_url( int $post_id ): string {
