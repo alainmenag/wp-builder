@@ -1418,6 +1418,31 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				el.parentNode.replaceChild( newEl, el );
 				if ( _liveRoot === el ) { _liveRoot = newEl; }
 				el = newEl;
+
+				// Re-render the Attributes accordion for the new node type so the
+				// correct attribute fields appear immediately without requiring a save.
+				if ( _attrsSection ) {
+					renderNodeAttrs(
+						_attrsSection.querySelector( '.wpbfe-accordion-body-inner' ),
+						newTag,
+						{},
+						() => {},
+						CSS
+					);
+					// Wire data-attr-name and markDirty on the freshly rendered controls.
+					_attrsSection.querySelectorAll( '[id^="wp-builder-node-attr-"]' ).forEach( ( ctrl ) => {
+						ctrl.dataset.attrName = ctrl.id.replace( 'wp-builder-node-attr-', '' );
+						ctrl.addEventListener( 'input',  markDirty );
+						ctrl.addEventListener( 'change', markDirty );
+					} );
+					const hasAttrs = !! _attrsSection.querySelector( '.wpbfe-accordion-body-inner' ).childElementCount;
+					_attrsSection.hidden = ! hasAttrs;
+					// Auto-open the attrs accordion when the new node has attributes.
+					if ( hasAttrs && ! _attrsSection.classList.contains( 'is-open' ) ) {
+						const accBtn = _attrsSection.querySelector( '.wpbfe-accordion-header' );
+						if ( accBtn ) { accBtn.click(); }
+					}
+				}
 			}
 			if ( _nodeChip ) { _nodeChip.textContent = newTag.toUpperCase(); }
 			// Show or hide the content accordion for void nodes (e.g. img, input).
