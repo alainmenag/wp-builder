@@ -31,8 +31,11 @@ final class WP_Builder {
 	private const ACTION                 = 'builder';
 	private const NONCE_ACTION           = 'wp_builder_save_layout';
 	private const TITLE_NONCE_ACTION     = 'wp_builder_update_title';
-	private const FRONTEND_GET_NONCE_ACTION  = 'wp_builder_get_element';
-	private const FRONTEND_SAVE_NONCE_ACTION = 'wp_builder_save_element';
+	private const FRONTEND_GET_NONCE_ACTION      = 'wp_builder_get_element';
+	private const FRONTEND_SAVE_NONCE_ACTION     = 'wp_builder_save_element';
+	private const FRONTEND_GET_LAYOUT_NONCE_ACTION = 'wp_builder_get_layout';
+	private const FRONTEND_ADD_NONCE_ACTION      = 'wp_builder_add_element';
+	private const FRONTEND_DELETE_NONCE_ACTION   = 'wp_builder_delete_element';
 	private const TEMPLATE_CPT           = 'wp_builder_template';
 	private const REWRITE_VERSION        = '2';
 	private const REWRITE_VERSION_OPTION = 'wp_builder_rewrite_version';
@@ -52,6 +55,9 @@ final class WP_Builder {
 		add_action( 'wp_ajax_wp_builder_update_title', array( $this, 'ajax_update_title' ) );
 		add_action( 'wp_ajax_wp_builder_get_element', array( $this, 'ajax_get_element' ) );
 		add_action( 'wp_ajax_wp_builder_save_element', array( $this, 'ajax_save_element' ) );
+		add_action( 'wp_ajax_wp_builder_get_layout', array( $this, 'ajax_get_layout' ) );
+		add_action( 'wp_ajax_wp_builder_add_element', array( $this, 'ajax_add_element' ) );
+		add_action( 'wp_ajax_wp_builder_delete_element', array( $this, 'ajax_delete_element' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_nodes' ), 80 );
 		add_filter( 'post_row_actions', array( $this, 'add_row_action' ), 10, 2 );

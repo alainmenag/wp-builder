@@ -205,6 +205,7 @@ POST wp-admin/admin-ajax.php
       "attrs": {},
       "children": []
     },
+    "layout": { "version": 2, "createdAt": 1718000000, "updatedAt": 1718000000, "children": [ /* … */ ] },
     "post_title": "My Page",
     "post_status": "publish",
     "page_template": "wp-builder-canvas",
@@ -216,6 +217,7 @@ POST wp-admin/admin-ajax.php
 | Field           | Type   | Description |
 |-----------------|--------|-------------|
 | `element`       | object | The element data object (layout schema element shape). |
+| `layout`        | object | The full layout object for the post (same shape as the stored meta). |
 | `post_title`    | string | Current post title. |
 | `post_status`   | string | Current post status. |
 | `page_template` | string | Active page-layout slug, or empty string for snippet CPTs. |

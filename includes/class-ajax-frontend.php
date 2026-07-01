@@ -39,6 +39,7 @@ trait WP_Builder_Ajax_Frontend {
 
 		wp_send_json_success( array(
 			'element'       => $element,
+			'layout'        => $layout,
 			'post_title'    => get_the_title( $post_id ),
 			'post_status'   => get_post_status( $post_id ),
 			'page_template' => $this->get_frontend_page_template( $post_id ),
@@ -157,6 +158,7 @@ trait WP_Builder_Ajax_Frontend {
 		wp_send_json_success(
 			array(
 				'element'       => $sanitized,
+				'layout'        => $layout,
 				'html'          => $html,
 				'post_title'    => get_the_title( $post_id ),
 				'post_status'   => $post_obj ? $post_obj->post_status : '',
@@ -416,5 +418,162 @@ trait WP_Builder_Ajax_Frontend {
 			}
 		}
 		return $result;
+	}
+
+	/**
+	 * Recursively remove an element by ID from the children array.
+	 * Elements that do not match are kept; their own children are also processed.
+	 *
+	 * @param array  $elements Source children array.
+	 * @param string $id       Element ID to remove.
+	 * @return array
+	 */
+	private function remove_layout_element( array $elements, string $id ): array {
+		$result = array();
+		foreach ( $elements as $element ) {
+			if ( ! is_array( $element ) || ! isset( $element['id'] ) ) {
+				$result[] = $element;
+				continue;
+			}
+			if ( $element['id'] === $id ) {
+				// Drop this element (do not append to $result).
+				continue;
+			}
+			if ( ! empty( $element['children'] ) ) {
+				$element['children'] = $this->remove_layout_element( $element['children'], $id );
+			}
+			$result[] = $element;
+		}
+		return $result;
+	}
+
+	// -------------------------------------------------------------------------
+	// AJAX: get layout (structure-view)
+	// -------------------------------------------------------------------------
+
+	public function ajax_get_layout(): void {
+		check_ajax_referer( self::FRONTEND_GET_LAYOUT_NONCE_ACTION, 'nonce' );
+
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+
+		if ( ! $post_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'wp-builder' ) ), 400 );
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to edit this post.', 'wp-builder' ) ), 403 );
+		}
+
+		$layout = $this->get_layout( $post_id );
+		wp_send_json_success( array( 'layout' => $layout ) );
+	}
+
+	// -------------------------------------------------------------------------
+	// AJAX: add element (structure-view)
+	// -------------------------------------------------------------------------
+
+	public function ajax_add_element(): void {
+		check_ajax_referer( self::FRONTEND_ADD_NONCE_ACTION, 'nonce' );
+
+		$post_id   = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$parent_id = isset( $_POST['parent_id'] ) ? sanitize_key( wp_unslash( $_POST['parent_id'] ) ) : '';
+
+		if ( ! $post_id || ! $parent_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'wp-builder' ) ), 400 );
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to edit this post.', 'wp-builder' ) ), 403 );
+		}
+
+		$layout = $this->get_layout( $post_id );
+		$parent = $this->find_layout_element( $layout['children'], $parent_id );
+
+		if ( null === $parent ) {
+			wp_send_json_error( array( 'message' => __( 'Parent element not found.', 'wp-builder' ) ), 404 );
+		}
+
+		$new_element = array(
+			'id'       => $this->generate_element_id(),
+			'node'     => 'div',
+			'props'    => array( 'flexDirection' => '', 'flexGrow' => '', 'gap' => '' ),
+			'style'    => '',
+			'content'  => '',
+			'attrs'    => array(),
+			'children' => array(),
+		);
+
+		$new_element_id = $new_element['id'];
+
+		// Append the new element to the parent's children.
+		$parent['children'][] = $new_element;
+		$new_children         = $this->replace_layout_element( $layout['children'], $parent_id, $parent );
+
+		$layout['children'] = $new_children;
+		update_post_meta( $post_id, self::META_KEY, wp_slash( wp_json_encode( $layout ) ) );
+
+		// Re-render the full layout root.
+		$post_obj  = get_post( $post_id );
+		$css_class = ( $post_obj && self::TEMPLATE_CPT === $post_obj->post_type )
+			? 'wp-builder-layout wp-builder-layout--snippet'
+			: 'wp-builder-layout';
+		$html = $this->render_element( $new_children[0], $css_class, $post_id );
+
+		wp_send_json_success(
+			array(
+				'html'           => $html,
+				'new_element_id' => $new_element_id,
+				'layout'         => $layout,
+			)
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// AJAX: delete element (structure-view)
+	// -------------------------------------------------------------------------
+
+	public function ajax_delete_element(): void {
+		check_ajax_referer( self::FRONTEND_DELETE_NONCE_ACTION, 'nonce' );
+
+		$post_id    = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$element_id = isset( $_POST['element_id'] ) ? sanitize_key( wp_unslash( $_POST['element_id'] ) ) : '';
+
+		if ( ! $post_id || ! $element_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'wp-builder' ) ), 400 );
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to edit this post.', 'wp-builder' ) ), 403 );
+		}
+
+		$layout = $this->get_layout( $post_id );
+
+		// Guard: refuse deletion of the root element.
+		if ( isset( $layout['children'][0]['id'] ) && $layout['children'][0]['id'] === $element_id ) {
+			wp_send_json_error( array( 'message' => __( 'The root element cannot be deleted.', 'wp-builder' ) ), 400 );
+		}
+
+		$element = $this->find_layout_element( $layout['children'], $element_id );
+		if ( null === $element ) {
+			wp_send_json_error( array( 'message' => __( 'Element not found.', 'wp-builder' ) ), 404 );
+		}
+
+		$new_children       = $this->remove_layout_element( $layout['children'], $element_id );
+		$layout['children'] = $new_children;
+		update_post_meta( $post_id, self::META_KEY, wp_slash( wp_json_encode( $layout ) ) );
+
+		// Re-render the full layout root.
+		$post_obj  = get_post( $post_id );
+		$css_class = ( $post_obj && self::TEMPLATE_CPT === $post_obj->post_type )
+			? 'wp-builder-layout wp-builder-layout--snippet'
+			: 'wp-builder-layout';
+		$html = $this->render_element( $new_children[0], $css_class, $post_id );
+
+		wp_send_json_success(
+			array(
+				'html'   => $html,
+				'layout' => $layout,
+			)
+		);
 	}
 }

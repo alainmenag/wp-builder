@@ -142,6 +142,9 @@ trait WP_Builder_Frontend {
 				'builderBaseUrl' => admin_url( 'post.php' ),
 				'getNonce'       => wp_create_nonce( self::FRONTEND_GET_NONCE_ACTION ),
 				'saveNonce'      => wp_create_nonce( self::FRONTEND_SAVE_NONCE_ACTION ),
+				'layoutNonce'    => wp_create_nonce( self::FRONTEND_GET_LAYOUT_NONCE_ACTION ),
+				'addNonce'       => wp_create_nonce( self::FRONTEND_ADD_NONCE_ACTION ),
+				'deleteNonce'    => wp_create_nonce( self::FRONTEND_DELETE_NONCE_ACTION ),
 				'isTemplate'     => is_singular( self::TEMPLATE_CPT ),
 				'pageTemplate'   => ( $post_id && ! $is_cpt ) ? ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ) : '',
 				'pageTemplates'  => ( $post_id && ! $is_cpt ) ? $this->get_available_page_templates( $post_id ) : array(),
@@ -183,6 +186,10 @@ trait WP_Builder_Frontend {
 					'statusDraft'    => __( 'Draft', 'wp-builder' ),
 					'statusPending'  => __( 'Pending Review', 'wp-builder' ),
 					'statusPrivate'  => __( 'Private', 'wp-builder' ),
+					'structureView'  => __( 'Structure View', 'wp-builder' ),
+					'renderedView'   => __( 'Rendered View', 'wp-builder' ),
+					'addChild'       => __( 'Add child element', 'wp-builder' ),
+					'deleteElement'  => __( 'Delete element', 'wp-builder' ),
 				),
 			)
 		);

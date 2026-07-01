@@ -14,7 +14,7 @@
 import { VOID_NODES, ALLOWED_NODES, TEMPLATE_CPT } from './constants.js';
 import { normalizeNodeTag } from './layout.js';
 import { renderNodeAttrs } from './dom-helpers.js';
-import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js';
+import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE, ICON_STRUCTURE } from './constants.js';
 
 ( () => {
 	'use strict';
@@ -59,6 +59,17 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 	let _pageZoomScale = 1;
 	/** @type {HTMLElement|null} Reference to the Fit Page footer button. */
 	let _fitBtn = null;
+
+	// ── Structure-view state ──────────────────────────────────────────────────
+
+	/** @type {boolean} Whether structure mode is currently active. */
+	let _isStructureMode = false;
+	/** @type {string|null} The outerHTML snapshot of _liveRoot captured when entering structure mode; used to restore rendered view on exit. */
+	let _savedRenderedOuterHtml = null;
+	/** @type {HTMLButtonElement|null} The structure-view toggle button in the panel header. */
+	let _structureToggleBtn = null;
+	/** @type {Object|null} The last layout object received from a wp_builder_get_element response. */
+	let _cachedLayout = null;
 
 	// -----------------------------------------------------------------------
 	// localStorage persistence
@@ -482,6 +493,17 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 			scrollBuilderElementIntoView( _elementId );
 			navigateFrontend( 'element', 'identity', 'wpbfe-node' );
 		} );
+
+		// Structure-view toggle button — placed to the left of the node chip.
+		_structureToggleBtn = document.createElement( 'button' );
+		_structureToggleBtn.type = 'button';
+		_structureToggleBtn.className = 'wpbfe-structure-toggle-btn';
+		_structureToggleBtn.setAttribute( 'aria-label', text.structureView || 'Structure View' );
+		_structureToggleBtn.setAttribute( 'title',      text.structureView || 'Structure View' );
+		_structureToggleBtn.innerHTML = ICON_STRUCTURE;
+		_structureToggleBtn.addEventListener( 'click', toggleStructureMode );
+
+		headerLeft.appendChild( _structureToggleBtn );
 		_idChip = document.createElement( 'span' );
 		_idChip.className = 'wpbfe-chip wpbfe-chip--id';
 		_idChip.style.cursor = 'pointer';
@@ -837,6 +859,240 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 	}
 
 	// -----------------------------------------------------------------------
+	// Structure-view
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Toggle between rendered mode and structure (node-tree) mode.
+	 */
+	function toggleStructureMode() {
+		if ( _isStructureMode ) {
+			exitStructureMode();
+		} else {
+			enterStructureMode();
+		}
+	}
+
+	/**
+	 * Enter structure mode: render the node tree over the live _liveRoot element.
+	 * Uses the layout already cached from the last wp_builder_get_element response.
+	 * Falls back to fetching the element (which also returns the layout) if the
+	 * cache is empty.
+	 */
+	function enterStructureMode() {
+		if ( ! _liveRoot || ! _postId ) { return; }
+
+		// Snapshot the current rendered HTML so we can restore it on exit.
+		_savedRenderedOuterHtml = _liveRoot.outerHTML;
+
+		// Activate structure mode and update the toggle button immediately.
+		_isStructureMode = true;
+		if ( _structureToggleBtn ) {
+			_structureToggleBtn.classList.add( 'is-active' );
+			_structureToggleBtn.setAttribute( 'aria-label', text.renderedView || 'Rendered View' );
+			_structureToggleBtn.setAttribute( 'title',      text.renderedView || 'Rendered View' );
+		}
+
+		if ( _cachedLayout ) {
+			renderStructureTree( _cachedLayout, _liveRoot );
+		} else if ( _elementId ) {
+			// No cached layout yet — fetch the element; the response includes the
+			// layout and fetchElement will call renderStructureTree because
+			// _isStructureMode is now true.
+			fetchElement( _postId, _elementId );
+		}
+	}
+
+	/**
+	 * Exit structure mode: restore the saved rendered HTML.
+	 */
+	function exitStructureMode() {
+		if ( ! _liveRoot || ! _savedRenderedOuterHtml ) { return; }
+
+		const tpl = document.createElement( 'template' );
+		tpl.innerHTML = _savedRenderedOuterHtml.trim();
+		_liveRoot.parentNode.insertBefore( tpl.content, _liveRoot );
+		_liveRoot.remove();
+
+		const newRoot = document.querySelector( '[data-wp-builder-post-id="' + _postId + '"]' );
+		if ( newRoot ) { _liveRoot = newRoot; }
+
+		_isStructureMode = false;
+		if ( _structureToggleBtn ) {
+			_structureToggleBtn.classList.remove( 'is-active' );
+			_structureToggleBtn.setAttribute( 'aria-label', text.structureView || 'Structure View' );
+			_structureToggleBtn.setAttribute( 'title',      text.structureView || 'Structure View' );
+		}
+	}
+
+	/**
+	 * Render the layout node tree inside rootEl, replacing its inner content.
+	 *
+	 * @param {Object}      layout The layout object ({version, children}).
+	 * @param {HTMLElement} rootEl The [data-wp-builder-post-id] root element.
+	 */
+	function renderStructureTree( layout, rootEl ) {
+		rootEl.classList.add( 'wpbfe-structure-view' );
+		// Remove all child nodes.
+		while ( rootEl.firstChild ) { rootEl.removeChild( rootEl.firstChild ); }
+		if ( layout && layout.children && layout.children[ 0 ] ) {
+			rootEl.appendChild( renderStructureNode( layout.children[ 0 ], 0, true ) );
+		}
+	}
+
+	/**
+	 * Build a single structure-view node element.
+	 *
+	 * @param {Object}  element Element data object.
+	 * @param {number}  depth   Nesting depth (0 = root).
+	 * @param {boolean} isRoot  True for the top-level element (no delete button).
+	 * @returns {HTMLElement}
+	 */
+	function renderStructureNode( element, depth, isRoot ) {
+		const node   = ( element.node || 'div' ).toLowerCase();
+		const isVoid = !! VOID_NODES[ node ];
+
+		const wrapper = document.createElement( 'div' );
+		wrapper.className = 'wpbfe-sv-node' + ( element.id === _elementId ? ' is-selected' : '' );
+		wrapper.dataset.wpBuilderId = element.id;
+		wrapper.style.setProperty( '--wpbfe-sv-depth', depth );
+
+		// ── Bar ──────────────────────────────────────────────────────────────
+		const bar = document.createElement( 'div' );
+		bar.className = 'wpbfe-sv-node-bar';
+
+		const titleBtn = document.createElement( 'button' );
+		titleBtn.type = 'button';
+		titleBtn.className = 'wpbfe-sv-node-title';
+		titleBtn.textContent = node.toUpperCase() + ' \u00b7 ' + ( element.id || '' );
+		titleBtn.addEventListener( 'click', ( e ) => {
+			e.stopPropagation();
+			openPanel( _postId, element.id, _liveRoot );
+		} );
+		bar.appendChild( titleBtn );
+
+		if ( ! isVoid ) {
+			const addBtn = document.createElement( 'button' );
+			addBtn.type = 'button';
+			addBtn.className = 'wpbfe-sv-node-action';
+			addBtn.setAttribute( 'aria-label', text.addChild || 'Add child element' );
+			addBtn.setAttribute( 'title',      text.addChild || 'Add child element' );
+			addBtn.innerHTML = ICON_ADD;
+			addBtn.addEventListener( 'click', ( e ) => {
+				e.stopPropagation();
+				addChildElement( element.id );
+			} );
+			bar.appendChild( addBtn );
+		}
+
+		if ( ! isRoot ) {
+			const delBtn = document.createElement( 'button' );
+			delBtn.type = 'button';
+			delBtn.className = 'wpbfe-sv-node-action wpbfe-sv-node-action--danger';
+			delBtn.setAttribute( 'aria-label', text.deleteElement || 'Delete element' );
+			delBtn.setAttribute( 'title',      text.deleteElement || 'Delete element' );
+			delBtn.innerHTML = ICON_REMOVE;
+			delBtn.addEventListener( 'click', ( e ) => {
+				e.stopPropagation();
+				deleteLayoutElement( element.id );
+			} );
+			bar.appendChild( delBtn );
+		}
+
+		wrapper.appendChild( bar );
+
+		// ── Children ─────────────────────────────────────────────────────────
+		const children = element.children || [];
+		if ( children.length ) {
+			const body = document.createElement( 'div' );
+			body.className = 'wpbfe-sv-node-body';
+			children.forEach( ( child ) => {
+				body.appendChild( renderStructureNode( child, depth + 1, false ) );
+			} );
+			wrapper.appendChild( body );
+		}
+
+		return wrapper;
+	}
+
+	/**
+	 * Update the is-selected highlight in the structure tree for the given id.
+	 *
+	 * @param {string} id Element ID to mark as selected.
+	 */
+	function syncStructureSelection( id ) {
+		if ( ! _liveRoot ) { return; }
+		_liveRoot.querySelectorAll( '.wpbfe-sv-node' ).forEach( ( node ) => {
+			node.classList.toggle( 'is-selected', node.dataset.wpBuilderId === id );
+		} );
+	}
+
+	/**
+	 * POST wp_builder_add_element, then re-render structure tree.
+	 *
+	 * @param {string} parentId ID of the parent element to append to.
+	 */
+	function addChildElement( parentId ) {
+		const form = new window.FormData();
+		form.append( 'action',    'wp_builder_add_element' );
+		form.append( 'nonce',     config.addNonce );
+		form.append( 'post_id',   _postId );
+		form.append( 'parent_id', parentId );
+
+		window.fetch( config.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: form } )
+			.then( ( r ) => r.json() )
+			.then( ( payload ) => {
+				if ( ! payload || ! payload.success ) {
+					throw new Error( payload && payload.data && payload.data.message
+						? payload.data.message : ( text.error || 'Error' ) );
+				}
+				// Update the snapshot so exitStructureMode() restores the current DOM.
+				if ( payload.data.html ) { _savedRenderedOuterHtml = payload.data.html; }
+				if ( payload.data.layout ) { renderStructureTree( payload.data.layout, _liveRoot ); }
+				// Open the newly-created element in the panel.
+				if ( payload.data.new_element_id ) {
+					openPanel( _postId, payload.data.new_element_id, _liveRoot );
+				}
+			} )
+			.catch( ( err ) => {
+				setStatus( err.message || ( text.error || 'Error' ), true );
+			} );
+	}
+
+	/**
+	 * POST wp_builder_delete_element, then re-render structure tree.
+	 *
+	 * @param {string} elementId ID of the element to delete.
+	 */
+	function deleteLayoutElement( elementId ) {
+		const form = new window.FormData();
+		form.append( 'action',     'wp_builder_delete_element' );
+		form.append( 'nonce',      config.deleteNonce );
+		form.append( 'post_id',    _postId );
+		form.append( 'element_id', elementId );
+
+		window.fetch( config.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: form } )
+			.then( ( r ) => r.json() )
+			.then( ( payload ) => {
+				if ( ! payload || ! payload.success ) {
+					throw new Error( payload && payload.data && payload.data.message
+						? payload.data.message : ( text.error || 'Error' ) );
+				}
+				if ( payload.data.html ) { _savedRenderedOuterHtml = payload.data.html; }
+				if ( payload.data.layout ) { renderStructureTree( payload.data.layout, _liveRoot ); }
+				// Clear panel selection if the deleted element was open.
+				if ( elementId === _elementId ) {
+					_elementId = null;
+					if ( _nodeChip ) { _nodeChip.textContent = ''; }
+					if ( _idChip   ) { _idChip.textContent   = ''; }
+				}
+			} )
+			.catch( ( err ) => {
+				setStatus( err.message || ( text.error || 'Error' ), true );
+			} );
+	}
+
+	// -----------------------------------------------------------------------
 	// Dock / undock toggle
 	// -----------------------------------------------------------------------
 
@@ -970,6 +1226,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		if ( _isPageZoomed ) {
 			removePageZoom();
 		}
+		if ( _isStructureMode ) {
+			exitStructureMode();
+		}
 		_postId    = null;
 		_elementId = null;
 		_liveRoot  = null;
@@ -1011,7 +1270,12 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				}
 				_saveBtn.disabled = false;
 				setStatus( '', false );
+				if ( data.layout ) { _cachedLayout = data.layout; }
 				populatePanel( data.element, data.post_title || '', data.post_status || '', data.page_template || '' );
+				// If in structure mode, keep the tree in sync with the fetched layout.
+				if ( _isStructureMode && data.layout ) {
+					renderStructureTree( data.layout, _liveRoot );
+				}
 			} )
 			.catch( ( err ) => {
 				setStatus( err.message || ( text.error || 'Error' ), true );
@@ -1069,6 +1333,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 		if ( postTitle !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = postTitle; }
 		if ( postStatus !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = postStatus; }
 		if ( pageTemplate !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = pageTemplate; }
+
+		// Keep structure-tree selection highlight in sync.
+		if ( _isStructureMode ) {
+			syncStructureSelection( element.id || '' );
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -1116,24 +1385,38 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE } from './constants.js'
 				}
 
 				if ( payload.data.html && _liveRoot && _liveRoot.parentNode ) {
-					const tpl = document.createElement( 'template' );
-					tpl.innerHTML = payload.data.html.trim();
-					const prevEl = _liveRoot.previousElementSibling;
-					if ( prevEl && prevEl.tagName === 'STYLE' ) { prevEl.remove(); }
-					_liveRoot.parentNode.insertBefore( tpl.content, _liveRoot );
-					_liveRoot.remove();
-					const newRoot = document.querySelector( '[data-wp-builder-post-id="' + _postId + '"]' );
-					if ( newRoot ) { _liveRoot = newRoot; }
+					if ( _isStructureMode ) {
+						// In structure mode do not swap the DOM — just keep the snapshot updated.
+						_savedRenderedOuterHtml = payload.data.html;
+					} else {
+						const tpl = document.createElement( 'template' );
+						tpl.innerHTML = payload.data.html.trim();
+						const prevEl = _liveRoot.previousElementSibling;
+						if ( prevEl && prevEl.tagName === 'STYLE' ) { prevEl.remove(); }
+						_liveRoot.parentNode.insertBefore( tpl.content, _liveRoot );
+						_liveRoot.remove();
+						const newRoot = document.querySelector( '[data-wp-builder-post-id="' + _postId + '"]' );
+						if ( newRoot ) { _liveRoot = newRoot; }
+					}
 				}
 
 				if ( payload.data.element ) { populatePanel( payload.data.element ); }
 				if ( payload.data.element && payload.data.element.id ) {
 					_elementId = payload.data.element.id;
 				}
+				if ( payload.data.layout ) { _cachedLayout = payload.data.layout; }
 				if ( payload.data.post_title  !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = payload.data.post_title; }
 				if ( payload.data.post_status !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = payload.data.post_status; }
 				if ( payload.data.page_template !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = payload.data.page_template; }
 				setStatus( text.saved || 'Saved', false );
+
+				// When in structure mode: update the saved snapshot and re-render the tree.
+				if ( _isStructureMode && payload.data.html ) {
+					_savedRenderedOuterHtml = payload.data.html;
+					if ( payload.data.layout ) {
+						renderStructureTree( payload.data.layout, _liveRoot );
+					}
+				}
 			} )
 			.catch( ( err ) => {
 				setStatus( err.message || ( text.error || 'Save failed' ), true );
