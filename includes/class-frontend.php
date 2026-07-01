@@ -145,7 +145,7 @@ trait WP_Builder_Frontend {
 				'layoutNonce'    => wp_create_nonce( self::GET_LAYOUT_NONCE_ACTION ),
 				'addNonce'       => wp_create_nonce( self::ADD_NONCE_ACTION ),
 				'deleteNonce'    => wp_create_nonce( self::DELETE_NONCE_ACTION ),
-				'isTemplate'     => is_singular( self::TEMPLATE_CPT ),
+				'isTemplate'     => $is_cpt,
 				'pageTemplate'   => ( $post_id && ! $is_cpt ) ? ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ) : '',
 				'pageTemplates'  => ( $post_id && ! $is_cpt ) ? $this->get_available_page_templates( $post_id ) : array(),
 				'i18n'           => array(
