@@ -366,7 +366,11 @@ export function createPanel( schema ) {
 	state.structureToggleBtn.innerHTML = ICON_STRUCTURE;
 	state.structureToggleBtn.addEventListener( 'click', toggleStructureMode );
 
-	headerLeft.appendChild( state.structureToggleBtn );
+	const headerLeftMain = document.createElement( 'div' );
+	headerLeftMain.className = 'wpbe-panel-header-left-main';
+	headerLeftMain.appendChild( state.structureToggleBtn );
+	headerLeftMain.appendChild( state.nodeChip );
+	headerLeft.appendChild( headerLeftMain );
 
 	state.idChip           = document.createElement( 'span' );
 	state.idChip.className = 'wpbe-chip wpbe-chip--id';
@@ -374,8 +378,11 @@ export function createPanel( schema ) {
 	state.idChip.addEventListener( 'click', () => {
 		if ( state.cb_navigateEditor ) { state.cb_navigateEditor( 'element', 'identity', 'wpbe-node-id' ); }
 	} );
-	headerLeft.appendChild( state.nodeChip );
-	headerLeft.appendChild( state.idChip );
+
+	const headerLeftId = document.createElement( 'div' );
+	headerLeftId.className = 'wpbe-panel-header-left-id';
+	headerLeftId.appendChild( state.idChip );
+	headerLeft.appendChild( headerLeftId );
 
 	header.appendChild( headerLeft );
 
