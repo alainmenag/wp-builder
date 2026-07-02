@@ -167,7 +167,8 @@ export function renderStructureNode( element, depth, isRoot ) {
 
 	const svIdChip           = document.createElement( 'span' );
 	svIdChip.className       = 'wpbe-chip wpbe-chip--id';
-	svIdChip.textContent     = element.id || '';
+	svIdChip.textContent     = element.title || element.id || '';
+	if ( element.title ) { svIdChip.title = element.id || ''; }
 
 	titleBtn.appendChild( svNodeChip );
 	titleBtn.appendChild( svIdChip );

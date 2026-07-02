@@ -99,6 +99,7 @@ export function saveElement() {
 	form.append( 'post_id',    state.postId );
 	form.append( 'element_id', state.elementId );
 	form.append( 'new_element_id', state.idDisplayCtrl.value );
+	form.append( 'element_title',  state.elementTitleCtrl ? state.elementTitleCtrl.value : '' );
 	form.append( 'title',         state.mainTitleDisplay  ? state.mainTitleDisplay.value  : '' );
 	form.append( 'post_status',   state.mainStatusDisplay ? state.mainStatusDisplay.value : '' );
 	form.append( 'page_template', state.mainPageTemplateDisplay ? state.mainPageTemplateDisplay.value : '' );

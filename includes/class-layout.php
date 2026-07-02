@@ -39,6 +39,7 @@ trait WP_Builder_Layout {
 				array(
 					'id'        => $this->generate_element_id(),
 					'node'      => 'div',
+					'title'     => '',
 					'props'     => array( 'flexDirection' => '', 'flexGrow' => '', 'gap' => '' ),
 					'style'     => '',
 					'content'   => '',
@@ -220,6 +221,7 @@ trait WP_Builder_Layout {
 		return array(
 			'id'       => isset( $raw['id'] ) && is_string( $raw['id'] ) && '' !== $raw['id'] ? sanitize_key( $raw['id'] ) : $this->generate_element_id(),
 			'node'     => $node,
+			'title'    => sanitize_text_field( isset( $raw['title'] ) ? (string) $raw['title'] : '' ),
 			'props'    => $this->sanitize_container_props( $props ),
 			'style'    => $this->sanitize_custom_style( $custom_style ),
 			'content'  => isset( $raw['content'] ) ? wp_kses_post( (string) $raw['content'] ) : '',

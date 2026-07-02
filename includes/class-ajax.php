@@ -106,6 +106,7 @@ trait WP_Builder_Ajax {
 		$updated = array(
 			'id'       => $new_element_id,
 			'node'     => isset( $_POST['node'] ) ? sanitize_key( wp_unslash( $_POST['node'] ) ) : $element['node'],
+			'title'    => isset( $_POST['element_title'] ) ? sanitize_text_field( wp_unslash( $_POST['element_title'] ) ) : ( isset( $element['title'] ) ? (string) $element['title'] : '' ),
 			'props'    => $raw_props,
 			'style'    => isset( $_POST['style'] ) ? wp_unslash( (string) $_POST['style'] ) : '',
 			'content'  => isset( $_POST['content'] ) ? wp_unslash( (string) $_POST['content'] ) : '',
@@ -375,6 +376,12 @@ trait WP_Builder_Ajax {
 						'label'  => __( 'Identity', 'wp-builder' ),
 						'open'   => false,
 						'fields' => array(
+							array(
+								'type'        => 'text',
+								'id'          => 'wpbe-element-title',
+								'label'       => __( 'Title', 'wp-builder' ),
+								'placeholder' => __( 'e.g. Hero Section', 'wp-builder' ),
+							),
 							array(
 								'type'    => 'select',
 								'id'      => 'wpbe-node',

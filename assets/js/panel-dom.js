@@ -89,6 +89,7 @@ function createFieldGroup( labelText, controlFactory, fieldId ) {
  * (e.g. the id-field sanitise-on-blur listener).
  */
 const FIELD_REFS = {
+	'wpbe-element-title':  ( ctrl ) => { state.elementTitleCtrl            = ctrl; },
 	'wpbe-node':           ( ctrl ) => { state.nodeSelectCtrl           = ctrl; },
 	'wpbe-node-id':        ( ctrl ) => {
 		state.idDisplayCtrl = ctrl;
@@ -376,7 +377,7 @@ export function createPanel( schema ) {
 	state.idChip.className = 'wpbe-chip wpbe-chip--id';
 	state.idChip.style.cursor = 'pointer';
 	state.idChip.addEventListener( 'click', () => {
-		if ( state.cb_navigateEditor ) { state.cb_navigateEditor( 'element', 'identity', 'wpbe-node-id' ); }
+		if ( state.cb_navigateEditor ) { state.cb_navigateEditor( 'element', 'identity', 'wpbe-element-title' ); }
 	} );
 
 	const headerRightSide = document.createElement( 'div' );
