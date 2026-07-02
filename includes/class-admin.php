@@ -143,6 +143,8 @@ trait WP_Builder_Admin {
 		add_filter( 'views_edit-' . self::TEMPLATE_CPT, array( $this, 'get_builder_list_views' ) );
 		add_filter( 'manage_' . self::TEMPLATE_CPT . '_posts_columns', array( $this, 'add_builder_list_type_column' ) );
 		add_action( 'manage_' . self::TEMPLATE_CPT . '_posts_custom_column', array( $this, 'render_builder_list_type_column' ), 10, 2 );
+		add_action( 'manage_page_posts_custom_column', array( $this, 'render_builder_list_type_column' ), 10, 2 );
+		add_action( 'manage_post_posts_custom_column', array( $this, 'render_builder_list_type_column' ), 10, 2 );
 		// Title clicks open the builder; remove the now-redundant "Builder" row action.
 		add_action( 'admin_head', array( $this, 'print_builder_list_title_script' ) );
 		add_filter( 'post_row_actions', array( $this, 'remove_builder_row_action_on_list' ), 20, 2 );
