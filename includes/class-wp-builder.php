@@ -30,6 +30,7 @@ final class WP_Builder {
 	private const GET_LAYOUT_NONCE_ACTION = 'wp_builder_get_layout';
 	private const ADD_NONCE_ACTION      = 'wp_builder_add_element';
 	private const DELETE_NONCE_ACTION   = 'wp_builder_delete_element';
+	private const RESET_NONCE_ACTION    = 'wp_builder_reset';
 	private const TEMPLATE_CPT           = 'wp_builder_template';
 	private const REWRITE_VERSION        = '2';
 	private const REWRITE_VERSION_OPTION = 'wp_builder_rewrite_version';
@@ -50,6 +51,7 @@ final class WP_Builder {
 		add_action( 'wp_ajax_wp_builder_get_layout', array( $this, 'ajax_get_layout' ) );
 		add_action( 'wp_ajax_wp_builder_add_element', array( $this, 'ajax_add_element' ) );
 		add_action( 'wp_ajax_wp_builder_delete_element', array( $this, 'ajax_delete_element' ) );
+		add_action( 'wp_ajax_wp_builder_reset', array( $this, 'ajax_reset_builder' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_nodes' ), 80 );
 		add_filter( 'post_row_actions', array( $this, 'add_row_action' ), 10, 2 );

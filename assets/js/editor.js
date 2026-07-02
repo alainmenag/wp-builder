@@ -356,6 +356,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		'wpbe-post-title':     ( ctrl ) => { _mainTitleDisplay         = ctrl; },
 		'wpbe-post-status':    ( ctrl ) => { _mainStatusDisplay        = ctrl; },
 		'wpbe-page-template':  ( ctrl ) => { _mainPageTemplateDisplay  = ctrl; },
+		'wpbe-reset-builder':  ( ctrl ) => { ctrl.addEventListener( 'click', resetBuilder ); },
 	};
 
 	/**
@@ -446,6 +447,15 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				}
 				group.appendChild( a );
 				return { group, control: a };
+			}
+			case 'button': {
+				const btn       = document.createElement( 'button' );
+				btn.type        = 'button';
+				btn.className   = 'wpbe-button-secondary';
+				btn.textContent = field.label || '';
+				applyAttrs( btn, field.attrs );
+				controlEl = btn;
+				break;
 			}
 			default:
 				return null;
@@ -1809,6 +1819,37 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			} )
 			.finally( () => {
 				_saveBtn.disabled = false;
+			} );
+	}
+
+	// -----------------------------------------------------------------------
+	// Reset builder (clears layout data and page template, redirects to edit)
+	// -----------------------------------------------------------------------
+
+	function resetBuilder() {
+		if ( ! _postId ) { return; }
+		const confirmMsg = text.resetBuilderConfirm ||
+			'This will permanently clear all builder data and reset the page template to default. This action cannot be undone. Continue?';
+		if ( ! window.confirm( confirmMsg ) ) { return; }
+
+		setStatus( text.resetting || 'Resetting\u2026', false );
+
+		const form = new window.FormData();
+		form.append( 'action',  'wp_builder_reset' );
+		form.append( 'nonce',   config.resetNonce );
+		form.append( 'post_id', _postId );
+
+		window.fetch( config.ajaxUrl, { method: 'POST', body: form } )
+			.then( ( r ) => r.json() )
+			.then( ( payload ) => {
+				if ( ! payload || ! payload.success ) {
+					throw new Error( payload && payload.data && payload.data.message
+						? payload.data.message : ( text.error || 'Error' ) );
+				}
+				window.location.href = payload.data.editUrl;
+			} )
+			.catch( ( err ) => {
+				setStatus( err.message || ( text.error || 'Error' ), true );
 			} );
 	}
 

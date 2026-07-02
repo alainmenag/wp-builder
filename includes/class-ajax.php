@@ -281,14 +281,20 @@ trait WP_Builder_Ajax {
 						'slug'   => 'data',
 						'label'  => __( 'Data', 'wp-builder' ),
 						'open'   => false,
-						'fields' => array(
+						'fields' => array_filter( array(
 							array(
 								'type'  => 'link',
 								'label' => __( 'Export', 'wp-builder' ),
 								'href'  => $export_url,
 								'attrs' => array( 'target' => '_blank', 'rel' => 'noreferrer', 'style' => 'width: 100%;' ),
 							),
-						),
+							$is_template ? null : array(
+								'type'  => 'button',
+								'id'    => 'wpbe-reset-builder',
+								'label' => __( 'Reset', 'wp-builder' ),
+								'attrs' => array( 'style' => 'width: 100%;' ),
+							),
+						) ),
 					),
 				),
 			),
@@ -472,6 +478,42 @@ trait WP_Builder_Ajax {
 			$result[] = $element;
 		}
 		return $result;
+	}
+
+	// -------------------------------------------------------------------------
+	// AJAX: reset builder (clears layout data and page template)
+	// -------------------------------------------------------------------------
+
+	public function ajax_reset_builder(): void {
+		check_ajax_referer( self::RESET_NONCE_ACTION, 'nonce' );
+
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+
+		if ( ! $post_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'wp-builder' ) ), 400 );
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to edit this post.', 'wp-builder' ) ), 403 );
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post || self::TEMPLATE_CPT === $post->post_type ) {
+			wp_send_json_error( array( 'message' => __( 'Reset is not available for snippets.', 'wp-builder' ) ), 400 );
+		}
+
+		delete_post_meta( $post_id, self::META_KEY );
+		delete_post_meta( $post_id, '_wp_page_template' );
+
+		$edit_url = add_query_arg(
+			array(
+				'post'   => $post_id,
+				'action' => 'edit',
+			),
+			admin_url( 'post.php' )
+		);
+
+		wp_send_json_success( array( 'editUrl' => esc_url_raw( $edit_url ) ) );
 	}
 
 	// -------------------------------------------------------------------------

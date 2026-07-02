@@ -145,6 +145,7 @@ trait WP_Builder_Frontend {
 				'layoutNonce'    => wp_create_nonce( self::GET_LAYOUT_NONCE_ACTION ),
 				'addNonce'       => wp_create_nonce( self::ADD_NONCE_ACTION ),
 				'deleteNonce'    => wp_create_nonce( self::DELETE_NONCE_ACTION ),
+				'resetNonce'     => wp_create_nonce( self::RESET_NONCE_ACTION ),
 				'isTemplate'     => $is_cpt,
 				'isBuilderMode'  => $is_builder_mode,
 				'pageTemplate'   => ( $post_id && ! $is_cpt ) ? ( get_post_meta( $post_id, '_wp_page_template', true ) ?: 'wp-builder-canvas' ) : '',
@@ -193,6 +194,9 @@ trait WP_Builder_Frontend {
 					'renderedView'   => __( 'Rendered View', 'wp-builder' ),
 					'addChild'       => __( 'Add child element', 'wp-builder' ),
 					'deleteElement'  => __( 'Delete element', 'wp-builder' ),
+					'resetBuilder'        => __( 'Reset', 'wp-builder' ),
+					'resetBuilderConfirm' => __( 'This will permanently clear all builder data and reset the page template to default. This action cannot be undone. Continue?', 'wp-builder' ),
+					'resetting'           => __( 'Resetting…', 'wp-builder' ),
 				),
 			)
 		);
