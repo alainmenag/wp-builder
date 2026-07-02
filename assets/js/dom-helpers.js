@@ -69,6 +69,12 @@ export function el( tag, descriptor ) {
 		}
 	}
 
+	if ( on ) {
+		for ( const [ eventName, handler ] of Object.entries( on ) ) {
+			element.addEventListener( eventName, handler );
+		}
+	}
+
 	if ( html !== undefined ) { element.innerHTML   = html; }
 	if ( text !== undefined ) { element.textContent = text; }
 
