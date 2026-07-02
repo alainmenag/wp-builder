@@ -199,6 +199,15 @@ trait WP_Builder_Frontend {
 					'resetting'           => __( 'Resetting…', 'wp-builder' ),
 				),
 				'hookLocations'  => array_values( array_filter( array_keys( $this->get_hook_locations() ) ) ),
+				'icons'          => array(
+					'add'       => file_get_contents( WP_BUILDER_DIR . 'assets/icons/add.svg' ),
+					'remove'    => file_get_contents( WP_BUILDER_DIR . 'assets/icons/remove.svg' ),
+					'fit'       => file_get_contents( WP_BUILDER_DIR . 'assets/icons/fit.svg' ),
+					'isolate'   => file_get_contents( WP_BUILDER_DIR . 'assets/icons/isolate.svg' ),
+					'element'   => file_get_contents( WP_BUILDER_DIR . 'assets/icons/element.svg' ),
+					'post'      => file_get_contents( WP_BUILDER_DIR . 'assets/icons/post.svg' ),
+					'structure' => file_get_contents( WP_BUILDER_DIR . 'assets/icons/structure.svg' ),
+				),
 			)
 		);
 	}
