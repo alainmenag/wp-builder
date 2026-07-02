@@ -43,6 +43,10 @@ trait WP_Builder_Ajax {
 			'post_title'    => get_the_title( $post_id ),
 			'post_status'   => get_post_status( $post_id ),
 			'page_template' => $this->get_page_template( $post_id ),
+			'hook_name'     => (string) get_post_meta( $post_id, self::HOOK_NAME_META_KEY, true ),
+			'hook_priority' => get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true ) !== ''
+				? (int) get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true )
+				: 10,
 			'fields'        => $this->get_panel_schema( $post_id ),
 		) );
 	}
@@ -147,6 +151,24 @@ trait WP_Builder_Ajax {
 			update_post_meta( $post_id, '_wp_page_template', $page_template_value );
 		}
 
+		// Update hook name and priority if this is a snippet CPT.
+		if ( $is_cpt ) {
+			$allowed_hooks = $this->get_hook_locations();
+			$new_hook_name = isset( $_POST['hook_name'] ) ? sanitize_key( wp_unslash( $_POST['hook_name'] ) ) : '';
+
+			// Only accept hook names that appear in the allowed list.
+			if ( '' === $new_hook_name || array_key_exists( $new_hook_name, $allowed_hooks ) ) {
+				if ( '' === $new_hook_name ) {
+					delete_post_meta( $post_id, self::HOOK_NAME_META_KEY );
+					delete_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY );
+				} else {
+					$new_hook_priority = isset( $_POST['hook_priority'] ) ? absint( $_POST['hook_priority'] ) : 10;
+					update_post_meta( $post_id, self::HOOK_NAME_META_KEY, $new_hook_name );
+					update_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, $new_hook_priority );
+				}
+			}
+		}
+
 		// Re-render the full layout root with the post ID so the DOM swap
 		// preserves the data-wp-builder-post-id attribute and any nested styles.
 		$post_obj  = $post instanceof WP_Post ? $post : get_post( $post_id );
@@ -163,6 +185,10 @@ trait WP_Builder_Ajax {
 				'post_title'    => get_the_title( $post_id ),
 				'post_status'   => $post_obj ? $post_obj->post_status : '',
 				'page_template' => $this->get_page_template( $post_id ),
+				'hook_name'     => (string) get_post_meta( $post_id, self::HOOK_NAME_META_KEY, true ),
+				'hook_priority' => get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true ) !== ''
+					? (int) get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true )
+					: 10,
 			)
 		);
 	}
@@ -243,6 +269,87 @@ trait WP_Builder_Ajax {
 			);
 		}
 
+		// Hooks accordion — snippet-only.
+		$main_accordions = array(
+			array(
+				'slug'   => 'settings',
+				'label'  => __( 'Settings', 'wp-builder' ),
+				'open'   => true,
+				'fields' => $settings_fields,
+			),
+			array(
+				'slug'   => 'shortcode',
+				'label'  => __( 'Shortcode', 'wp-builder' ),
+				'open'   => false,
+				'fields' => array(
+					array(
+						'type'    => 'pre',
+						'label'   => __( 'Shortcode', 'wp-builder' ),
+						'content' => $shortcode,
+					),
+				),
+			),
+		);
+
+		if ( $is_template ) {
+			$hook_locations     = $this->get_hook_locations();
+			$saved_hook_name    = (string) get_post_meta( $post_id, self::HOOK_NAME_META_KEY, true );
+			$saved_hook_priority = (int) get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true );
+			if ( 0 === $saved_hook_priority && '' === (string) get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true ) ) {
+				$saved_hook_priority = 10;
+			}
+
+			$hook_options = array();
+			foreach ( $hook_locations as $slug => $label ) {
+				$hook_options[] = array(
+					'value'    => $slug,
+					'label'    => $label,
+					'selected' => $saved_hook_name === $slug,
+				);
+			}
+
+			$main_accordions[] = array(
+				'slug'   => 'hooks',
+				'label'  => __( 'Hooks', 'wp-builder' ),
+				'open'   => false,
+				'fields' => array(
+					array(
+						'type'    => 'select',
+						'id'      => 'wpbe-hook-location',
+						'label'   => __( 'Hook Location', 'wp-builder' ),
+						'options' => $hook_options,
+					),
+					array(
+						'type'        => 'number',
+						'id'          => 'wpbe-hook-priority',
+						'label'       => __( 'Priority', 'wp-builder' ),
+						'placeholder' => '10',
+						'attrs'       => array( 'min' => '0', 'step' => '1' ),
+					),
+				),
+			);
+		}
+
+		$main_accordions[] = array(
+			'slug'   => 'data',
+			'label'  => __( 'Data', 'wp-builder' ),
+			'open'   => false,
+			'fields' => array_filter( array(
+				array(
+					'type'  => 'link',
+					'label' => __( 'Export', 'wp-builder' ),
+					'href'  => $export_url,
+					'attrs' => array( 'target' => '_blank', 'rel' => 'noreferrer', 'style' => 'width: 100%;' ),
+				),
+				$is_template ? null : array(
+					'type'  => 'button',
+					'id'    => 'wpbe-reset-builder',
+					'label' => __( 'Reset', 'wp-builder' ),
+					'attrs' => array( 'style' => 'width: 100%;' ),
+				),
+			) ),
+		);
+
 		// Node tag options (same set as the full editor and constants.js).
 		$node_tags    = array(
 			'div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav',
@@ -258,45 +365,7 @@ trait WP_Builder_Ajax {
 			array(
 				'key'        => 'main',
 				'label'      => __( 'Main', 'wp-builder' ),
-				'accordions' => array(
-					array(
-						'slug'   => 'settings',
-						'label'  => __( 'Settings', 'wp-builder' ),
-						'open'   => true,
-						'fields' => $settings_fields,
-					),
-					array(
-						'slug'   => 'shortcode',
-						'label'  => __( 'Shortcode', 'wp-builder' ),
-						'open'   => false,
-						'fields' => array(
-							array(
-								'type'    => 'pre',
-								'label'   => __( 'Shortcode', 'wp-builder' ),
-								'content' => $shortcode,
-							),
-						),
-					),
-					array(
-						'slug'   => 'data',
-						'label'  => __( 'Data', 'wp-builder' ),
-						'open'   => false,
-						'fields' => array_filter( array(
-							array(
-								'type'  => 'link',
-								'label' => __( 'Export', 'wp-builder' ),
-								'href'  => $export_url,
-								'attrs' => array( 'target' => '_blank', 'rel' => 'noreferrer', 'style' => 'width: 100%;' ),
-							),
-							$is_template ? null : array(
-								'type'  => 'button',
-								'id'    => 'wpbe-reset-builder',
-								'label' => __( 'Reset', 'wp-builder' ),
-								'attrs' => array( 'style' => 'width: 100%;' ),
-							),
-						) ),
-					),
-				),
+				'accordions' => $main_accordions,
 			),
 			array(
 				'key'        => 'element',

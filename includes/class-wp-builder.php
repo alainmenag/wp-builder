@@ -31,6 +31,8 @@ final class WP_Builder {
 	private const ADD_NONCE_ACTION      = 'wp_builder_add_element';
 	private const DELETE_NONCE_ACTION   = 'wp_builder_delete_element';
 	private const RESET_NONCE_ACTION    = 'wp_builder_reset';
+	private const HOOK_NAME_META_KEY    = '_wp_builder_hook_name';
+	private const HOOK_PRIORITY_META_KEY = '_wp_builder_hook_priority';
 	private const TEMPLATE_CPT           = 'wp_builder_template';
 	private const REWRITE_VERSION        = '2';
 	private const REWRITE_VERSION_OPTION = 'wp_builder_rewrite_version';
@@ -52,6 +54,7 @@ final class WP_Builder {
 		add_action( 'wp_ajax_wp_builder_add_element', array( $this, 'ajax_add_element' ) );
 		add_action( 'wp_ajax_wp_builder_delete_element', array( $this, 'ajax_delete_element' ) );
 		add_action( 'wp_ajax_wp_builder_reset', array( $this, 'ajax_reset_builder' ) );
+		add_action( 'wp', array( $this, 'inject_snippet_hooks' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_nodes' ), 80 );
 		add_filter( 'post_row_actions', array( $this, 'add_row_action' ), 10, 2 );
@@ -113,5 +116,30 @@ final class WP_Builder {
 			__( 'Builder: %s', 'wp-builder' ),
 			get_the_title( $post_id )
 		);
+	}
+
+	/**
+	 * Return an ordered associative array of hook slug => display label for the
+	 * hook-location selector. An empty-string key means "no hook assigned".
+	 *
+	 * Theme and plugin authors can extend the list via the
+	 * `wp_builder_hook_locations` filter.
+	 *
+	 * @return array<string, string>
+	 */
+	private function get_hook_locations(): array {
+		$locations = array(
+			''              => __( '— None —', 'wp-builder' ),
+			'wp_head'       => __( 'Head (<head>)', 'wp-builder' ),
+			'wp_body_open'  => __( 'After <body> Open', 'wp-builder' ),
+			'wp_footer'     => __( 'Footer (before </body>)', 'wp-builder' ),
+		);
+
+		/**
+		 * Filter the list of hook locations available for snippet injection.
+		 *
+		 * @param array<string, string> $locations Associative array of hook_slug => display_label.
+		 */
+		return (array) apply_filters( 'wp_builder_hook_locations', $locations );
 	}
 }

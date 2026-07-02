@@ -146,6 +146,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	let _mainStatusDisplay = null;
 	/** @type {HTMLSelectElement|null} Page layout select in Main tab. */
 	let _mainPageTemplateDisplay = null;
+	/** @type {HTMLSelectElement|null} Hook location select in Main tab (snippet only). */
+	let _hookLocationCtrl        = null;
+	/** @type {HTMLInputElement|null} Hook priority input in Main tab (snippet only). */
+	let _hookPriorityCtrl        = null;
 	/** @type {HTMLButtonElement[]} The two tab toggle buttons. */
 	let _tabBtns           = [];
 
@@ -356,6 +360,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		'wpbe-post-title':     ( ctrl ) => { _mainTitleDisplay         = ctrl; },
 		'wpbe-post-status':    ( ctrl ) => { _mainStatusDisplay        = ctrl; },
 		'wpbe-page-template':  ( ctrl ) => { _mainPageTemplateDisplay  = ctrl; },
+		'wpbe-hook-location':  ( ctrl ) => { _hookLocationCtrl         = ctrl; },
+		'wpbe-hook-priority':  ( ctrl ) => { _hookPriorityCtrl         = ctrl; },
 		'wpbe-reset-builder':  ( ctrl ) => { ctrl.addEventListener( 'click', resetBuilder ); },
 	};
 
@@ -1616,6 +1622,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			_nodeSelectCtrl, _idDisplayCtrl, _htmlTextareaCtrl,
 			_flexDirCtrl, _flexGrowCtrl, _gapCtrl, _styleTextareaCtrl,
 			_mainTitleDisplay, _mainStatusDisplay, _mainPageTemplateDisplay,
+			_hookLocationCtrl, _hookPriorityCtrl,
 		];
 		fieldControls.forEach( ( ctrl ) => {
 			if ( ! ctrl ) { return; }
@@ -1663,7 +1670,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				_saveBtn.disabled = false;
 				setStatus( '', false );
 				if ( data.layout ) { _cachedLayout = data.layout; }
-				populatePanel( data.element, data.post_title || '', data.post_status || '', data.page_template || '' );
+				populatePanel( data.element, data.post_title || '', data.post_status || '', data.page_template || '', data.hook_name || '', data.hook_priority !== undefined ? data.hook_priority : 10 );
 				// If in structure mode, keep the tree in sync with the fetched layout.
 				if ( _isStructureMode && data.layout ) {
 					renderStructureTree( data.layout, _liveRoot );
@@ -1678,7 +1685,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	// Populate panel fields from element data
 	// -----------------------------------------------------------------------
 
-	function populatePanel( element, postTitle, postStatus, pageTemplate ) {
+	function populatePanel( element, postTitle, postStatus, pageTemplate, hookName, hookPriority ) {
 		const node   = normalizeNodeTag( element.node );
 		const isVoid = !! VOID_NODES[ node ];
 		const props  = element.props || {};
@@ -1725,6 +1732,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( postTitle !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = postTitle; }
 		if ( postStatus !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = postStatus; }
 		if ( pageTemplate !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = pageTemplate; }
+		if ( hookName !== undefined && _hookLocationCtrl ) { _hookLocationCtrl.value = hookName; }
+		if ( hookPriority !== undefined && _hookPriorityCtrl ) { _hookPriorityCtrl.value = String( hookPriority ); }
 
 		// Keep structure-tree selection highlight in sync.
 		if ( _isStructureMode ) {
@@ -1761,6 +1770,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		form.append( 'title',         _mainTitleDisplay  ? _mainTitleDisplay.value  : '' );
 		form.append( 'post_status',   _mainStatusDisplay ? _mainStatusDisplay.value : '' );
 		form.append( 'page_template', _mainPageTemplateDisplay ? _mainPageTemplateDisplay.value : '' );
+		if ( _hookLocationCtrl ) {
+			form.append( 'hook_name',     _hookLocationCtrl.value );
+			form.append( 'hook_priority', _hookPriorityCtrl ? _hookPriorityCtrl.value : '10' );
+		}
 		form.append( 'node',       _nodeSelectCtrl.value );
 		form.append( 'props',      JSON.stringify( {
 			flexDirection: _flexDirCtrl.value,
@@ -1803,6 +1816,8 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				if ( payload.data.post_title  !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = payload.data.post_title; }
 				if ( payload.data.post_status !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = payload.data.post_status; }
 				if ( payload.data.page_template !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = payload.data.page_template; }
+				if ( payload.data.hook_name !== undefined && _hookLocationCtrl ) { _hookLocationCtrl.value = payload.data.hook_name; }
+				if ( payload.data.hook_priority !== undefined && _hookPriorityCtrl ) { _hookPriorityCtrl.value = String( payload.data.hook_priority ); }
 				setStatus( text.saved || 'Saved', false );
 				markClean();
 

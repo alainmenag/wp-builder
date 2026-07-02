@@ -26,6 +26,35 @@ trait WP_Builder_Post_Types {
 				)
 			);
 		}
+
+		// Hook name and priority are only relevant for snippet CPTs.
+		$hook_auth = static function ( $allowed, string $meta_key, int $post_id ): bool {
+			return current_user_can( 'edit_post', $post_id );
+		};
+
+		register_post_meta(
+			self::TEMPLATE_CPT,
+			self::HOOK_NAME_META_KEY,
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => false,
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => $hook_auth,
+			)
+		);
+
+		register_post_meta(
+			self::TEMPLATE_CPT,
+			self::HOOK_PRIORITY_META_KEY,
+			array(
+				'type'              => 'integer',
+				'single'            => true,
+				'show_in_rest'      => false,
+				'sanitize_callback' => 'absint',
+				'auth_callback'     => $hook_auth,
+			)
+		);
 	}
 
 	public function register_template_post_type(): void {

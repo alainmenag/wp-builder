@@ -206,4 +206,63 @@ trait WP_Builder_Frontend {
 		$layout = $this->get_layout( $post_id );
 		return isset( $layout['children'][0] ) && is_array( $layout['children'][0] ) ? $layout['children'][0] : array();
 	}
+
+	/**
+	 * Register each published snippet that has a hook location configured as a
+	 * callback on the appropriate WordPress action hook.
+	 *
+	 * Hooked on `wp` (priority 1) so all theme action hooks are still available
+	 * when the callbacks actually fire. Runs only once per request via a static flag.
+	 */
+	public function inject_snippet_hooks(): void {
+		static $ran = false;
+		if ( $ran ) {
+			return;
+		}
+		$ran = true;
+
+		$snippets = get_posts( array(
+			'post_type'      => self::TEMPLATE_CPT,
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				array(
+					'key'     => self::HOOK_NAME_META_KEY,
+					'value'   => '',
+					'compare' => '!=',
+				),
+			),
+		) );
+
+		if ( empty( $snippets ) ) {
+			return;
+		}
+
+		foreach ( $snippets as $snippet_id ) {
+			$hook_name     = (string) get_post_meta( $snippet_id, self::HOOK_NAME_META_KEY, true );
+			$hook_priority = get_post_meta( $snippet_id, self::HOOK_PRIORITY_META_KEY, true );
+			$hook_priority = ( '' !== (string) $hook_priority ) ? (int) $hook_priority : 10;
+
+			if ( ! $hook_name || ! $this->has_builder_layout( $snippet_id ) ) {
+				continue;
+			}
+
+			add_action(
+				$hook_name,
+				function () use ( $snippet_id ) {
+					$this->enqueue_frontend_style();
+					$this->enqueue_editor_assets( $snippet_id );
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post().
+					echo $this->render_element(
+						$this->get_layout_root_element( $snippet_id ),
+						'wp-builder-layout wp-builder-layout--snippet',
+						$snippet_id
+					);
+				},
+				$hook_priority
+			);
+		}
+	}
 }
