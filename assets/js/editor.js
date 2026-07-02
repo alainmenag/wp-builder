@@ -146,10 +146,10 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	let _mainStatusDisplay = null;
 	/** @type {HTMLSelectElement|null} Page layout select in Main tab. */
 	let _mainPageTemplateDisplay = null;
-	/** @type {HTMLSelectElement|null} Hook location select in Main tab (snippet only). */
-	let _hookLocationCtrl        = null;
-	/** @type {HTMLInputElement|null} Hook priority input in Main tab (snippet only). */
-	let _hookPriorityCtrl        = null;
+	/** @type {HTMLTextAreaElement|null} Hooks textarea in Main tab (snippet only). */
+	let _hooksTextareaCtrl       = null;
+	/** @type {Object|null} CodeMirror wrapper for the hooks textarea. */
+	let _hooksEditor             = null;
 	/** @type {HTMLButtonElement[]} The two tab toggle buttons. */
 	let _tabBtns           = [];
 
@@ -292,6 +292,61 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		// additional listener is needed.
 	}
 
+	/**
+	 * Initialise CodeMirror on the hooks textarea with autocompletion for
+	 * predefined hook locations (from config.hookLocations) and priority values.
+	 * Falls back to a plain textarea when wp.codeEditor is unavailable.
+	 */
+	function initHooksEditor() {
+		if ( ! _hooksTextareaCtrl ) { return; }
+		if ( ! window.wp || ! window.wp.codeEditor ) { return; }
+
+		const hookSlugs        = ( config.hookLocations || [] ).filter( Boolean );
+		const prioritySlugs    = [ '1', '5', '10', '20', '50', '100' ];
+		const CM               = window.wp.CodeMirror;
+
+		function hooksHint( cm ) {
+			const cursor  = cm.getCursor();
+			const line    = cm.getLine( cursor.line );
+			const before  = line.slice( 0, cursor.ch );
+			const pipePos = before.indexOf( '|' );
+
+			if ( pipePos === -1 ) {
+				// Suggest hook names.
+				const token = before.trim();
+				const list  = hookSlugs.filter( ( s ) => s.startsWith( token ) );
+				return {
+					list,
+					from: CM.Pos( cursor.line, cursor.ch - token.length ),
+					to:   cursor,
+				};
+			}
+
+			// Suggest priorities.
+			const token = before.slice( pipePos + 1 );
+			const list  = prioritySlugs.filter( ( s ) => s.startsWith( token ) );
+			return {
+				list,
+				from: CM.Pos( cursor.line, pipePos + 1 ),
+				to:   cursor,
+			};
+		}
+
+		_hooksEditor = window.wp.codeEditor.initialize( _hooksTextareaCtrl, {
+			codemirror: {
+				mode:       'text/plain',
+				lineWrapping: false,
+				extraKeys:  { 'Ctrl-Space': function( cm ) { cm.showHint( { hint: hooksHint, completeSingle: false } ); } },
+				placeholder: _hooksTextareaCtrl.placeholder || '',
+			},
+		} );
+
+		_hooksEditor.codemirror.on( 'inputRead', function( cm ) {
+			if ( cm.state.completionActive ) { return; }
+			cm.showHint( { hint: hooksHint, completeSingle: false } );
+		} );
+	}
+
 	function scrollBuilderElementIntoView( id ) {
 		if ( ! id ) { return; }
 		const target = document.querySelector( '[data-wp-builder-id="' + id + '"]' );
@@ -360,8 +415,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		'wpbe-post-title':     ( ctrl ) => { _mainTitleDisplay         = ctrl; },
 		'wpbe-post-status':    ( ctrl ) => { _mainStatusDisplay        = ctrl; },
 		'wpbe-page-template':  ( ctrl ) => { _mainPageTemplateDisplay  = ctrl; },
-		'wpbe-hook-location':  ( ctrl ) => { _hookLocationCtrl         = ctrl; },
-		'wpbe-hook-priority':  ( ctrl ) => { _hookPriorityCtrl         = ctrl; },
+		'wpbe-hooks':          ( ctrl ) => { _hooksTextareaCtrl        = ctrl; },
 		'wpbe-reset-builder':  ( ctrl ) => { ctrl.addEventListener( 'click', resetBuilder ); },
 	};
 
@@ -417,6 +471,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				const ta     = document.createElement( 'textarea' );
 				ta.className = 'wpbe-textarea';
 				applyAttrs( ta, field.attrs );
+				if ( field.value !== undefined ) { ta.value = field.value; }
 				controlEl = ta;
 				break;
 			}
@@ -521,6 +576,18 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 					accBtn.addEventListener( 'click', () => {
 						if ( _styleEditor && accEl.classList.contains( 'is-open' ) ) {
 							_styleEditor.codemirror.refresh();
+						}
+					} );
+				}
+			}
+
+			// Refresh hooks CodeMirror when the hooks accordion re-opens.
+			if ( 'hooks' === accordion.slug ) {
+				const accBtn = accEl.querySelector( '.wpbe-accordion-header' );
+				if ( accBtn ) {
+					accBtn.addEventListener( 'click', () => {
+						if ( _hooksEditor && accEl.classList.contains( 'is-open' ) ) {
+							_hooksEditor.codemirror.refresh();
 						}
 					} );
 				}
@@ -1622,7 +1689,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 			_nodeSelectCtrl, _idDisplayCtrl, _htmlTextareaCtrl,
 			_flexDirCtrl, _flexGrowCtrl, _gapCtrl, _styleTextareaCtrl,
 			_mainTitleDisplay, _mainStatusDisplay, _mainPageTemplateDisplay,
-			_hookLocationCtrl, _hookPriorityCtrl,
+			_hooksTextareaCtrl,
 		];
 		fieldControls.forEach( ( ctrl ) => {
 			if ( ! ctrl ) { return; }
@@ -1636,6 +1703,11 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				if ( _styleEditorSuppressChange ) { return; }
 				markDirty();
 				applyLivePreview();
+			} );
+		}
+		if ( _hooksEditor ) {
+			_hooksEditor.codemirror.on( 'change', () => {
+				markDirty();
 			} );
 		}
 	}
@@ -1664,13 +1736,14 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				if ( ! _panel ) {
 					createPanel( data.fields || [] );
 					initStyleEditor();
+					initHooksEditor();
 					initChangeListeners();
 					positionAndShowPanel();
 				}
 				_saveBtn.disabled = false;
 				setStatus( '', false );
 				if ( data.layout ) { _cachedLayout = data.layout; }
-				populatePanel( data.element, data.post_title || '', data.post_status || '', data.page_template || '', data.hook_name || '', data.hook_priority !== undefined ? data.hook_priority : 10 );
+				populatePanel( data.element, data.post_title || '', data.post_status || '', data.page_template || '', data.hooks !== undefined ? data.hooks : '' );
 				// If in structure mode, keep the tree in sync with the fetched layout.
 				if ( _isStructureMode && data.layout ) {
 					renderStructureTree( data.layout, _liveRoot );
@@ -1685,7 +1758,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 	// Populate panel fields from element data
 	// -----------------------------------------------------------------------
 
-	function populatePanel( element, postTitle, postStatus, pageTemplate, hookName, hookPriority ) {
+	function populatePanel( element, postTitle, postStatus, pageTemplate, hooksValue ) {
 		const node   = normalizeNodeTag( element.node );
 		const isVoid = !! VOID_NODES[ node ];
 		const props  = element.props || {};
@@ -1732,8 +1805,13 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		if ( postTitle !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = postTitle; }
 		if ( postStatus !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = postStatus; }
 		if ( pageTemplate !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = pageTemplate; }
-		if ( hookName !== undefined && _hookLocationCtrl ) { _hookLocationCtrl.value = hookName; }
-		if ( hookPriority !== undefined && _hookPriorityCtrl ) { _hookPriorityCtrl.value = String( hookPriority ); }
+		if ( hooksValue !== undefined && _hooksTextareaCtrl ) {
+			if ( _hooksEditor ) {
+				_hooksEditor.codemirror.setValue( hooksValue );
+			} else {
+				_hooksTextareaCtrl.value = hooksValue;
+			}
+		}
 
 		// Keep structure-tree selection highlight in sync.
 		if ( _isStructureMode ) {
@@ -1770,9 +1848,9 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		form.append( 'title',         _mainTitleDisplay  ? _mainTitleDisplay.value  : '' );
 		form.append( 'post_status',   _mainStatusDisplay ? _mainStatusDisplay.value : '' );
 		form.append( 'page_template', _mainPageTemplateDisplay ? _mainPageTemplateDisplay.value : '' );
-		if ( _hookLocationCtrl ) {
-			form.append( 'hook_name',     _hookLocationCtrl.value );
-			form.append( 'hook_priority', _hookPriorityCtrl ? _hookPriorityCtrl.value : '10' );
+		if ( _hooksTextareaCtrl ) {
+			const hooksVal = _hooksEditor ? _hooksEditor.codemirror.getValue() : _hooksTextareaCtrl.value;
+			form.append( 'hooks', hooksVal );
 		}
 		form.append( 'node',       _nodeSelectCtrl.value );
 		form.append( 'props',      JSON.stringify( {
@@ -1816,8 +1894,13 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				if ( payload.data.post_title  !== undefined && _mainTitleDisplay )  { _mainTitleDisplay.value  = payload.data.post_title; }
 				if ( payload.data.post_status !== undefined && _mainStatusDisplay ) { _mainStatusDisplay.value = payload.data.post_status; }
 				if ( payload.data.page_template !== undefined && _mainPageTemplateDisplay ) { _mainPageTemplateDisplay.value = payload.data.page_template; }
-				if ( payload.data.hook_name !== undefined && _hookLocationCtrl ) { _hookLocationCtrl.value = payload.data.hook_name; }
-				if ( payload.data.hook_priority !== undefined && _hookPriorityCtrl ) { _hookPriorityCtrl.value = String( payload.data.hook_priority ); }
+				if ( payload.data.hooks !== undefined && _hooksTextareaCtrl ) {
+					if ( _hooksEditor ) {
+						_hooksEditor.codemirror.setValue( payload.data.hooks );
+					} else {
+						_hooksTextareaCtrl.value = payload.data.hooks;
+					}
+				}
 				setStatus( text.saved || 'Saved', false );
 				markClean();
 

@@ -198,6 +198,7 @@ trait WP_Builder_Frontend {
 					'resetBuilderConfirm' => __( 'This will permanently clear all builder data and reset the page template to default. This action cannot be undone. Continue?', 'wp-builder' ),
 					'resetting'           => __( 'Resetting…', 'wp-builder' ),
 				),
+				'hookLocations'  => array_values( array_filter( array_keys( $this->get_hook_locations() ) ) ),
 			)
 		);
 	}
@@ -221,6 +222,8 @@ trait WP_Builder_Frontend {
 		}
 		$ran = true;
 
+		// Fetch snippets that have either the new multi-hook meta or the legacy
+		// single-hook meta set, so that pre-migration snippets still fire.
 		$snippets = get_posts( array(
 			'post_type'      => self::TEMPLATE_CPT,
 			'post_status'    => 'publish',
@@ -228,6 +231,12 @@ trait WP_Builder_Frontend {
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
 			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				'relation' => 'OR',
+				array(
+					'key'     => self::HOOKS_META_KEY,
+					'value'   => '',
+					'compare' => '!=',
+				),
 				array(
 					'key'     => self::HOOK_NAME_META_KEY,
 					'value'   => '',
@@ -241,28 +250,29 @@ trait WP_Builder_Frontend {
 		}
 
 		foreach ( $snippets as $snippet_id ) {
-			$hook_name     = (string) get_post_meta( $snippet_id, self::HOOK_NAME_META_KEY, true );
-			$hook_priority = get_post_meta( $snippet_id, self::HOOK_PRIORITY_META_KEY, true );
-			$hook_priority = ( '' !== (string) $hook_priority ) ? (int) $hook_priority : 10;
-
-			if ( ! $hook_name || ! $this->has_builder_layout( $snippet_id ) ) {
+			if ( ! $this->has_builder_layout( $snippet_id ) ) {
 				continue;
 			}
 
-			add_action(
-				$hook_name,
-				function () use ( $snippet_id ) {
-					$this->enqueue_frontend_style();
-					$this->enqueue_editor_assets( $snippet_id );
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post().
-					echo $this->render_element(
-						$this->get_layout_root_element( $snippet_id ),
-						'wp-builder-layout wp-builder-layout--snippet',
-						$snippet_id
-					);
-				},
-				$hook_priority
-			);
+			$hooks_value = $this->get_snippet_hooks_value( $snippet_id );
+			$hooks       = $this->parse_hooks_textarea( $hooks_value );
+
+			foreach ( $hooks as $hook ) {
+				add_action(
+					$hook['name'],
+					function () use ( $snippet_id ) {
+						$this->enqueue_frontend_style();
+						$this->enqueue_editor_assets( $snippet_id );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post().
+						echo $this->render_element(
+							$this->get_layout_root_element( $snippet_id ),
+							'wp-builder-layout wp-builder-layout--snippet',
+							$snippet_id
+						);
+					},
+					$hook['priority']
+				);
+			}
 		}
 	}
 }

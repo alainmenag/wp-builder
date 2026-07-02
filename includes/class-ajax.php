@@ -43,10 +43,7 @@ trait WP_Builder_Ajax {
 			'post_title'    => get_the_title( $post_id ),
 			'post_status'   => get_post_status( $post_id ),
 			'page_template' => $this->get_page_template( $post_id ),
-			'hook_name'     => (string) get_post_meta( $post_id, self::HOOK_NAME_META_KEY, true ),
-			'hook_priority' => get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true ) !== ''
-				? (int) get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true )
-				: 10,
+			'hooks'         => $this->get_snippet_hooks_value( $post_id ),
 			'fields'        => $this->get_panel_schema( $post_id ),
 		) );
 	}
@@ -151,21 +148,28 @@ trait WP_Builder_Ajax {
 			update_post_meta( $post_id, '_wp_page_template', $page_template_value );
 		}
 
-		// Update hook name and priority if this is a snippet CPT.
+		// Update hook locations if this is a snippet CPT.
 		if ( $is_cpt ) {
-			$allowed_hooks = $this->get_hook_locations();
-			$new_hook_name = isset( $_POST['hook_name'] ) ? sanitize_key( wp_unslash( $_POST['hook_name'] ) ) : '';
+			$raw_hooks  = isset( $_POST['hooks'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['hooks'] ) ) : '';
+			$parsed     = $this->parse_hooks_textarea( $raw_hooks );
 
-			// Only accept hook names that appear in the allowed list.
-			if ( '' === $new_hook_name || array_key_exists( $new_hook_name, $allowed_hooks ) ) {
-				if ( '' === $new_hook_name ) {
-					delete_post_meta( $post_id, self::HOOK_NAME_META_KEY );
-					delete_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY );
-				} else {
-					$new_hook_priority = isset( $_POST['hook_priority'] ) ? absint( $_POST['hook_priority'] ) : 10;
-					update_post_meta( $post_id, self::HOOK_NAME_META_KEY, $new_hook_name );
-					update_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, $new_hook_priority );
-				}
+			if ( empty( $parsed ) ) {
+				delete_post_meta( $post_id, self::HOOKS_META_KEY );
+				// Remove legacy single-hook meta when the user explicitly clears all hooks.
+				delete_post_meta( $post_id, self::HOOK_NAME_META_KEY );
+				delete_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY );
+			} else {
+				// Rebuild a canonical textarea from the parsed/sanitised entries.
+				$canonical = implode(
+					"\n",
+					array_map(
+						static function ( $h ) {
+							return $h['name'] . '|' . $h['priority'];
+						},
+						$parsed
+					)
+				);
+				update_post_meta( $post_id, self::HOOKS_META_KEY, $canonical );
 			}
 		}
 
@@ -185,10 +189,7 @@ trait WP_Builder_Ajax {
 				'post_title'    => get_the_title( $post_id ),
 				'post_status'   => $post_obj ? $post_obj->post_status : '',
 				'page_template' => $this->get_page_template( $post_id ),
-				'hook_name'     => (string) get_post_meta( $post_id, self::HOOK_NAME_META_KEY, true ),
-				'hook_priority' => get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true ) !== ''
-					? (int) get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true )
-					: 10,
+				'hooks'         => $this->get_snippet_hooks_value( $post_id ),
 			)
 		);
 	}
@@ -292,21 +293,7 @@ trait WP_Builder_Ajax {
 		);
 
 		if ( $is_template ) {
-			$hook_locations     = $this->get_hook_locations();
-			$saved_hook_name    = (string) get_post_meta( $post_id, self::HOOK_NAME_META_KEY, true );
-			$saved_hook_priority = (int) get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true );
-			if ( 0 === $saved_hook_priority && '' === (string) get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true ) ) {
-				$saved_hook_priority = 10;
-			}
-
-			$hook_options = array();
-			foreach ( $hook_locations as $slug => $label ) {
-				$hook_options[] = array(
-					'value'    => $slug,
-					'label'    => $label,
-					'selected' => $saved_hook_name === $slug,
-				);
-			}
+			$hooks_value = $this->get_snippet_hooks_value( $post_id );
 
 			$main_accordions[] = array(
 				'slug'   => 'hooks',
@@ -314,17 +301,15 @@ trait WP_Builder_Ajax {
 				'open'   => false,
 				'fields' => array(
 					array(
-						'type'    => 'select',
-						'id'      => 'wpbe-hook-location',
-						'label'   => __( 'Hook Location', 'wp-builder' ),
-						'options' => $hook_options,
-					),
-					array(
-						'type'        => 'number',
-						'id'          => 'wpbe-hook-priority',
-						'label'       => __( 'Priority', 'wp-builder' ),
-						'placeholder' => '10',
-						'attrs'       => array( 'min' => '0', 'step' => '1' ),
+						'type'  => 'textarea',
+						'id'    => 'wpbe-hooks',
+						'label' => __( 'Hook Locations', 'wp-builder' ),
+						'hint'  => __( 'One entry per line: <code>hook_name|priority</code><br>e.g. <code>wp_head|10</code>', 'wp-builder' ),
+						'attrs' => array(
+							'rows'        => '4',
+							'placeholder' => "wp_head|10\nwp_footer|5",
+						),
+						'value' => $hooks_value,
 					),
 				),
 			);

@@ -33,6 +33,7 @@ final class WP_Builder {
 	private const RESET_NONCE_ACTION    = 'wp_builder_reset';
 	private const HOOK_NAME_META_KEY    = '_wp_builder_hook_name';
 	private const HOOK_PRIORITY_META_KEY = '_wp_builder_hook_priority';
+	private const HOOKS_META_KEY        = '_wp_builder_hooks';
 	private const TEMPLATE_CPT           = 'wp_builder_template';
 	private const REWRITE_VERSION        = '2';
 	private const REWRITE_VERSION_OPTION = 'wp_builder_rewrite_version';
@@ -141,5 +142,61 @@ final class WP_Builder {
 		 * @param array<string, string> $locations Associative array of hook_slug => display_label.
 		 */
 		return (array) apply_filters( 'wp_builder_hook_locations', $locations );
+	}
+
+	/**
+	 * Parse the multi-hook textarea value into an array of hooks.
+	 *
+	 * Expected format — one entry per line:
+	 *   hook_name|priority
+	 *
+	 * Lines with no hook name are silently skipped. Priority defaults to 10.
+	 *
+	 * @param string $value Raw textarea content.
+	 * @return array[] Array of arrays with 'name' (string) and 'priority' (int) keys.
+	 */
+	private function parse_hooks_textarea( string $value ): array {
+		$hooks = array();
+		$lines = preg_split( '/[\r\n]+/', $value, -1, PREG_SPLIT_NO_EMPTY );
+		foreach ( $lines as $line ) {
+			$parts    = explode( '|', trim( $line ), 2 );
+			$name     = sanitize_key( $parts[0] );
+			$priority = isset( $parts[1] ) ? absint( $parts[1] ) : 10;
+			if ( $name ) {
+				$hooks[] = array(
+					'name'     => $name,
+					'priority' => $priority,
+				);
+			}
+		}
+		return $hooks;
+	}
+
+	/**
+	 * Return the hooks textarea value for a snippet post.
+	 *
+	 * Reads from HOOKS_META_KEY first. If that is empty (pre-migration snippet),
+	 * constructs a single-line value from the legacy HOOK_NAME_META_KEY and
+	 * HOOK_PRIORITY_META_KEY fields.
+	 *
+	 * @param int $post_id Snippet post ID.
+	 * @return string
+	 */
+	private function get_snippet_hooks_value( int $post_id ): string {
+		$value = (string) get_post_meta( $post_id, self::HOOKS_META_KEY, true );
+		if ( '' !== $value ) {
+			return $value;
+		}
+
+		// Backward compat: migrate from legacy single-hook meta.
+		$legacy_name = (string) get_post_meta( $post_id, self::HOOK_NAME_META_KEY, true );
+		if ( '' === $legacy_name ) {
+			return '';
+		}
+
+		$legacy_prio = get_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY, true );
+		$legacy_prio = ( '' !== (string) $legacy_prio ) ? (int) $legacy_prio : 10;
+
+		return $legacy_name . '|' . $legacy_prio;
 	}
 }

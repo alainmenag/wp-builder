@@ -55,6 +55,18 @@ trait WP_Builder_Post_Types {
 				'auth_callback'     => $hook_auth,
 			)
 		);
+
+		register_post_meta(
+			self::TEMPLATE_CPT,
+			self::HOOKS_META_KEY,
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => false,
+				'sanitize_callback' => 'sanitize_textarea_field',
+				'auth_callback'     => $hook_auth,
+			)
+		);
 	}
 
 	public function register_template_post_type(): void {
