@@ -352,6 +352,7 @@ trait WP_Builder_Ajax {
 			'div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav',
 			'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'button',
 			'figure', 'figcaption', 'img', 'input', 'label', 'audio', 'video', 'source', 'iframe',
+			'script', 'style', 'code', 'pre', 'blockquote',
 		);
 		$node_options = array_map(
 			static function ( $tag ) { return array( 'value' => $tag, 'label' => $tag ); },
