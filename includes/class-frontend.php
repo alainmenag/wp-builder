@@ -298,24 +298,51 @@ trait WP_Builder_Frontend {
 			$hooks       = $this->parse_hooks_textarea( $hooks_value );
 
 			foreach ( $hooks as $hook ) {
-				add_action(
-					$hook['name'],
-					function () use ( $snippet_id ) {
-						$snippet = get_post( $snippet_id );
-						if ( ! $snippet || ! $this->can_view_builder_post( $snippet ) ) {
-							return;
-						}
-						$this->enqueue_frontend_style();
-						$this->enqueue_editor_assets( $snippet_id );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post().
-						echo $this->render_element(
-							$this->get_layout_root_element( $snippet_id ),
-							'wp-builder-layout wp-builder-layout--snippet',
-							$snippet_id
-						);
-					},
-					$hook['priority']
-				);
+				if ( 'menu' === $hook['type'] ) {
+					$location = $hook['name'];
+					add_filter(
+						'wp_nav_menu',
+						function ( $nav_menu, $args ) use ( $snippet_id, $location ) {
+							if ( ! isset( $args->theme_location ) || $args->theme_location !== $location ) {
+								return $nav_menu;
+							}
+							$snippet = get_post( $snippet_id );
+							if ( ! $snippet || ! $this->can_view_builder_post( $snippet ) ) {
+								return $nav_menu;
+							}
+							$this->enqueue_frontend_style();
+							$this->enqueue_editor_assets( $snippet_id );
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post().
+							$snippet_html = $this->render_element(
+								$this->get_layout_root_element( $snippet_id ),
+								'wp-builder-layout wp-builder-layout--snippet',
+								$snippet_id
+							);
+							return $snippet_html . $nav_menu;
+						},
+						$hook['priority'],
+						2
+					);
+				} else {
+					add_action(
+						'wp_' . $hook['name'],
+						function () use ( $snippet_id ) {
+							$snippet = get_post( $snippet_id );
+							if ( ! $snippet || ! $this->can_view_builder_post( $snippet ) ) {
+								return;
+							}
+							$this->enqueue_frontend_style();
+							$this->enqueue_editor_assets( $snippet_id );
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post().
+							echo $this->render_element(
+								$this->get_layout_root_element( $snippet_id ),
+								'wp-builder-layout wp-builder-layout--snippet',
+								$snippet_id
+							);
+						},
+						$hook['priority']
+					);
+				}
 			}
 		}
 	}
