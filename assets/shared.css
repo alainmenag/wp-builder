@@ -124,6 +124,7 @@
 .wp-builder-select,
 .wp-builder-input,
 .wpbe-select,
+.wpbe-input[type],
 .wpbe-input {
 	background: var(--wpb-bg-control);
 	border: 1px solid var(--wpb-border-default);

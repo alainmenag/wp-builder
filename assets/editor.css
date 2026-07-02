@@ -256,7 +256,7 @@ body.admin-bar .wpbe-panel.is-docked {
 /* Base accordion rules live in shared.css; only panel-specific override here. */
 
 .wpbe-accordion-body-inner {
-	padding: 12px 14px;
+	padding: 16px;
 }
 
 /* ── Field groups ───────────────────────────────────────────────────────── */
@@ -265,7 +265,7 @@ body.admin-bar .wpbe-panel.is-docked {
 .wpbe-field-group {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 6px;
 }
 
 .wpbe-label {
@@ -275,6 +275,7 @@ body.admin-bar .wpbe-panel.is-docked {
 	font-weight: 700;
 	letter-spacing: .03em;
 	text-transform: uppercase;
+	line-height: 1;
 }
 
 .wpbe-inspector-hint {
@@ -342,6 +343,7 @@ body.admin-bar .wpbe-panel.is-docked {
 	background: var(--wpb-bg-control);
 	border-color: var(--wpb-border-focus);
 	outline: none;
+	color: var(--wpb-text-primary);
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
