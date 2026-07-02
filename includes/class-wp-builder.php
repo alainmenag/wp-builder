@@ -123,6 +123,9 @@ final class WP_Builder {
 	 * Return an ordered associative array of hook slug => display label for the
 	 * hook-location selector. An empty-string key means "no hook assigned".
 	 *
+	 * Nav menu locations registered by the active theme are included automatically
+	 * with the `menu:` prefix (e.g. `menu:primary`).
+	 *
 	 * Theme and plugin authors can extend the list via the
 	 * `wp_builder_hook_locations` filter.
 	 *
@@ -135,6 +138,11 @@ final class WP_Builder {
 			'wp_body_open'  => __( 'After <body> Open', 'wp-builder' ),
 			'wp_footer'     => __( 'Footer (before </body>)', 'wp-builder' ),
 		);
+
+		foreach ( get_registered_nav_menus() as $slug => $name ) {
+			/* translators: %s: nav menu location label, e.g. "Primary Menu". */
+			$locations[ 'menu:' . $slug ] = sprintf( __( 'Menu: %s', 'wp-builder' ), $name );
+		}
 
 		/**
 		 * Filter the list of hook locations available for snippet injection.
@@ -150,23 +158,40 @@ final class WP_Builder {
 	 * Expected format — one entry per line:
 	 *   hook_name|priority
 	 *
+	 * Nav menu locations use the `menu:` prefix:
+	 *   menu:location_slug|priority
+	 *
 	 * Lines with no hook name are silently skipped. Priority defaults to 10.
 	 *
 	 * @param string $value Raw textarea content.
-	 * @return array[] Array of arrays with 'name' (string) and 'priority' (int) keys.
+	 * @return array[] Array of arrays with 'type' ('action'|'menu'), 'name' (string), and 'priority' (int) keys.
 	 */
 	private function parse_hooks_textarea( string $value ): array {
 		$hooks = array();
 		$lines = preg_split( '/[\r\n]+/', $value, -1, PREG_SPLIT_NO_EMPTY );
 		foreach ( $lines as $line ) {
 			$parts    = explode( '|', trim( $line ), 2 );
-			$name     = sanitize_key( $parts[0] );
+			$raw      = trim( $parts[0] );
 			$priority = isset( $parts[1] ) ? absint( $parts[1] ) : 10;
-			if ( $name ) {
-				$hooks[] = array(
-					'name'     => $name,
-					'priority' => $priority,
-				);
+
+			if ( 0 === strpos( $raw, 'menu:' ) ) {
+				$location = sanitize_key( substr( $raw, 5 ) );
+				if ( $location ) {
+					$hooks[] = array(
+						'type'     => 'menu',
+						'name'     => $location,
+						'priority' => $priority,
+					);
+				}
+			} else {
+				$name = sanitize_key( $raw );
+				if ( $name ) {
+					$hooks[] = array(
+						'type'     => 'action',
+						'name'     => $name,
+						'priority' => $priority,
+					);
+				}
 			}
 		}
 		return $hooks;
