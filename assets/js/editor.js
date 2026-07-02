@@ -1029,6 +1029,19 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 		_savedRenderedOuterHtml = stylePrefix + _liveRoot.outerHTML;
 		if ( _suppressedStyleEl ) { _suppressedStyleEl.disabled = true; }
 
+		// If the root element uses a browser-special tag (e.g. <script>, <style>),
+		// browsers treat its children as raw text rather than rendered DOM nodes.
+		// Swap it for a plain <div> so the structure tree renders correctly.
+		// exitStructureMode() restores the original element from _savedRenderedOuterHtml.
+		if ( _liveRoot.tagName !== 'DIV' ) {
+			const div = document.createElement( 'div' );
+			Array.from( _liveRoot.attributes ).forEach( ( attr ) => {
+				div.setAttribute( attr.name, attr.value );
+			} );
+			_liveRoot.parentNode.replaceChild( div, _liveRoot );
+			_liveRoot = div;
+		}
+
 		// Activate structure mode and update the toggle button immediately.
 		_isStructureMode = true;
 		if ( _structureToggleBtn ) {
