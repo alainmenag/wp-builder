@@ -43,6 +43,7 @@ trait WP_Builder_Ajax {
 			'post_title'    => get_the_title( $post_id ),
 			'post_status'   => get_post_status( $post_id ),
 			'page_template' => $this->get_page_template( $post_id ),
+			'hooks'         => $this->get_snippet_hooks_value( $post_id ),
 			'fields'        => $this->get_panel_schema( $post_id ),
 		) );
 	}
@@ -147,6 +148,31 @@ trait WP_Builder_Ajax {
 			update_post_meta( $post_id, '_wp_page_template', $page_template_value );
 		}
 
+		// Update hook locations if this is a snippet CPT.
+		if ( $is_cpt ) {
+			$raw_hooks  = isset( $_POST['hooks'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['hooks'] ) ) : '';
+			$parsed     = $this->parse_hooks_textarea( $raw_hooks );
+
+			if ( empty( $parsed ) ) {
+				delete_post_meta( $post_id, self::HOOKS_META_KEY );
+				// Remove legacy single-hook meta when the user explicitly clears all hooks.
+				delete_post_meta( $post_id, self::HOOK_NAME_META_KEY );
+				delete_post_meta( $post_id, self::HOOK_PRIORITY_META_KEY );
+			} else {
+				// Rebuild a canonical textarea from the parsed/sanitised entries.
+				$canonical = implode(
+					"\n",
+					array_map(
+						static function ( $h ) {
+							return $h['name'] . '|' . $h['priority'];
+						},
+						$parsed
+					)
+				);
+				update_post_meta( $post_id, self::HOOKS_META_KEY, $canonical );
+			}
+		}
+
 		// Re-render the full layout root with the post ID so the DOM swap
 		// preserves the data-wp-builder-post-id attribute and any nested styles.
 		$post_obj  = $post instanceof WP_Post ? $post : get_post( $post_id );
@@ -163,6 +189,7 @@ trait WP_Builder_Ajax {
 				'post_title'    => get_the_title( $post_id ),
 				'post_status'   => $post_obj ? $post_obj->post_status : '',
 				'page_template' => $this->get_page_template( $post_id ),
+				'hooks'         => $this->get_snippet_hooks_value( $post_id ),
 			)
 		);
 	}
@@ -243,6 +270,71 @@ trait WP_Builder_Ajax {
 			);
 		}
 
+		// Hooks accordion — snippet-only.
+		$main_accordions = array(
+			array(
+				'slug'   => 'settings',
+				'label'  => __( 'Settings', 'wp-builder' ),
+				'open'   => true,
+				'fields' => $settings_fields,
+			),
+			array(
+				'slug'   => 'shortcode',
+				'label'  => __( 'Shortcode', 'wp-builder' ),
+				'open'   => false,
+				'fields' => array(
+					array(
+						'type'    => 'pre',
+						'label'   => __( 'Shortcode', 'wp-builder' ),
+						'content' => $shortcode,
+					),
+				),
+			),
+		);
+
+		if ( $is_template ) {
+			$hooks_value = $this->get_snippet_hooks_value( $post_id );
+
+			$main_accordions[] = array(
+				'slug'   => 'hooks',
+				'label'  => __( 'Hooks', 'wp-builder' ),
+				'open'   => false,
+				'fields' => array(
+					array(
+						'type'  => 'textarea',
+						'id'    => 'wpbe-hooks',
+						'label' => __( 'Hook Locations', 'wp-builder' ),
+						'hint'  => __( 'One entry per line: <code>hook_name|priority</code><br>e.g. <code>wp_head|10</code>', 'wp-builder' ),
+						'attrs' => array(
+							'rows'        => '4',
+							'placeholder' => "wp_head|10\nwp_footer|5",
+						),
+						'value' => $hooks_value,
+					),
+				),
+			);
+		}
+
+		$main_accordions[] = array(
+			'slug'   => 'data',
+			'label'  => __( 'Data', 'wp-builder' ),
+			'open'   => false,
+			'fields' => array_filter( array(
+				array(
+					'type'  => 'link',
+					'label' => __( 'Export', 'wp-builder' ),
+					'href'  => $export_url,
+					'attrs' => array( 'target' => '_blank', 'rel' => 'noreferrer', 'style' => 'width: 100%;' ),
+				),
+				$is_template ? null : array(
+					'type'  => 'button',
+					'id'    => 'wpbe-reset-builder',
+					'label' => __( 'Reset', 'wp-builder' ),
+					'attrs' => array( 'style' => 'width: 100%;' ),
+				),
+			) ),
+		);
+
 		// Node tag options (same set as the full editor and constants.js).
 		$node_tags    = array(
 			'div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav',
@@ -258,45 +350,7 @@ trait WP_Builder_Ajax {
 			array(
 				'key'        => 'main',
 				'label'      => __( 'Main', 'wp-builder' ),
-				'accordions' => array(
-					array(
-						'slug'   => 'settings',
-						'label'  => __( 'Settings', 'wp-builder' ),
-						'open'   => true,
-						'fields' => $settings_fields,
-					),
-					array(
-						'slug'   => 'shortcode',
-						'label'  => __( 'Shortcode', 'wp-builder' ),
-						'open'   => false,
-						'fields' => array(
-							array(
-								'type'    => 'pre',
-								'label'   => __( 'Shortcode', 'wp-builder' ),
-								'content' => $shortcode,
-							),
-						),
-					),
-					array(
-						'slug'   => 'data',
-						'label'  => __( 'Data', 'wp-builder' ),
-						'open'   => false,
-						'fields' => array_filter( array(
-							array(
-								'type'  => 'link',
-								'label' => __( 'Export', 'wp-builder' ),
-								'href'  => $export_url,
-								'attrs' => array( 'target' => '_blank', 'rel' => 'noreferrer', 'style' => 'width: 100%;' ),
-							),
-							$is_template ? null : array(
-								'type'  => 'button',
-								'id'    => 'wpbe-reset-builder',
-								'label' => __( 'Reset', 'wp-builder' ),
-								'attrs' => array( 'style' => 'width: 100%;' ),
-							),
-						) ),
-					),
-				),
+				'accordions' => $main_accordions,
 			),
 			array(
 				'key'        => 'element',
