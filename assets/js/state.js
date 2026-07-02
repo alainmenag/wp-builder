@@ -31,6 +31,8 @@ export const state = {
 	nodeSelectCtrl:  null,
 	/** @type {HTMLInputElement|null} */
 	idDisplayCtrl:   null,
+	/** @type {HTMLInputElement|null} */
+	elementTitleCtrl: null,
 	/** @type {HTMLTextAreaElement|null} */
 	htmlTextareaCtrl:  null,
 	/** @type {HTMLElement|null} Content accordion (hidden for void nodes). */

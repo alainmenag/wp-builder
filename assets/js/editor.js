@@ -132,10 +132,12 @@ import { fetchElement, saveElement, resetBuilder } from './ajax.js';
 		const props  = element.props || {};
 
 		state.nodeChip.textContent = node.toUpperCase();
-		state.idChip.textContent   = element.id || '';
+		state.idChip.textContent   = element.title || element.id || '';
+		state.idChip.title         = element.title ? ( element.id || '' ) : '';
 
 		state.nodeSelectCtrl.value = node;
 		state.idDisplayCtrl.value  = element.id || '';
+		if ( state.elementTitleCtrl ) { state.elementTitleCtrl.value = element.title || ''; }
 
 		state.contentSection.hidden  = isVoid;
 		state.htmlTextareaCtrl.value = isVoid ? '' : ( element.content || '' );
