@@ -323,9 +323,35 @@ trait WP_Builder_Frontend {
 						$hook['priority'],
 						2
 					);
+				} elseif ( 'content' === $hook['type'] ) {
+					$position = $hook['name']; // 'before' or 'after'.
+					add_filter(
+						'the_content',
+						function ( $content ) use ( $snippet_id, $position ) {
+							if ( ! in_the_loop() || ! is_main_query() ) {
+								return $content;
+							}
+							$snippet = get_post( $snippet_id );
+							if ( ! $snippet || ! $this->can_view_builder_post( $snippet ) ) {
+								return $content;
+							}
+							$this->enqueue_frontend_style();
+							$this->enqueue_editor_assets( $snippet_id );
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post().
+							$snippet_html = $this->render_element(
+								$this->get_layout_root_element( $snippet_id ),
+								'wp-builder-layout wp-builder-layout--snippet',
+								$snippet_id
+							);
+							return 'before' === $position ? $snippet_html . $content : $content . $snippet_html;
+						},
+						$hook['priority']
+					);
 				} else {
+					// 'wp' type: prepend 'wp_' to the suffix. 'action'/'theme' type: use name as-is.
+					$hook_name = 'wp' === $hook['type'] ? 'wp_' . $hook['name'] : $hook['name'];
 					add_action(
-						'wp_' . $hook['name'],
+						$hook_name,
 						function () use ( $snippet_id ) {
 							$snippet = get_post( $snippet_id );
 							if ( ! $snippet || ! $this->can_view_builder_post( $snippet ) ) {
