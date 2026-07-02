@@ -22,7 +22,7 @@ A lightweight, Elementor-inspired page builder plugin for WordPress. Build infin
 - **Container** element — the single, composable building block. Containers nest inside each other without a depth limit.
 - Each container exposes:
   - **ID** — editable element identifier; auto-regenerated if left blank.
-  - **Node** — choose any semantic HTML tag (`div`, `section`, `article`, `main`, `aside`, `header`, `footer`, `nav`, `p`, `span`, `h1`–`h6`, `a`, `button`, `figure`, `figcaption`, `img`, `input`, `label`, `audio`, `video`, `source`, `iframe`).
+  - **Node** — choose any HTML tag (`div`, `section`, `article`, `main`, `aside`, `header`, `footer`, `nav`, `p`, `span`, `h1`–`h6`, `a`, `button`, `figure`, `figcaption`, `img`, `input`, `label`, `audio`, `video`, `source`, `iframe`, `script`, `style`, `code`, `pre`, `blockquote`).
   - **Content** — rich-text inner HTML (filtered through `wp_kses_post`).
   - **Direction** — flexbox row or column layout.
   - **Flex Grow** — numeric `flex-grow` value.
@@ -31,13 +31,15 @@ A lightweight, Elementor-inspired page builder plugin for WordPress. Build infin
   - **Node attributes** — tag-specific attributes (`src`, `href`, `alt`, `width`, `height`, etc.) for media and interactive elements.
 - **Add / delete** child elements directly from the editor panel.
 - **Export** — opens `?view=json` in a new tab to download the raw layout JSON.
+- **Reset** — clears all builder data and restores the default page template (posts/pages only).
 - **Post status** control (Published, Draft, Pending Review, Private) inside the editor panel.
 - **Page layout** selector (when editing posts/pages).
-- Admin bar **Builder** menu with quick links to all snippets.
+- Admin bar **Builder** menu with quick links to snippets (up to 20).
 
 ### Snippets (`wp_builder_template` CPT)
 - Create reusable layouts as Builder Snippets (custom post type, hidden from the front end by default).
-- Snippets are always rendered with the **Canvas Layout** page layout (blank HTML, no theme chrome).
+- Snippets are always displayed using the **Canvas Layout** page layout when opened via the builder editor.
+- Snippets can be injected automatically into WordPress action hook locations (e.g. `wp_head`, `wp_footer`, nav menu locations, theme-registered hooks, before/after post content) via the **Hooks** panel in the editor.
 - Embed snippets anywhere via shortcode or the Elementor widget.
 
 ### Shortcodes
@@ -97,8 +99,8 @@ wp-builder/
 ├── includes/
 │   ├── class-wp-builder.php        # Main class — uses all traits, registers all hooks
 │   ├── class-admin.php             # Admin menus, row actions, admin bar
-│   ├── class-ajax.php     # AJAX handlers: get/save element, get layout, add/delete element
-│   ├── class-editor.php            # Builder routing: redirects action=builder to the front end; JSON export
+│   ├── class-ajax.php     # AJAX handlers: get/save element, get layout, add/delete element, reset builder
+│   ├── class-editor.php            # Builder routing: renders builder canvas for action=builder; JSON export
 │   ├── class-elementor.php         # Elementor widget registration + editor styles
 │   ├── class-frontend.php          # Shortcodes, front-end asset enqueue, content filter
 │   ├── class-layout.php            # Layout load/save/sanitise/render helpers

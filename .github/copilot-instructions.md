@@ -24,8 +24,8 @@ wp-builder/
 ├── includes/
 │   ├── class-wp-builder.php        # Main class + hook registration
 │   ├── class-admin.php             # Trait: admin menus, row actions, admin bar
-│   ├── class-ajax.php     # Trait: AJAX get/save element, get layout, add/delete element
-│   ├── class-editor.php            # Trait: action=builder redirect to front end; JSON export
+│   ├── class-ajax.php     # Trait: AJAX get/save element, get layout, add/delete element, reset builder
+│   ├── class-editor.php            # Trait: action=builder renders builder canvas inline; JSON export
 │   ├── class-elementor.php         # Trait: Elementor widget + editor styles
 │   ├── class-frontend.php          # Trait: shortcodes, front-end assets, content filter
 │   ├── class-layout.php            # Trait: load/save/sanitise/render layout data
@@ -62,8 +62,8 @@ wp-builder/
 - **No direct database queries** — use the WordPress meta API (`get_post_meta`, `update_post_meta`), `WP_Query`, `wp_insert_post`, `wp_update_post`, etc.
 - **No new PHP dependencies** — do not suggest Composer packages.
 - **Traits only** — new logic belongs in a trait in `includes/class-*.php`. Register its hooks in `WP_Builder::__construct()`. Never put logic directly in the bootstrap.
-- **Constants** (`VERSION`, `META_KEY`, `MENU_SLUG`, `ACTION`, `GET_NONCE_ACTION`, `SAVE_NONCE_ACTION`, `GET_LAYOUT_NONCE_ACTION`, `ADD_NONCE_ACTION`, `DELETE_NONCE_ACTION`, `TEMPLATE_CPT`, `REWRITE_VERSION`, `REWRITE_VERSION_OPTION`) are declared `private const` in `class-wp-builder.php` and accessed as `self::CONSTANT_NAME` within the class/traits.
-- **Helper methods** shared across traits (`is_builder_request`, `get_builder_url`, `get_preview_url`, `get_builder_doc_title`, `supported_post_types`, `is_supported_post_type`) live in `class-wp-builder.php`.
+- **Constants** (`VERSION`, `META_KEY`, `MENU_SLUG`, `ACTION`, `GET_NONCE_ACTION`, `SAVE_NONCE_ACTION`, `GET_LAYOUT_NONCE_ACTION`, `ADD_NONCE_ACTION`, `DELETE_NONCE_ACTION`, `RESET_NONCE_ACTION`, `HOOK_NAME_META_KEY`, `HOOK_PRIORITY_META_KEY`, `HOOKS_META_KEY`, `TEMPLATE_CPT`, `REWRITE_VERSION`, `REWRITE_VERSION_OPTION`) are declared `private const` in `class-wp-builder.php` and accessed as `self::CONSTANT_NAME` within the class/traits.
+- **Helper methods** shared across traits (`is_builder_request`, `get_builder_url`, `get_preview_url`, `get_builder_doc_title`, `supported_post_types`, `is_supported_post_type`, `get_hook_locations`, `get_theme_action_hooks`, `parse_hooks_textarea`, `get_snippet_hooks_value`) live in `class-wp-builder.php`.
 - **Internationalisation:** wrap every user-facing string in `__()`, `_e()`, `esc_html__()`, `esc_html_e()`, etc. Use the text domain `wp-builder`.
 
 ---
@@ -81,9 +81,13 @@ wp-builder/
   - `layoutNonce` — nonce for `wp_builder_get_layout`.
   - `addNonce` — nonce for `wp_builder_add_element`.
   - `deleteNonce` — nonce for `wp_builder_delete_element`.
+  - `resetNonce` — nonce for `wp_builder_reset`.
   - `isTemplate` — boolean; `true` when viewing a `wp_builder_template` CPT (snippet).
+  - `isBuilderMode` — boolean; `true` when the canvas is loaded via `action=builder` (full builder mode), `false` when loaded as a front-end embed.
   - `pageTemplate` — active page-layout slug (e.g. `wp-builder-canvas`). Empty string for snippets.
   - `pageTemplates` — object mapping page-layout slugs to display names. Empty for snippets.
+  - `i18n` — object of translated strings keyed by camelCase label name (e.g. `save`, `close`, `addChild`).
+  - `hookLocations` — array of registered hook-location slugs available for snippet injection.
 - **AJAX calls** must send `action`, `nonce`, `post_id`, and the relevant payload to `config.ajaxUrl` using `fetch`.
 - **No new external libraries.**
 
@@ -133,7 +137,7 @@ Each **element** (root and nested alike):
 }
 ```
 
-- `node` must be one of the allowed tags defined in `sanitize_node_tag()` (see `class-layout.php`): `div`, `section`, `article`, `main`, `aside`, `header`, `footer`, `nav`, `p`, `span`, `h1`–`h6`, `a`, `button`, `figure`, `figcaption`, `img`, `input`, `label`, `audio`, `video`, `source`, `iframe`. Unrecognised values fall back to `div`.
+- `node` must be one of the allowed tags defined in `sanitize_node_tag()` (see `class-layout.php`): `div`, `section`, `article`, `main`, `aside`, `header`, `footer`, `nav`, `p`, `span`, `h1`–`h6`, `a`, `button`, `figure`, `figcaption`, `img`, `input`, `label`, `audio`, `video`, `source`, `iframe`, `script`, `style`, `code`, `pre`, `blockquote`. Unrecognised values fall back to `div`.
 - `props` supports `flexDirection` (`"row"` | `"column"` | `""`), `flexGrow` (numeric string or `""`), and `gap` (CSS value string).
 - `style` is scoped: `self` is replaced with `[data-wp-builder-id="<id>"]` at render time.
 - `content` is stored and rendered as raw HTML (sanitised through `wp_kses_post`).
@@ -148,6 +152,7 @@ Each **element** (root and nested alike):
 |------|---------|------|
 | `init` | `register_meta`, `register_template_post_type`, `register_shortcodes`, `maybe_flush_rewrite_rules` | post-types, frontend |
 | `admin_menu` | `register_builder_page`, `register_template_menu` | admin |
+| `load-edit.php` | `setup_builder_list_hooks` | admin |
 | `load-post-new.php` | `maybe_redirect_new_template` | admin |
 | `load-post.php` | `maybe_redirect_template_edit`, `maybe_render_builder_request` | admin, editor |
 | `wp_ajax_wp_builder_get_element` | `ajax_get_element` | ajax |
@@ -155,15 +160,19 @@ Each **element** (root and nested alike):
 | `wp_ajax_wp_builder_get_layout` | `ajax_get_layout` | ajax |
 | `wp_ajax_wp_builder_add_element` | `ajax_add_element` | ajax |
 | `wp_ajax_wp_builder_delete_element` | `ajax_delete_element` | ajax |
+| `wp_ajax_wp_builder_reset` | `ajax_reset_builder` | ajax |
+| `wp` | `inject_snippet_hooks` | frontend |
 | `wp_enqueue_scripts` | `enqueue_frontend_assets` | frontend |
 | `admin_bar_menu` | `add_admin_bar_nodes` | admin |
 | `post_row_actions` / `page_row_actions` / `wp_builder_template_row_actions` | `add_row_action` | admin |
 | `post_type_link` | `template_post_type_link` | post-types |
+| `template_redirect` | `maybe_redirect_template_frontend` | post-types |
 | `the_content` | `render_builder_content` | frontend |
 | `theme_page_templates` / `theme_post_templates` | `register_page_templates` | page-chrome |
 | `template_include` | `maybe_use_builder_template` | page-chrome |
 | `elementor/widgets/register` | `register_elementor_widget` | elementor |
 | `elementor/editor/after_enqueue_styles` | `enqueue_elementor_editor_styles` | elementor |
+| `script_loader_tag` | `add_module_type_to_script_tag` | editor |
 
 ---
 
@@ -206,6 +215,12 @@ Appends a new default child element to a parent element and returns re-rendered 
 `POST wp-admin/admin-ajax.php` with `action=wp_builder_delete_element`
 
 Removes an element (and its descendants) from the layout and returns re-rendered HTML.
+
+### AJAX: reset builder
+
+`POST wp-admin/admin-ajax.php` with `action=wp_builder_reset`
+
+Clears all builder layout data and page template meta for a post (not available for snippet CPTs) and returns the standard WordPress edit URL.
 
 ---
 
