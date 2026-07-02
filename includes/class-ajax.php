@@ -223,7 +223,7 @@ trait WP_Builder_Ajax {
 				'label'   => __( 'Page Layout', 'wp-builder' ),
 				'attrs'   => array( 'disabled' => true ),
 				'options' => array(
-					array( 'value' => 'wp-builder-canvas', 'label' => __( 'Canvas Layout', 'wp-builder' ), 'selected' => true ),
+					array( 'value' => 'wp-builder-canvas', 'label' => __( 'Builder Canvas Layout', 'wp-builder' ), 'selected' => true ),
 				),
 			);
 		} elseif ( ! empty( $page_templates ) ) {

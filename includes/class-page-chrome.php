@@ -12,8 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 trait WP_Builder_Page_Chrome {
 
 	public function register_page_templates( array $templates, $theme, $post, string $post_type ): array {
-		$templates['wp-builder-canvas']     = __( 'Canvas Layout', 'wp-builder' );
-		$templates['wp-builder-full-width'] = __( 'Full Width Layout', 'wp-builder' );
+		$templates['wp-builder-canvas']     = __( 'Builder Canvas Layout', 'wp-builder' );
+		$templates['wp-builder-full-width'] = __( 'Builder Full Width Layout', 'wp-builder' );
 		return $templates;
 	}
 

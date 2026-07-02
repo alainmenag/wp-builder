@@ -184,7 +184,7 @@ trait WP_Builder_Frontend {
 					'postTitle'      => __( 'Title', 'wp-builder' ),
 					'postStatus'     => __( 'Status', 'wp-builder' ),
 					'pageLayout'     => __( 'Template', 'wp-builder' ),
-					'canvasLayout'   => __( 'Canvas Layout', 'wp-builder' ),
+					'canvasLayout'   => __( 'Builder Canvas Layout', 'wp-builder' ),
 					'statusPublish'  => __( 'Publish', 'wp-builder' ),
 					'statusDraft'    => __( 'Draft', 'wp-builder' ),
 					'statusPending'  => __( 'Pending Review', 'wp-builder' ),
