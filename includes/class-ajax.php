@@ -167,6 +167,12 @@ trait WP_Builder_Ajax {
 							if ( 'menu' === $h['type'] ) {
 								return 'menu:' . $h['name'] . '|' . $h['priority'];
 							}
+							if ( 'action' === $h['type'] ) {
+								return 'action:' . $h['name'] . '|' . $h['priority'];
+							}
+							if ( 'content' === $h['type'] ) {
+								return 'content:' . $h['name'] . '|' . $h['priority'];
+							}
 							return 'wp:' . $h['name'] . '|' . $h['priority'];
 						},
 						$parsed

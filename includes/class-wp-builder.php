@@ -133,15 +133,32 @@ final class WP_Builder {
 	 */
 	private function get_hook_locations(): array {
 		$locations = array(
-			''               => __( '— None —', 'wp-builder' ),
-			'wp:head'        => __( 'Head (<head>)', 'wp-builder' ),
-			'wp:body_open'   => __( 'After <body> Open', 'wp-builder' ),
-			'wp:footer'      => __( 'Footer (before </body>)', 'wp-builder' ),
+			''                              => __( '— None —', 'wp-builder' ),
+			'wp:head'                       => __( 'Head (<head>)', 'wp-builder' ),
+			'wp:body_open'                  => __( 'After <body> Open', 'wp-builder' ),
+			'wp:footer'                     => __( 'Footer (before </body>)', 'wp-builder' ),
+			'action:loop_start'             => __( 'Before Loop', 'wp-builder' ),
+			'action:loop_end'               => __( 'After Loop', 'wp-builder' ),
+			'action:get_header'             => __( 'Header Include', 'wp-builder' ),
+			'action:get_footer'             => __( 'Footer Include', 'wp-builder' ),
+			'action:dynamic_sidebar_before' => __( 'Before Widget Area', 'wp-builder' ),
+			'action:dynamic_sidebar_after'  => __( 'After Widget Area', 'wp-builder' ),
+			'content:before'                => __( 'Before Post Content', 'wp-builder' ),
+			'content:after'                 => __( 'After Post Content', 'wp-builder' ),
 		);
 
 		foreach ( get_registered_nav_menus() as $slug => $name ) {
 			/* translators: %s: nav menu location label, e.g. "Primary Menu". */
 			$locations[ 'menu:' . $slug ] = sprintf( __( 'Menu: %s', 'wp-builder' ), $name );
+		}
+
+		// Include action hooks discovered in the active theme's PHP files.
+		foreach ( $this->get_theme_action_hooks() as $hook ) {
+			$key = 'action:' . $hook;
+			if ( ! isset( $locations[ $key ] ) ) {
+				/* translators: %s: WordPress action hook name, e.g. "astra_header_before". */
+				$locations[ $key ] = sprintf( __( 'Theme: %s', 'wp-builder' ), $hook );
+			}
 		}
 
 		/**
@@ -150,6 +167,58 @@ final class WP_Builder {
 		 * @param array<string, string> $locations Associative array of hook_slug => display_label.
 		 */
 		return (array) apply_filters( 'wp_builder_hook_locations', $locations );
+	}
+
+	/**
+	 * Scan the active theme's PHP files for do_action() calls and return a
+	 * sorted, deduplicated list of hook names. Results are cached in a transient
+	 * keyed by theme slug so the scan only runs once per hour per theme.
+	 *
+	 * @return string[]
+	 */
+	private function get_theme_action_hooks(): array {
+		$cache_key = 'wpb_theme_hooks_' . sanitize_key( get_template() );
+		$cached    = get_transient( $cache_key );
+		if ( false !== $cached ) {
+			return (array) $cached;
+		}
+
+		$theme_dir = get_template_directory();
+		$hooks     = array();
+
+		try {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $theme_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
+				RecursiveIteratorIterator::LEAVES_ONLY
+			);
+
+			foreach ( $iterator as $file_info ) {
+				if ( ! $file_info->isFile() || 'php' !== strtolower( $file_info->getExtension() ) ) {
+					continue;
+				}
+
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$content = file_get_contents( $file_info->getPathname() );
+				if ( ! $content ) {
+					continue;
+				}
+
+				if ( preg_match_all( '/\bdo_action\s*\(\s*[\'"]([a-z][a-z0-9_]*)[\'"]/i', $content, $matches ) ) {
+					foreach ( $matches[1] as $hook ) {
+						$hooks[] = $hook;
+					}
+				}
+			}
+		} catch ( Exception $e ) {
+			// If scanning fails (e.g. permission error), return an empty list.
+			return array();
+		}
+
+		$hooks = array_values( array_unique( $hooks ) );
+		sort( $hooks );
+
+		set_transient( $cache_key, $hooks, HOUR_IN_SECONDS );
+		return $hooks;
 	}
 
 	/**
@@ -178,6 +247,24 @@ final class WP_Builder {
 					$hooks[] = array(
 						'type'     => 'menu',
 						'name'     => $location,
+						'priority' => $priority,
+					);
+				}
+			} elseif ( 0 === strpos( $raw, 'action:' ) ) {
+				$name = sanitize_key( substr( $raw, 7 ) );
+				if ( $name ) {
+					$hooks[] = array(
+						'type'     => 'action',
+						'name'     => $name,
+						'priority' => $priority,
+					);
+				}
+			} elseif ( 0 === strpos( $raw, 'content:' ) ) {
+				$position = sanitize_key( substr( $raw, 8 ) );
+				if ( in_array( $position, array( 'before', 'after' ), true ) ) {
+					$hooks[] = array(
+						'type'     => 'content',
+						'name'     => $position,
 						'priority' => $priority,
 					);
 				}
