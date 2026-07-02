@@ -495,7 +495,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				const a        = document.createElement( 'a' );
 				a.className    = 'wpbe-button-secondary';
 				a.href         = field.href || '#';
-				a.textContent  = field.label || '';
+				a.textContent  = field.label || field.attrs?.title || '';
 				applyAttrs( a, field.attrs );
 				if ( field.id ) { a.id = field.id; }
 				const group      = document.createElement( 'div' );
@@ -503,7 +503,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				if ( field.label ) {
 					const lbl        = document.createElement( 'label' );
 					lbl.className    = CSS.label;
-					lbl.textContent  = field.label;
+					lbl.textContent  = field.label || '';
 					group.appendChild( lbl );
 				}
 				group.appendChild( a );
@@ -513,7 +513,7 @@ import { ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_ADD, ICON_REMOVE,
 				const btn       = document.createElement( 'button' );
 				btn.type        = 'button';
 				btn.className   = 'wpbe-button-secondary';
-				btn.textContent = field.label || '';
+				btn.textContent = field.label || field.attrs?.title || '';
 				applyAttrs( btn, field.attrs );
 				controlEl = btn;
 				break;

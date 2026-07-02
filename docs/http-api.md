@@ -6,13 +6,15 @@ WP Builder exposes five authenticated WordPress AJAX endpoints and one read-only
 
 ## Table of contents
 
-- [JSON export (read-only)](#json-export-read-only)
-- [AJAX: get element](#ajax-get-element)
-- [AJAX: save element](#ajax-save-element)
-- [AJAX: get layout](#ajax-get-layout)
-- [AJAX: add element](#ajax-add-element)
-- [AJAX: delete element](#ajax-delete-element)
-- [Error responses](#error-responses)
+- [WP Builder — HTTP API Reference](#wp-builder--http-api-reference)
+	- [Table of contents](#table-of-contents)
+	- [JSON export (read-only)](#json-export-read-only)
+	- [AJAX: get element](#ajax-get-element)
+		- [`fields` panel schema](#fields-panel-schema)
+	- [AJAX: save element](#ajax-save-element)
+	- [AJAX: get layout](#ajax-get-layout)
+	- [AJAX: add element](#ajax-add-element)
+	- [AJAX: delete element](#ajax-delete-element)
 
 ---
 
@@ -162,7 +164,7 @@ POST wp-admin/admin-ajax.php
         "open": false,
         "fields": [
           { "type": "select", "id": "wpbe-node",    "label": "Node",       "options": [{ "value": "div", "label": "div" }, "…"] },
-          { "type": "text",   "id": "wpbe-node-id", "label": "Element ID", "placeholder": "e.g. my-element" }
+          { "type": "text",   "id": "wpbe-node-id", "label": "ID", "placeholder": "e.g. my-element" }
         ]
       },
       {
@@ -170,7 +172,7 @@ POST wp-admin/admin-ajax.php
         "label": "Content",
         "open": true,
         "fields": [
-          { "type": "textarea", "id": "wpbe-html-content", "label": "HTML Content", "attrs": { "rows": "8" } }
+          { "type": "textarea", "id": "wpbe-html-content", "label": "Content", "attrs": { "rows": "8" } }
         ]
       },
       {
@@ -178,8 +180,8 @@ POST wp-admin/admin-ajax.php
         "label": "Layout",
         "open": false,
         "fields": [
-          { "type": "select", "id": "wpbe-flex-direction", "label": "Flex Direction", "options": ["…"] },
-          { "type": "number", "id": "wpbe-flex-grow",      "label": "Flex Grow",      "placeholder": "0", "attrs": { "min": "0", "step": "1" } },
+          { "type": "select", "id": "wpbe-flex-direction", "label": "Direction", "options": ["…"] },
+          { "type": "number", "id": "wpbe-flex-grow",      "label": "Grow",      "placeholder": "0", "attrs": { "min": "0", "step": "1" } },
           { "type": "text",   "id": "wpbe-gap",            "label": "Gap",            "placeholder": "e.g. 16px" }
         ]
       },

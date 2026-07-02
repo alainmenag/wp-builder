@@ -240,12 +240,12 @@ trait WP_Builder_Ajax {
 			array(
 				'type'  => 'text',
 				'id'    => 'wpbe-post-title',
-				'label' => __( 'Post Title', 'wp-builder' ),
+				'label' => __( 'Title', 'wp-builder' ),
 			),
 			array(
 				'type'    => 'select',
 				'id'      => 'wpbe-post-status',
-				'label'   => __( 'Post Status', 'wp-builder' ),
+				'label'   => __( 'Status', 'wp-builder' ),
 				'options' => array(
 					array( 'value' => 'publish', 'label' => __( 'Published',      'wp-builder' ) ),
 					array( 'value' => 'draft',   'label' => __( 'Draft',          'wp-builder' ) ),
@@ -259,7 +259,7 @@ trait WP_Builder_Ajax {
 			$settings_fields[] = array(
 				'type'    => 'select',
 				'id'      => 'wpbe-page-template',
-				'label'   => __( 'Page Layout', 'wp-builder' ),
+				'label'   => __( 'Template', 'wp-builder' ),
 				'attrs'   => array( 'disabled' => true ),
 				'options' => array(
 					array( 'value' => 'wp-builder-canvas', 'label' => __( 'Builder Canvas Layout', 'wp-builder' ), 'selected' => true ),
@@ -277,7 +277,7 @@ trait WP_Builder_Ajax {
 			$settings_fields[] = array(
 				'type'    => 'select',
 				'id'      => 'wpbe-page-template',
-				'label'   => __( 'Page Layout', 'wp-builder' ),
+				'label'   => __( 'Template', 'wp-builder' ),
 				'options' => $tmpl_options,
 			);
 		}
@@ -297,7 +297,7 @@ trait WP_Builder_Ajax {
 				'fields' => array(
 					array(
 						'type'    => 'pre',
-						'label'   => __( 'Shortcode', 'wp-builder' ),
+						'label'   => null,
 						'content' => $shortcode,
 					),
 				),
@@ -315,8 +315,8 @@ trait WP_Builder_Ajax {
 					array(
 						'type'  => 'textarea',
 						'id'    => 'wpbe-hooks',
-						'label' => __( 'Hook Locations', 'wp-builder' ),
-						'hint'  => __( 'One entry per line: <code>(wp/content/action/theme):hook|priority</code>', 'wp-builder' ),
+						'label' => __( 'Locations', 'wp-builder' ),
+						'hint'  => __( 'One per line: <code>type:hook|priority</code><br /><b>Types:</b> wp/content/action/theme', 'wp-builder' ),
 						'attrs' => array(
 							'rows'        => '4',
 							'placeholder' => "wp:head|10\nmenu:primary|10",
@@ -334,9 +334,9 @@ trait WP_Builder_Ajax {
 			'fields' => array_filter( array(
 				array(
 					'type'  => 'link',
-					'label' => __( 'Export', 'wp-builder' ),
+					'label' => null,
 					'href'  => $export_url,
-					'attrs' => array( 'target' => '_blank', 'rel' => 'noreferrer', 'style' => 'width: 100%;' ),
+					'attrs' => array( 'target' => '_blank', 'rel' => 'noreferrer', 'style' => 'width: 100%;', 'title' => __( 'Export', 'wp-builder' ) ),
 				),
 				$is_template ? null : array(
 					'type'  => 'button',
@@ -383,7 +383,7 @@ trait WP_Builder_Ajax {
 							array(
 								'type'        => 'text',
 								'id'          => 'wpbe-node-id',
-								'label'       => __( 'Element ID', 'wp-builder' ),
+								'label'       => __( 'ID', 'wp-builder' ),
 								'placeholder' => __( 'e.g. my-element', 'wp-builder' ),
 							),
 						),
@@ -396,7 +396,7 @@ trait WP_Builder_Ajax {
 							array(
 								'type'  => 'textarea',
 								'id'    => 'wpbe-html-content',
-								'label' => __( 'HTML Content', 'wp-builder' ),
+								'label' => null,
 								'attrs' => array( 'rows' => '8' ),
 							),
 						),
@@ -409,7 +409,7 @@ trait WP_Builder_Ajax {
 							array(
 								'type'    => 'select',
 								'id'      => 'wpbe-flex-direction',
-								'label'   => __( 'Flex Direction', 'wp-builder' ),
+								'label'   => __( 'Direction', 'wp-builder' ),
 								'options' => array(
 									array( 'value' => '',       'label' => __( '— None —', 'wp-builder' ) ),
 									array( 'value' => 'row',    'label' => __( 'Row',      'wp-builder' ) ),
@@ -419,7 +419,7 @@ trait WP_Builder_Ajax {
 							array(
 								'type'        => 'number',
 								'id'          => 'wpbe-flex-grow',
-								'label'       => __( 'Flex Grow', 'wp-builder' ),
+								'label'       => __( 'Grow', 'wp-builder' ),
 								'placeholder' => '0',
 								'attrs'       => array( 'min' => '0', 'step' => '1' ),
 							),
@@ -439,7 +439,7 @@ trait WP_Builder_Ajax {
 							array(
 								'type'  => 'textarea',
 								'id'    => 'wpbe-custom-style',
-								'label' => __( 'Custom CSS', 'wp-builder' ),
+								'label' => __( 'CSS', 'wp-builder' ),
 								'hint'  => sprintf(
 									/* translators: %1$s: opening code tag, %2$s: closing code tag */
 									__( 'Use %1$sself%2$s to target this element.', 'wp-builder' ),
@@ -525,7 +525,7 @@ trait WP_Builder_Ajax {
 	 * Elements that do not match are kept; their own children are also processed.
 	 *
 	 * @param array  $elements Source children array.
-	 * @param string $id       Element ID to remove.
+	 * @param string $id       ID to remove.
 	 * @return array
 	 */
 	private function remove_layout_element( array $elements, string $id ): array {
