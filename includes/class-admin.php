@@ -165,15 +165,14 @@ trait WP_Builder_Admin {
 	}
 
 	/**
-	 * Output an inline script that rewrites each row-title link on the builder
-	 * list from action=edit to action=builder, so clicking the entry title
-	 * opens the builder directly.
+	 * Output an inline script that rewrites title and Edit row-action links on
+	 * the builder list from action=edit to action=builder.
 	 */
 	public function print_builder_list_title_script(): void {
 		?>
 		<script>
 		document.addEventListener( 'DOMContentLoaded', function () {
-			document.querySelectorAll( 'tr[id^="post-"] a.row-title' ).forEach( function ( a ) {
+			document.querySelectorAll( 'tr[id^="post-"] a.row-title, tr[id^="post-"] .row-actions span.edit a' ).forEach( function ( a ) {
 				a.href = a.href.replace( 'action=edit', 'action=builder' );
 			} );
 		} );
