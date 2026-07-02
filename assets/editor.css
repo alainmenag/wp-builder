@@ -218,7 +218,7 @@ body.admin-bar .wpbe-panel.is-docked {
 
 .wpbe-tab-btn.wpbe-panel-footer-link.is-active {
 	background-color: var(--wpb-bg-page) !important;
-	color: #ffffff !important;
+	color: var(--wpb-accent) !important;
 }
 
 .wpbe-close-btn {
