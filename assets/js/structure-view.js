@@ -12,6 +12,7 @@
 
 import { state } from './state.js';
 import { VOID_NODES, ICON_ADD, ICON_REMOVE } from './constants.js';
+import { el } from './dom-helpers.js';
 
 // ---------------------------------------------------------------------------
 // Toggle
@@ -148,63 +149,61 @@ export function renderStructureNode( element, depth, isRoot ) {
 	const node   = ( element.node || 'div' ).toLowerCase();
 	const isVoid = !! VOID_NODES[ node ];
 
-	const wrapper           = document.createElement( 'div' );
-	wrapper.className       = 'wpbe-sv-node' + ( element.id === state.elementId ? ' is-selected' : '' );
-	wrapper.dataset.wpBuilderId = element.id;
+	const wrapper = el( 'div', {
+		cls:  'wpbe-sv-node' + ( element.id === state.elementId ? ' is-selected' : '' ),
+		data: { wpBuilderId: element.id },
+	} );
+	// CSS custom property — must use setProperty() as Object.assign(style,…) does not support them.
 	wrapper.style.setProperty( '--wpbe-sv-depth', depth );
 
 	// ── Bar ──────────────────────────────────────────────────────────────────
-	const bar       = document.createElement( 'div' );
-	bar.className   = 'wpbe-sv-node-bar';
+	const svNodeChip = el( 'span', { cls: 'wpbe-chip wpbe-chip--node', text: node.toUpperCase() } );
 
-	const titleBtn       = document.createElement( 'button' );
-	titleBtn.type        = 'button';
-	titleBtn.className   = 'wpbe-sv-node-title';
-
-	const svNodeChip         = document.createElement( 'span' );
-	svNodeChip.className     = 'wpbe-chip wpbe-chip--node';
-	svNodeChip.textContent   = node.toUpperCase();
-
-	const svIdChip           = document.createElement( 'span' );
-	svIdChip.className       = 'wpbe-chip wpbe-chip--id';
-	svIdChip.textContent     = element.title || element.id || '';
+	const svIdChip = el( 'span', { cls: 'wpbe-chip wpbe-chip--id', text: element.title || element.id || '' } );
 	if ( element.title ) { svIdChip.title = element.id || ''; }
 
-	titleBtn.appendChild( svNodeChip );
-	titleBtn.appendChild( svIdChip );
-
-	titleBtn.addEventListener( 'click', ( e ) => {
-		e.stopPropagation();
-		if ( state.cb_openPanel ) { state.cb_openPanel( state.postId, element.id, state.liveRoot ); }
+	const titleBtn = el( 'button', {
+		type:     'button',
+		cls:      'wpbe-sv-node-title',
+		children: [ svNodeChip, svIdChip ],
+		on:       {
+			click: ( e ) => {
+				e.stopPropagation();
+				if ( state.cb_openPanel ) { state.cb_openPanel( state.postId, element.id, state.liveRoot ); }
+			},
+		},
 	} );
-	bar.appendChild( titleBtn );
+
+	const bar = el( 'div', { cls: 'wpbe-sv-node-bar', children: [ titleBtn ] } );
 
 	if ( ! isVoid ) {
-		const addBtn = document.createElement( 'button' );
-		addBtn.type      = 'button';
-		addBtn.className = 'wpbe-sv-node-action';
-		addBtn.setAttribute( 'aria-label', state.text.addChild || 'Add child element' );
-		addBtn.setAttribute( 'title',      state.text.addChild || 'Add child element' );
-		addBtn.innerHTML = ICON_ADD;
-		addBtn.addEventListener( 'click', ( e ) => {
-			e.stopPropagation();
-			addChildElement( element.id );
-		} );
-		bar.appendChild( addBtn );
+		bar.appendChild( el( 'button', {
+			type:  'button',
+			cls:   'wpbe-sv-node-action',
+			html:  ICON_ADD,
+			attrs: { 'aria-label': state.text.addChild || 'Add child element', title: state.text.addChild || 'Add child element' },
+			on:    {
+				click: ( e ) => {
+					e.stopPropagation();
+					addChildElement( element.id );
+				},
+			},
+		} ) );
 	}
 
 	if ( ! isRoot ) {
-		const delBtn = document.createElement( 'button' );
-		delBtn.type      = 'button';
-		delBtn.className = 'wpbe-sv-node-action wpbe-sv-node-action--danger';
-		delBtn.setAttribute( 'aria-label', state.text.deleteElement || 'Delete element' );
-		delBtn.setAttribute( 'title',      state.text.deleteElement || 'Delete element' );
-		delBtn.innerHTML = ICON_REMOVE;
-		delBtn.addEventListener( 'click', ( e ) => {
-			e.stopPropagation();
-			deleteLayoutElement( element.id );
-		} );
-		bar.appendChild( delBtn );
+		bar.appendChild( el( 'button', {
+			type:  'button',
+			cls:   'wpbe-sv-node-action wpbe-sv-node-action--danger',
+			html:  ICON_REMOVE,
+			attrs: { 'aria-label': state.text.deleteElement || 'Delete element', title: state.text.deleteElement || 'Delete element' },
+			on:    {
+				click: ( e ) => {
+					e.stopPropagation();
+					deleteLayoutElement( element.id );
+				},
+			},
+		} ) );
 	}
 
 	wrapper.appendChild( bar );
@@ -212,8 +211,7 @@ export function renderStructureNode( element, depth, isRoot ) {
 	// ── Children ──────────────────────────────────────────────────────────────
 	const children = element.children || [];
 	if ( children.length ) {
-		const body       = document.createElement( 'div' );
-		body.className   = 'wpbe-sv-node-body';
+		const body = el( 'div', { cls: 'wpbe-sv-node-body' } );
 
 		// Mirror the element's layout props so children are arranged correctly.
 		// The CSS default (flex-direction:column, gap:8px) acts as a fallback.

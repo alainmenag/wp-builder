@@ -12,6 +12,7 @@ import { state } from './state.js';
 import {
 	ICON_FIT, ICON_ELEMENT, ICON_POST, ICON_ISOLATE, ICON_STRUCTURE,
 } from './constants.js';
+import { el } from './dom-helpers.js';
 import { initDrag } from './drag.js';
 import { initResize } from './resize.js';
 import { togglePageZoom } from './zoom.js';
@@ -22,60 +23,50 @@ import { toggleStructureMode } from './structure-view.js';
 // ---------------------------------------------------------------------------
 
 function createAccordion( labelText, startOpen ) {
-	const section     = document.createElement( 'div' );
-	section.className = 'wpbe-accordion' + ( startOpen ? ' is-open' : '' );
+	const section = el( 'div', { cls: 'wpbe-accordion' + ( startOpen ? ' is-open' : '' ) } );
 
-	const btn       = document.createElement( 'button' );
-	btn.type        = 'button';
-	btn.className   = 'wpbe-accordion-header';
-	btn.setAttribute( 'aria-expanded', startOpen ? 'true' : 'false' );
-	btn.addEventListener( 'click', () => {
-		const isOpen = section.classList.contains( 'is-open' );
-		// Collapse all other open accordions in the panel (one-at-a-time).
-		if ( state.panel && ! isOpen ) {
-			state.panel.querySelectorAll( '.wpbe-accordion.is-open' ).forEach( ( other ) => {
-				if ( other === section ) { return; }
-				other.classList.remove( 'is-open' );
-				const otherBtn = other.querySelector( '.wpbe-accordion-header' );
-				if ( otherBtn ) { otherBtn.setAttribute( 'aria-expanded', 'false' ); }
-			} );
-		}
-		section.classList.toggle( 'is-open', ! isOpen );
-		btn.setAttribute( 'aria-expanded', ( ! isOpen ).toString() );
+	const btn = el( 'button', {
+		type:  'button',
+		cls:   'wpbe-accordion-header',
+		attrs: { 'aria-expanded': startOpen ? 'true' : 'false' },
+		on:    {
+			click: () => {
+				const isOpen = section.classList.contains( 'is-open' );
+				// Collapse all other open accordions in the panel (one-at-a-time).
+				if ( state.panel && ! isOpen ) {
+					state.panel.querySelectorAll( '.wpbe-accordion.is-open' ).forEach( ( other ) => {
+						if ( other === section ) { return; }
+						other.classList.remove( 'is-open' );
+						const otherBtn = other.querySelector( '.wpbe-accordion-header' );
+						if ( otherBtn ) { otherBtn.setAttribute( 'aria-expanded', 'false' ); }
+					} );
+				}
+				section.classList.toggle( 'is-open', ! isOpen );
+				btn.setAttribute( 'aria-expanded', ( ! isOpen ).toString() );
+			},
+		},
+		children: [
+			el( 'span', { text: labelText } ),
+			el( 'span', { cls: 'wpbe-accordion-chevron', attrs: { 'aria-hidden': 'true' } } ),
+		],
 	} );
-
-	const labelSpan       = document.createElement( 'span' );
-	labelSpan.textContent = labelText;
-
-	const chevron         = document.createElement( 'span' );
-	chevron.className     = 'wpbe-accordion-chevron';
-	chevron.setAttribute( 'aria-hidden', 'true' );
-
-	btn.appendChild( labelSpan );
-	btn.appendChild( chevron );
 	section.appendChild( btn );
 
-	const body       = document.createElement( 'div' );
-	body.className   = 'wpbe-accordion-body';
-	const inner      = document.createElement( 'div' );
-	inner.className  = 'wpbe-accordion-body-inner';
-	body.appendChild( inner );
-	section.appendChild( body );
+	const inner = el( 'div', { cls: 'wpbe-accordion-body-inner' } );
+	section.appendChild( el( 'div', { cls: 'wpbe-accordion-body', children: [ inner ] } ) );
 
 	return section;
 }
 
 function createFieldGroup( labelText, controlFactory, fieldId ) {
-	const group     = document.createElement( 'div' );
-	group.className = 'wpbe-field-group';
-	const control   = controlFactory();
+	const control = controlFactory();
 	if ( fieldId ) { control.id = fieldId; }
-	const lbl           = document.createElement( 'label' );
-	lbl.className       = 'wpbe-label';
-	lbl.textContent     = labelText;
-	if ( control.id ) { lbl.htmlFor = control.id; }
-	group.appendChild( lbl );
-	group.appendChild( control );
+	const lbl = el( 'label', {
+		cls:  'wpbe-label',
+		text: labelText,
+		...(control.id ? { attrs: { for: control.id } } : {}),
+	} );
+	const group = el( 'div', { cls: 'wpbe-field-group', children: [ lbl, control ] } );
 	return { group, control };
 }
 
@@ -151,10 +142,11 @@ export function renderFieldFromSchema( field ) {
 
 	// Container — a plain wrapper div with no field-group chrome.
 	if ( 'container' === type ) {
-		const div = document.createElement( 'div' );
-		if ( field.id    ) { div.id        = field.id; }
-		if ( field.class ) { div.className = field.class; }
-		if ( field.hidden ) { div.hidden   = true; }
+		const div = el( 'div', {
+			...(field.id     ? { id: field.id }     : {}),
+			...(field.class  ? { cls: field.class } : {}),
+			...(field.hidden ? { hidden: true }     : {}),
+		} );
 		return { group: div, control: div };
 	}
 
@@ -162,75 +154,63 @@ export function renderFieldFromSchema( field ) {
 	switch ( type ) {
 		case 'text':
 		case 'number': {
-			const inp       = document.createElement( 'input' );
-			inp.className   = state.CSS.input;
-			inp.type        = ( 'number' === type ) ? 'number' : 'text';
+			const inp = el( 'input', {
+				cls:  state.CSS.input,
+				type: ( 'number' === type ) ? 'number' : 'text',
+			} );
 			if ( field.placeholder ) { inp.placeholder = field.placeholder; }
 			applyAttrs( inp, field.attrs );
 			controlEl = inp;
 			break;
 		}
 		case 'select': {
-			const sel     = document.createElement( 'select' );
-			sel.className = state.CSS.select;
-			for ( const opt of ( field.options || [] ) ) {
-				const o       = document.createElement( 'option' );
-				o.value       = opt.value;
-				o.textContent = opt.label;
+			const options = ( field.options || [] ).map( ( opt ) => {
+				const o = el( 'option', { text: opt.label, attrs: { value: opt.value } } );
 				if ( opt.selected ) { o.selected = true; }
-				sel.appendChild( o );
-			}
+				return o;
+			} );
+			const sel = el( 'select', { cls: state.CSS.select, children: options } );
 			applyAttrs( sel, field.attrs );
 			controlEl = sel;
 			break;
 		}
 		case 'textarea': {
-			const ta     = document.createElement( 'textarea' );
-			ta.className = 'wpbe-textarea';
+			const ta = el( 'textarea', { cls: 'wpbe-textarea' } );
 			applyAttrs( ta, field.attrs );
 			if ( field.value !== undefined ) { ta.value = field.value; }
 			controlEl = ta;
 			break;
 		}
 		case 'pre': {
-			const pre        = document.createElement( 'pre' );
-			pre.className    = 'wpbe-embed-code';
-			pre.textContent  = field.content || '';
-			const group      = document.createElement( 'div' );
-			group.className  = state.CSS.fieldGroup;
-			if ( field.id ) { group.id = field.id; }
+			const pre   = el( 'pre', { cls: 'wpbe-embed-code', text: field.content || '' } );
+			const group = el( 'div', { cls: state.CSS.fieldGroup, ...(field.id ? { id: field.id } : {}) } );
 			if ( field.label ) {
-				const lbl        = document.createElement( 'label' );
-				lbl.className    = state.CSS.label;
-				lbl.textContent  = field.label;
-				group.appendChild( lbl );
+				group.appendChild( el( 'label', { cls: state.CSS.label, text: field.label } ) );
 			}
 			group.appendChild( pre );
 			return { group, control: pre };
 		}
 		case 'link': {
-			const a        = document.createElement( 'a' );
-			a.className    = 'wpbe-button-secondary';
-			a.href         = field.href || '#';
-			a.textContent  = field.label || ( field.attrs && field.attrs.title ) || '';
+			const a = el( 'a', {
+				cls:  'wpbe-button-secondary',
+				href: field.href || '#',
+				text: field.label || ( field.attrs && field.attrs.title ) || '',
+				...(field.id ? { id: field.id } : {}),
+			} );
 			applyAttrs( a, field.attrs );
-			if ( field.id ) { a.id = field.id; }
-			const group      = document.createElement( 'div' );
-			group.className  = state.CSS.fieldGroup;
+			const group = el( 'div', { cls: state.CSS.fieldGroup } );
 			if ( field.label ) {
-				const lbl        = document.createElement( 'label' );
-				lbl.className    = state.CSS.label;
-				lbl.textContent  = field.label || '';
-				group.appendChild( lbl );
+				group.appendChild( el( 'label', { cls: state.CSS.label, text: field.label || '' } ) );
 			}
 			group.appendChild( a );
 			return { group, control: a };
 		}
 		case 'button': {
-			const btn       = document.createElement( 'button' );
-			btn.type        = 'button';
-			btn.className   = 'wpbe-button-secondary';
-			btn.textContent = field.label || ( field.attrs && field.attrs.title ) || '';
+			const btn = el( 'button', {
+				type: 'button',
+				cls:  'wpbe-button-secondary',
+				text: field.label || ( field.attrs && field.attrs.title ) || '',
+			} );
 			applyAttrs( btn, field.attrs );
 			controlEl = btn;
 			break;
@@ -247,9 +227,7 @@ export function renderFieldFromSchema( field ) {
 
 	// Insert optional hint paragraph between the label and the control.
 	if ( field.hint ) {
-		const hint     = document.createElement( 'p' );
-		hint.className = 'wpbe-inspector-hint';
-		hint.innerHTML = field.hint;
+		const hint     = el( 'p', { cls: 'wpbe-inspector-hint', html: field.hint } );
 		group.insertBefore( hint, control );
 	}
 
@@ -274,9 +252,7 @@ export function renderFieldFromSchema( field ) {
  * @returns {HTMLElement}
  */
 function renderTabPanelFromSchema( tab ) {
-	const tabPanel       = document.createElement( 'div' );
-	tabPanel.className   = 'wpbe-tab-panel';
-	tabPanel.dataset.tab = tab.key;
+	const tabPanel = el( 'div', { cls: 'wpbe-tab-panel', data: { tab: tab.key } } );
 
 	// Element tab is the default active view; main tab starts hidden.
 	if ( 'main'    === tab.key ) { tabPanel.hidden = true;  state.mainTabPanel    = tabPanel; }
@@ -339,137 +315,143 @@ function renderTabPanelFromSchema( tab ) {
  */
 export function createPanel( schema ) {
 	// Panel shell
-	state.panel = document.createElement( 'div' );
-	state.panel.className = 'wpbe-panel';
-	state.panel.setAttribute( 'role', 'dialog' );
-	state.panel.setAttribute( 'aria-label', state.text.attributes || 'Element settings' );
+	state.panel = el( 'div', {
+		cls:   'wpbe-panel',
+		attrs: { role: 'dialog', 'aria-label': state.text.attributes || 'Element settings' },
+	} );
 
 	// ── Header ────────────────────────────────────────────────────────────────
-	const header         = document.createElement( 'div' );
-	header.className     = 'wpbe-panel-header';
-	const headerInside     = document.createElement( 'div' );
-	headerInside.className = 'wpbe-panel-header-inside';
+	const header       = el( 'div', { cls: 'wpbe-panel-header' } );
+	const headerInside = el( 'div', { cls: 'wpbe-panel-header-inside' } );
 
-	state.nodeChip           = document.createElement( 'span' );
-	state.nodeChip.className = 'wpbe-chip wpbe-chip--node';
-	state.nodeChip.style.cursor = 'pointer';
-	state.nodeChip.addEventListener( 'click', () => {
-		if ( state.cb_scrollIntoView ) { state.cb_scrollIntoView( state.elementId ); }
-		if ( state.cb_navigateEditor ) { state.cb_navigateEditor( 'element', 'identity', 'wpbe-node' ); }
+	state.nodeChip = el( 'span', {
+		cls:   'wpbe-chip wpbe-chip--node',
+		style: { cursor: 'pointer' },
+		on:    {
+			click: () => {
+				if ( state.cb_scrollIntoView ) { state.cb_scrollIntoView( state.elementId ); }
+				if ( state.cb_navigateEditor ) { state.cb_navigateEditor( 'element', 'identity', 'wpbe-node' ); }
+			},
+		},
 	} );
 
 	// Structure-view toggle button — placed to the left of the node chip.
-	state.structureToggleBtn           = document.createElement( 'button' );
-	state.structureToggleBtn.type      = 'button';
-	state.structureToggleBtn.className = 'wpbe-structure-toggle-btn';
-	state.structureToggleBtn.setAttribute( 'aria-label', state.text.structureView || 'Structure View' );
-	state.structureToggleBtn.setAttribute( 'title',      state.text.structureView || 'Structure View' );
-	state.structureToggleBtn.innerHTML = ICON_STRUCTURE;
-	state.structureToggleBtn.addEventListener( 'click', toggleStructureMode );
-
-	const headerLeftMain = document.createElement( 'div' );
-	headerLeftMain.className = 'wpbe-panel-header-left-side';
-	headerLeftMain.appendChild( state.structureToggleBtn );
-	headerLeftMain.appendChild( state.nodeChip );
-	headerInside.appendChild( headerLeftMain );
-
-	state.idChip           = document.createElement( 'span' );
-	state.idChip.className = 'wpbe-chip wpbe-chip--id';
-	state.idChip.style.cursor = 'pointer';
-	state.idChip.addEventListener( 'click', () => {
-		if ( state.cb_navigateEditor ) { state.cb_navigateEditor( 'element', 'identity', 'wpbe-element-title' ); }
+	state.structureToggleBtn = el( 'button', {
+		type:  'button',
+		cls:   'wpbe-structure-toggle-btn',
+		html:  ICON_STRUCTURE,
+		attrs: { 'aria-label': state.text.structureView || 'Structure View', title: state.text.structureView || 'Structure View' },
+		on:    { click: toggleStructureMode },
 	} );
 
-	const headerRightSide = document.createElement( 'div' );
-	headerRightSide.className = 'wpbe-panel-header-right-side';
-	headerRightSide.appendChild( state.idChip );
+	const headerLeftMain = el( 'div', {
+		cls:      'wpbe-panel-header-left-side',
+		children: [ state.structureToggleBtn, state.nodeChip ],
+	} );
+	headerInside.appendChild( headerLeftMain );
+
+	state.idChip = el( 'span', {
+		cls:   'wpbe-chip wpbe-chip--id',
+		style: { cursor: 'pointer' },
+		on:    {
+			click: () => {
+				if ( state.cb_navigateEditor ) { state.cb_navigateEditor( 'element', 'identity', 'wpbe-element-title' ); }
+			},
+		},
+	} );
+
+	const headerRightSide = el( 'div', {
+		cls:      'wpbe-panel-header-right-side',
+		children: [ state.idChip ],
+	} );
 	headerInside.appendChild( headerRightSide );
 
 	header.appendChild( headerInside );
 
 	if ( ! ( state.config && state.config.isBuilderMode ) ) {
-		const closeBtn       = document.createElement( 'button' );
-		closeBtn.className   = 'wpbe-close-btn';
-		closeBtn.type        = 'button';
-		closeBtn.setAttribute( 'aria-label', state.text.close || 'Close' );
-		closeBtn.innerHTML   = '&#x2715;';
-		closeBtn.addEventListener( 'click', () => { if ( state.cb_closePanel ) { state.cb_closePanel(); } } );
+		const closeBtn = el( 'button', {
+			cls:   'wpbe-close-btn',
+			type:  'button',
+			html:  '&#x2715;',
+			attrs: { 'aria-label': state.text.close || 'Close' },
+			on:    { click: () => { if ( state.cb_closePanel ) { state.cb_closePanel(); } } },
+		} );
 		header.appendChild( closeBtn );
 	}
 	state.panel.appendChild( header );
 
 	// ── Body — schema-driven tab panels ───────────────────────────────────────
-	const body       = document.createElement( 'div' );
-	body.className   = 'wpbe-panel-body';
+	const body = el( 'div', { cls: 'wpbe-panel-body' } );
 	for ( const tab of ( schema || [] ) ) {
 		body.appendChild( renderTabPanelFromSchema( tab ) );
 	}
 	state.panel.appendChild( body );
 
 	// ── Footer ────────────────────────────────────────────────────────────────
-	const footer       = document.createElement( 'div' );
-	footer.className   = 'wpbe-panel-footer';
+	const footer = el( 'div', { cls: 'wpbe-panel-footer' } );
 
 	// Tab switcher buttons — built from the schema so the order and keys
 	// stay in sync with the server-defined tabs.
-	const tabBtnsGroup       = document.createElement( 'div' );
-	tabBtnsGroup.className   = 'wpbe-tab-btns';
-	state.tabBtns            = [];
+	const tabBtnsGroup = el( 'div', { cls: 'wpbe-tab-btns' } );
+	state.tabBtns      = [];
 
 	const tabIconMap = { main: ICON_POST, element: ICON_ELEMENT };
 	for ( const tab of ( schema || [] ) ) {
-		const btn       = document.createElement( 'button' );
-		btn.type        = 'button';
-		btn.dataset.tab = tab.key;
-		btn.className   = 'wpbe-tab-btn wpbe-panel-footer-link' + ( 'element' === tab.key ? ' is-active' : '' );
-		btn.innerHTML   = tabIconMap[ tab.key ] || '';
-		btn.style.fill  = '#ffffff';
-		btn.addEventListener( 'click', ( () => {
-			const key = tab.key;
-			return () => { if ( state.cb_navigateEditor ) { state.cb_navigateEditor( key ); } };
-		} )() );
+		const btn = el( 'button', {
+			type:  'button',
+			cls:   'wpbe-tab-btn wpbe-panel-footer-link' + ( 'element' === tab.key ? ' is-active' : '' ),
+			html:  tabIconMap[ tab.key ] || '',
+			style: { fill: '#ffffff' },
+			data:  { tab: tab.key },
+			on:    {
+				click: ( () => {
+					const key = tab.key;
+					return () => { if ( state.cb_navigateEditor ) { state.cb_navigateEditor( key ); } };
+				} )(),
+			},
+		} );
 		tabBtnsGroup.appendChild( btn );
 		state.tabBtns.push( btn );
 	}
 	footer.appendChild( tabBtnsGroup );
 
 	// Action buttons — right side of footer.
-	const footerActions       = document.createElement( 'div' );
-	footerActions.className   = 'wpbe-footer-actions';
+	const footerActions = el( 'div', { cls: 'wpbe-footer-actions' } );
 
-	state.editLink           = document.createElement( 'a' );
-	state.editLink.className = 'wpbe-edit-link wpbe-panel-footer-link';
-	state.editLink.target    = '_blank';
-	state.editLink.rel       = 'noopener noreferrer';
-	state.editLink.setAttribute( 'aria-label', state.text.editInBuilder || 'Edit in Builder' );
-	state.editLink.innerHTML = ICON_ISOLATE;
-	state.editLink.style.fill = '#ffffff';
+	state.editLink = el( 'a', {
+		cls:    'wpbe-edit-link wpbe-panel-footer-link',
+		target: '_blank',
+		rel:    'noopener noreferrer',
+		html:   ICON_ISOLATE,
+		style:  { fill: '#ffffff' },
+		attrs:  { 'aria-label': state.text.editInBuilder || 'Edit in Builder' },
+	} );
 
-	state.fitBtn           = document.createElement( 'button' );
-	state.fitBtn.type      = 'button';
-	state.fitBtn.className = 'wpbe-fit-btn wpbe-panel-footer-link';
-	state.fitBtn.setAttribute( 'aria-label', state.text.fitPage || 'Fit Page' );
-	state.fitBtn.setAttribute( 'title',      state.text.fitPage || 'Fit Page' );
-	state.fitBtn.disabled  = ! state.isDocked;
-	state.fitBtn.innerHTML = ICON_FIT;
-	state.fitBtn.addEventListener( 'click', togglePageZoom );
+	state.fitBtn = el( 'button', {
+		type:     'button',
+		cls:      'wpbe-fit-btn wpbe-panel-footer-link',
+		html:     ICON_FIT,
+		disabled: ! state.isDocked,
+		attrs:    { 'aria-label': state.text.fitPage || 'Fit Page', title: state.text.fitPage || 'Fit Page' },
+		on:       { click: togglePageZoom },
+	} );
 
-	state.saveBtn           = document.createElement( 'button' );
-	state.saveBtn.type      = 'button';
-	state.saveBtn.className = 'wpbe-save-btn';
+	state.saveBtn = el( 'button', {
+		type: 'button',
+		cls:  'wpbe-save-btn',
+		on:   { click: () => { if ( state.cb_saveElement ) { state.cb_saveElement(); } } },
+	} );
 
-	state.statusMsg = document.createElement( 'span' );
-	state.statusMsg.className = 'wpbe-save-status';
-	state.statusMsg.setAttribute( 'role',     'status' );
-	state.statusMsg.setAttribute( 'aria-live', 'polite' );
+	state.statusMsg = el( 'span', {
+		cls:   'wpbe-save-status',
+		attrs: { role: 'status', 'aria-live': 'polite' },
+	} );
 
-	const saveLbl       = document.createElement( 'span' );
-	saveLbl.textContent = state.text.save || 'Save';
-	state.saveLbl       = saveLbl;
+	const saveLbl = el( 'span', { text: state.text.save || 'Save' } );
+	state.saveLbl = saveLbl;
 
 	state.saveBtn.appendChild( state.statusMsg );
 	state.saveBtn.appendChild( saveLbl );
-	state.saveBtn.addEventListener( 'click', () => { if ( state.cb_saveElement ) { state.cb_saveElement(); } } );
 
 	if ( ! ( state.config && state.config.isBuilderMode ) ) {
 		footerActions.appendChild( state.editLink );
@@ -479,16 +461,10 @@ export function createPanel( schema ) {
 	footer.appendChild( footerActions );
 
 	// Left-edge resize handle (used when docked right).
-	const resizeHandle       = document.createElement( 'div' );
-	resizeHandle.className   = 'wpbe-resize-handle-left';
-
 	// Right-edge resize handle (used when docked left).
-	const resizeHandleRight       = document.createElement( 'div' );
-	resizeHandleRight.className   = 'wpbe-resize-handle-right';
-
 	state.panel.appendChild( footer );
-	state.panel.appendChild( resizeHandle );
-	state.panel.appendChild( resizeHandleRight );
+	state.panel.appendChild( el( 'div', { cls: 'wpbe-resize-handle-left' } ) );
+	state.panel.appendChild( el( 'div', { cls: 'wpbe-resize-handle-right' } ) );
 	document.body.appendChild( state.panel );
 	initDrag();
 	initResize();
