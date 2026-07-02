@@ -35,7 +35,18 @@ wp-builder/
 │   ├── shared.css                  # Shared design tokens and reusable UI components (--wpb-*)
 │   ├── editor.css         # Frontend quick-editor panel styles (wpbe- prefix)
 │   ├── js/
-│   │   ├── editor.js      # Entry point — boots the frontend quick-editor (ES module IIFE)
+│   │   ├── editor.js               # Entry point — orchestrates all modules, wires callbacks, boots editor
+│   │   ├── state.js                # Shared mutable state and cross-module callback slots (cb_*)
+│   │   ├── ajax.js                 # AJAX layer — fetchElement, saveElement, resetBuilder
+│   │   ├── panel-dom.js            # Builds and manages the quick-editor panel DOM
+│   │   ├── live-preview.js         # Unsaved-change tracking and live DOM preview
+│   │   ├── structure-view.js       # Structure-tree view of the element hierarchy
+│   │   ├── code-editors.js         # CodeMirror integration for CSS and hooks fields
+│   │   ├── dock.js                 # Panel docking, positioning, and snap behaviour
+│   │   ├── drag.js                 # Panel drag-to-reposition logic
+│   │   ├── resize.js               # Panel edge-resize logic
+│   │   ├── zoom.js                 # Fit-page zoom for the builder canvas
+│   │   ├── prefs.js                # Persist and restore panel position preferences (localStorage)
 │   │   ├── constants.js            # Node glossary, void-node set, icon SVG strings
 │   │   ├── layout.js               # Layout data helpers (create, find, add, delete elements)
 │   │   └── dom-helpers.js          # Shared attribute-control rendering helpers
@@ -72,7 +83,8 @@ wp-builder/
 
 - **ES6 native modules** — the editor is split across `assets/js/` as native ES modules. `assets/js/editor.js` is the entry point; PHP loads it with `type="module"` via `add_module_type_to_script_tag()`.
 - **No framework, no build step** — plain DOM APIs (`document.getElementById`, `addEventListener`, `classList`, etc.).
-- **Module dependencies:** `constants` and `layout` are leaf modules; `dom-helpers` imports from `constants`; `editor.js` imports from `constants`, `layout`, and `dom-helpers`.
+- **Module architecture:** `editor.js` is the orchestrator — it imports all 14 sibling modules, wires cross-module callbacks onto the shared `state` object (as `cb_*` slots) to break circular-import chains, and boots the editor on DOMContentLoaded. `state.js` is the shared mutable hub imported by every module. `constants.js`, `layout.js`, and `dom-helpers.js` are leaf/utility modules with no dependency on `state.js`.
+- **Cross-module callbacks** — functions owned by `editor.js` (e.g. `openPanel`, `closePanel`, `populatePanel`, `setStatus`) are stored as `state.cb_*` slots at startup so other modules (e.g. `ajax.js`, `panel-dom.js`, `structure-view.js`) can call back into the orchestrator without importing it directly.
 - **Global config** is injected by `wp_localize_script` as `window.wpBuilderEditor` (see `class-frontend.php` → `enqueue_editor_assets`). Because `wp_localize_script` emits a plain `var` declaration (no `type="module"`), `window.wpBuilderEditor` is available globally when the deferred module executes. Access it as `const config = window.wpBuilderEditor || {};`. The object exposes:
   - `ajaxUrl` — WordPress admin-ajax URL.
   - `builderBaseUrl` — `wp-admin/post.php` base URL (used for the JSON export link).

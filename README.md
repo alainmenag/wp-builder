@@ -70,9 +70,9 @@ When Elementor is active, a **Builder Snippet** widget appears in the Elementor 
 
 ### Opening the editor
 - Visit any post/page/snippet on the **front end** while logged in as a user with edit permissions — the quick-editor panel loads automatically.
-- From any post/page list: click the **Builder** row action to open the post's front-end URL with the editor panel active.
-- From the admin bar: **Builder → Edit** (when viewing a post on the front end).
-- Direct URL: `wp-admin/post.php?post={id}&action=builder` — redirects to the post's front-end URL.
+- From any post/page list: click the **Builder** row action to open the builder canvas for the post.
+- From the admin bar: **Builder → Edit** (when viewing a post or page on the front end) — opens the builder canvas.
+- Direct URL: `wp-admin/post.php?post={id}&action=builder` — renders the builder canvas inline (no theme chrome).
 
 ### Creating a snippet
 1. Go to **Builder → Add New** in the admin sidebar.
@@ -110,7 +110,18 @@ wp-builder/
 │   ├── shared.css                  # Shared design tokens and reusable UI components
 │   ├── editor.css         # Frontend quick-editor panel styles (wpbe- prefix)
 │   ├── js/
-│   │   ├── editor.js      # Entry point — boots the frontend quick-editor (ES module IIFE)
+│   │   ├── editor.js               # Entry point — orchestrates all modules, wires callbacks, boots editor
+│   │   ├── state.js                # Shared mutable state and cross-module callback slots (cb_*)
+│   │   ├── ajax.js                 # AJAX layer — fetchElement, saveElement, resetBuilder
+│   │   ├── panel-dom.js            # Builds and manages the quick-editor panel DOM
+│   │   ├── live-preview.js         # Unsaved-change tracking and live DOM preview
+│   │   ├── structure-view.js       # Structure-tree view of the element hierarchy
+│   │   ├── code-editors.js         # CodeMirror integration for CSS and hooks fields
+│   │   ├── dock.js                 # Panel docking, positioning, and snap behaviour
+│   │   ├── drag.js                 # Panel drag-to-reposition logic
+│   │   ├── resize.js               # Panel edge-resize logic
+│   │   ├── zoom.js                 # Fit-page zoom for the builder canvas
+│   │   ├── prefs.js                # Persist and restore panel position preferences (localStorage)
 │   │   ├── constants.js            # Node glossary, void-node set, icon SVG strings
 │   │   ├── layout.js               # Layout data helpers (create, find, add, delete elements)
 │   │   └── dom-helpers.js          # Shared attribute-control rendering helpers
