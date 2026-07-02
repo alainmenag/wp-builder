@@ -32,10 +32,10 @@ trait WP_Builder_Post_Types {
 		register_post_type(
 			self::TEMPLATE_CPT,
 			array(
-				'label'               => __( 'Builder Snippets', 'wp-builder' ),
+				'label'               => __( 'Builder List', 'wp-builder' ),
 				'labels'              => array(
-					'name'               => __( 'Builder Snippets', 'wp-builder' ),
-					'singular_name'      => __( 'Builder Snippet', 'wp-builder' ),
+					'name'               => __( 'Builder List', 'wp-builder' ),
+					'singular_name'      => __( 'Builder Item', 'wp-builder' ),
 					'add_new'            => __( 'Add New', 'wp-builder' ),
 					'add_new_item'       => __( 'Add New Snippet', 'wp-builder' ),
 					'edit_item'          => __( 'Edit Snippet', 'wp-builder' ),
