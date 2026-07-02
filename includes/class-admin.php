@@ -110,6 +110,11 @@ trait WP_Builder_Admin {
 			return $actions;
 		}
 
+		// For snippets, "Edit" already opens the builder — no need for a duplicate link.
+		if ( self::TEMPLATE_CPT === $post->post_type ) {
+			return $actions;
+		}
+
 		$actions['wp_builder'] = sprintf(
 			'<a href="%1$s">%2$s</a>',
 			esc_url( $this->get_builder_url( $post->ID ) ),
