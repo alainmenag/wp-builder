@@ -24,8 +24,8 @@ trait WP_Builder_Admin {
 
 		add_submenu_page(
 			'wp-builder-snippets',
-			__( 'Builder Snippets', 'wp-builder' ),
-			__( 'Snippets', 'wp-builder' ),
+			__( 'Builder List', 'wp-builder' ),
+			__( 'List', 'wp-builder' ),
 			'edit_posts',
 			'edit.php?post_type=' . self::TEMPLATE_CPT
 		);
