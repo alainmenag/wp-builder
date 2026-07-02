@@ -415,7 +415,7 @@ export function createPanel( schema ) {
 	tabBtnsGroup.className   = 'wpbe-tab-btns';
 	state.tabBtns            = [];
 
-	const tabIconMap = { main: ICON_ELEMENT, element: ICON_POST };
+	const tabIconMap = { main: ICON_POST, element: ICON_ELEMENT };
 	for ( const tab of ( schema || [] ) ) {
 		const btn       = document.createElement( 'button' );
 		btn.type        = 'button';
