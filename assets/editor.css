@@ -146,8 +146,22 @@ body.admin-bar .wpbe-panel.is-docked {
 	align-items: center;
 	display: flex;
 	flex: 1;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	gap: 6px;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.wpbe-panel-header-left-main {
+	align-items: center;
+	display: flex;
+	flex-shrink: 0;
+	gap: 6px;
+}
+
+.wpbe-panel-header-left-id {
+	display: flex;
+	flex: 1;
 	min-width: 0;
 	overflow: hidden;
 }
@@ -172,6 +186,7 @@ body.admin-bar .wpbe-panel.is-docked {
 .wpbe-chip--id {
 	color: var(--wpb-text-muted);
 	cursor: pointer;
+	display: block;
 	font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 	font-size: 12px;
 	font-weight: 900;
