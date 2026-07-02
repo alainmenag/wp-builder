@@ -348,7 +348,7 @@ trait WP_Builder_Frontend {
 						$hook['priority']
 					);
 				} else {
-					// 'wp' type: prepend 'wp_' to the suffix. 'action' type: use name as-is.
+					// 'wp' type: prepend 'wp_' to the suffix. 'action'/'theme' type: use name as-is.
 					$hook_name = 'wp' === $hook['type'] ? 'wp_' . $hook['name'] : $hook['name'];
 					add_action(
 						$hook_name,

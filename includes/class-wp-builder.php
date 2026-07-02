@@ -154,7 +154,7 @@ final class WP_Builder {
 
 		// Include action hooks discovered in the active theme's PHP files.
 		foreach ( $this->get_theme_action_hooks() as $hook ) {
-			$key = 'action:' . $hook;
+			$key = 'theme:' . $hook;
 			if ( ! isset( $locations[ $key ] ) ) {
 				/* translators: %s: WordPress action hook name, e.g. "astra_header_before". */
 				$locations[ $key ] = sprintf( __( 'Theme: %s', 'wp-builder' ), $hook );
@@ -247,6 +247,15 @@ final class WP_Builder {
 					$hooks[] = array(
 						'type'     => 'menu',
 						'name'     => $location,
+						'priority' => $priority,
+					);
+				}
+			} elseif ( 0 === strpos( $raw, 'theme:' ) ) {
+				$name = sanitize_key( substr( $raw, 6 ) );
+				if ( $name ) {
+					$hooks[] = array(
+						'type'     => 'theme',
+						'name'     => $name,
 						'priority' => $priority,
 					);
 				}

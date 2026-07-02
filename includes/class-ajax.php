@@ -170,6 +170,9 @@ trait WP_Builder_Ajax {
 							if ( 'action' === $h['type'] ) {
 								return 'action:' . $h['name'] . '|' . $h['priority'];
 							}
+							if ( 'theme' === $h['type'] ) {
+								return 'theme:' . $h['name'] . '|' . $h['priority'];
+							}
 							if ( 'content' === $h['type'] ) {
 								return 'content:' . $h['name'] . '|' . $h['priority'];
 							}
