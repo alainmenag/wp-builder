@@ -84,6 +84,20 @@ export function el( tag, descriptor ) {
 }
 
 // ---------------------------------------------------------------------------
+// append() — multi-child append helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Append one or more child nodes (or strings) to a target element.
+ *
+ * @param {Element}              target   The element to append into.
+ * @param {Node|string|Array}    children A single node/string or an array of nodes/strings.
+ */
+export function append( target, children ) {
+	target.append( ...( Array.isArray( children ) ? children : [ children ] ) );
+}
+
+// ---------------------------------------------------------------------------
 // createAttrControl / renderNodeAttrs
 // ---------------------------------------------------------------------------
 
