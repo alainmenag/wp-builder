@@ -143,6 +143,42 @@ trait WP_Builder_Admin {
 		add_filter( 'views_edit-' . self::TEMPLATE_CPT, array( $this, 'get_builder_list_views' ) );
 		add_filter( 'manage_' . self::TEMPLATE_CPT . '_posts_columns', array( $this, 'add_builder_list_type_column' ) );
 		add_action( 'manage_' . self::TEMPLATE_CPT . '_posts_custom_column', array( $this, 'render_builder_list_type_column' ), 10, 2 );
+		// Title clicks open the builder; remove the now-redundant "Builder" row action.
+		add_action( 'admin_head', array( $this, 'print_builder_list_title_script' ) );
+		add_filter( 'post_row_actions', array( $this, 'remove_builder_row_action_on_list' ), 20, 2 );
+		add_filter( 'page_row_actions', array( $this, 'remove_builder_row_action_on_list' ), 20, 2 );
+	}
+
+	/**
+	 * Remove the "Builder" row action for non-snippet entries when on the
+	 * builder list screen — the title link already opens the builder there.
+	 *
+	 * @param array   $actions Row actions.
+	 * @param WP_Post $post    Current post.
+	 * @return array
+	 */
+	public function remove_builder_row_action_on_list( array $actions, WP_Post $post ): array {
+		if ( self::TEMPLATE_CPT !== $post->post_type ) {
+			unset( $actions['wp_builder'] );
+		}
+		return $actions;
+	}
+
+	/**
+	 * Output an inline script that rewrites each row-title link on the builder
+	 * list from action=edit to action=builder, so clicking the entry title
+	 * opens the builder directly.
+	 */
+	public function print_builder_list_title_script(): void {
+		?>
+		<script>
+		document.addEventListener( 'DOMContentLoaded', function () {
+			document.querySelectorAll( 'tr[id^="post-"] a.row-title' ).forEach( function ( a ) {
+				a.href = a.href.replace( 'action=edit', 'action=builder' );
+			} );
+		} );
+		</script>
+		<?php
 	}
 
 	/**
