@@ -47,6 +47,15 @@ global $post;
 $post = get_post( $post_id );
 setup_postdata( $post );
 
+// If the post has no saved layout yet, initialise and persist one now so that
+// the element ID baked into the rendered HTML matches what the AJAX handlers
+// will find when they call get_layout() on subsequent requests.
+$raw_layout = get_post_meta( $post_id, self::META_KEY, true );
+if ( ! $raw_layout ) {
+	$new_layout = $this->empty_layout();
+	update_post_meta( $post_id, self::META_KEY, wp_slash( wp_json_encode( $new_layout ) ) );
+}
+
 // Render the builder canvas directly without an HTTP redirect.
 $this->enqueue_frontend_style();
 $this->enqueue_editor_assets( $post_id, true );
