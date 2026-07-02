@@ -214,29 +214,51 @@ trait WP_Builder_Admin {
 		}
 
 		// Default: show all builder content across all three post types.
-		// Pre-fetch snippet IDs (all, regardless of meta) and page/post IDs
-		// that carry builder layout data, then scope the main query to that set.
+		// Derive the status to pre-fetch from what WordPress already parsed from the URL
+		// so that trash views are populated correctly.
+		$current_post_status = $query->get( 'post_status' );
+		$fetch_status        = $current_post_status ?: array( 'publish', 'draft', 'pending', 'private', 'future' );
+
 		$fetch_args = array(
 			'fields'                 => 'ids',
 			'posts_per_page'         => -1,
-			'post_status'            => array( 'publish', 'draft', 'pending', 'private', 'future' ),
+			'post_status'            => $fetch_status,
 			'no_found_rows'          => true,
 			'update_post_meta_cache' => false,
 			'update_post_term_cache' => false,
 		);
 
 		$snippet_ids = get_posts( array_merge( $fetch_args, array( 'post_type' => self::TEMPLATE_CPT ) ) );
-		$builder_ids = get_posts( array_merge(
-			$fetch_args,
-			array(
-				'post_type' => array( 'page', 'post' ),
-				'meta_key'  => self::META_KEY,
+		$builder_ids = get_posts(
+			array_merge(
+				$fetch_args,
+				array(
+					'post_type' => array( 'page', 'post' ),
+					'meta_key'  => self::META_KEY,
+				)
 			)
-		) );
+		);
 
 		$all_ids = array_merge( $snippet_ids, $builder_ids );
 
-		$query->set( 'post_type', array( self::TEMPLATE_CPT, 'page', 'post' ) );
+		// Keep post_type as wp_builder_template so WordPress's edit.php can handle
+		// bulk-action messages correctly — it expects a string, not an array.
+		// Widen the post-type SQL condition via a self-removing posts_where closure.
+		$template_cpt = self::TEMPLATE_CPT;
+		$where_filter = static function ( string $where, WP_Query $q ) use ( &$where_filter, $template_cpt ) {
+			if ( ! $q->is_main_query() ) {
+				return $where;
+			}
+			remove_filter( 'posts_where', $where_filter, 10 );
+			global $wpdb;
+			return str_replace(
+				"{$wpdb->posts}.post_type = '{$template_cpt}'",
+				"{$wpdb->posts}.post_type IN ('{$template_cpt}', 'page', 'post')",
+				$where
+			);
+		};
+		add_filter( 'posts_where', $where_filter, 10, 2 );
+
 		$query->set( 'post__in', $all_ids ?: array( 0 ) );
 	}
 
@@ -252,17 +274,21 @@ trait WP_Builder_Admin {
 		$current_status = isset( $_GET['post_status'] ) ? sanitize_key( wp_unslash( $_GET['post_status'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$base_url       = admin_url( 'edit.php?post_type=' . self::TEMPLATE_CPT );
 
-		$snippet_all = $this->count_builder_list_posts( self::TEMPLATE_CPT );
-		$snippet_pub = $this->count_builder_list_posts( self::TEMPLATE_CPT, 'publish' );
-		$page_all    = $this->count_builder_list_posts( 'page' );
-		$page_pub    = $this->count_builder_list_posts( 'page', 'publish' );
-		$post_all    = $this->count_builder_list_posts( 'post' );
-		$post_pub    = $this->count_builder_list_posts( 'post', 'publish' );
+		$snippet_all   = $this->count_builder_list_posts( self::TEMPLATE_CPT );
+		$snippet_pub   = $this->count_builder_list_posts( self::TEMPLATE_CPT, 'publish' );
+		$snippet_trash = $this->count_builder_list_posts( self::TEMPLATE_CPT, 'trash' );
+		$page_all      = $this->count_builder_list_posts( 'page' );
+		$page_pub      = $this->count_builder_list_posts( 'page', 'publish' );
+		$page_trash    = $this->count_builder_list_posts( 'page', 'trash' );
+		$post_all      = $this->count_builder_list_posts( 'post' );
+		$post_pub      = $this->count_builder_list_posts( 'post', 'publish' );
+		$post_trash    = $this->count_builder_list_posts( 'post', 'trash' );
 
-		$all_total = $snippet_all + $page_all + $post_all;
-		$pub_total = $snippet_pub + $page_pub + $post_pub;
+		$all_total   = $snippet_all + $page_all + $post_all;
+		$pub_total   = $snippet_pub + $page_pub + $post_pub;
+		$trash_total = $snippet_trash + $page_trash + $post_trash;
 
-		return array(
+		$result = array(
 			'all'     => $this->builder_view_link(
 				$base_url,
 				__( 'All', 'wp-builder' ),
@@ -294,6 +320,17 @@ trait WP_Builder_Admin {
 				'post' === $wpb_type
 			),
 		);
+
+		if ( $trash_total > 0 ) {
+			$result['trash'] = $this->builder_view_link(
+				add_query_arg( 'post_status', 'trash', $base_url ),
+				__( 'Trash', 'wp-builder' ),
+				$trash_total,
+				'' === $wpb_type && 'trash' === $current_status
+			);
+		}
+
+		return $result;
 	}
 
 	/**
