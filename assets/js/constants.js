@@ -54,7 +54,8 @@ export const ALLOWED_NODES = [
 	'div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav',
 	'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
 	'a', 'button', 'figure', 'figcaption', 'img', 'input', 'label',
-	'audio', 'video', 'source', 'iframe'
+	'audio', 'video', 'source', 'iframe',
+	'script', 'style', 'code', 'pre', 'blockquote'
 ];
 
 export const ICON_ADD     = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>';

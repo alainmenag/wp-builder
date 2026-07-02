@@ -125,7 +125,7 @@ trait WP_Builder_Layout {
 	}
 
 	private function sanitize_node_tag( string $tag ): string {
-		$allowed = array( 'div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav', 'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'button', 'figure', 'figcaption', 'img', 'input', 'label', 'audio', 'video', 'source', 'iframe' );
+		$allowed = array( 'div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav', 'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'button', 'figure', 'figcaption', 'img', 'input', 'label', 'audio', 'video', 'source', 'iframe', 'script', 'style', 'code', 'pre', 'blockquote' );
 		return in_array( $tag, $allowed, true ) ? $tag : 'div';
 	}
 
