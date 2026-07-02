@@ -60,10 +60,12 @@ export const ALLOWED_NODES = [
 
 const { icons = {} } = window.wpBuilderEditor || {};
 
-export const ICON_ADD       = icons.add       ?? '';
-export const ICON_REMOVE    = icons.remove    ?? '';
-export const ICON_FIT       = icons.fit       ?? '';
-export const ICON_ISOLATE   = icons.isolate   ?? '';
-export const ICON_ELEMENT   = icons.element   ?? '';
-export const ICON_POST      = icons.post      ?? '';
-export const ICON_STRUCTURE = icons.structure ?? '';
+export const ICON_DEFAULT   = icons.default   ?? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M0 0h24v24H0z" fill="none"/></svg>';
+
+export const ICON_ADD       = icons.add       ?? ICON_DEFAULT;
+export const ICON_REMOVE    = icons.remove    ?? ICON_DEFAULT;
+export const ICON_FIT       = icons.fit       ?? ICON_DEFAULT;
+export const ICON_ISOLATE   = icons.isolate   ?? ICON_DEFAULT;
+export const ICON_ELEMENT   = icons.element   ?? ICON_DEFAULT;
+export const ICON_POST      = icons.post      ?? ICON_DEFAULT;
+export const ICON_STRUCTURE = icons.structure ?? ICON_DEFAULT;
