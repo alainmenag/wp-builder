@@ -142,7 +142,7 @@ body.admin-bar .wpbe-panel.is-docked {
 	cursor: grabbing;
 }
 
-.wpbe-panel-header-left {
+.wpbe-panel-header-inside {
 	align-items: center;
 	display: flex;
 	flex: 1;
@@ -152,14 +152,14 @@ body.admin-bar .wpbe-panel.is-docked {
 	overflow: hidden;
 }
 
-.wpbe-panel-header-left-main {
+.wpbe-panel-header-left-side {
 	align-items: center;
 	display: flex;
 	flex-shrink: 0;
 	gap: 6px;
 }
 
-.wpbe-panel-header-left-id {
+.wpbe-panel-header-right-side {
 	display: flex;
 	flex: 1;
 	min-width: 0;

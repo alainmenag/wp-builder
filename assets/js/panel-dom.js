@@ -346,8 +346,8 @@ export function createPanel( schema ) {
 	// ── Header ────────────────────────────────────────────────────────────────
 	const header         = document.createElement( 'div' );
 	header.className     = 'wpbe-panel-header';
-	const headerLeft     = document.createElement( 'div' );
-	headerLeft.className = 'wpbe-panel-header-left';
+	const headerInside     = document.createElement( 'div' );
+	headerInside.className = 'wpbe-panel-header-inside';
 
 	state.nodeChip           = document.createElement( 'span' );
 	state.nodeChip.className = 'wpbe-chip wpbe-chip--node';
@@ -367,10 +367,10 @@ export function createPanel( schema ) {
 	state.structureToggleBtn.addEventListener( 'click', toggleStructureMode );
 
 	const headerLeftMain = document.createElement( 'div' );
-	headerLeftMain.className = 'wpbe-panel-header-left-main';
+	headerLeftMain.className = 'wpbe-panel-header-left-side';
 	headerLeftMain.appendChild( state.structureToggleBtn );
 	headerLeftMain.appendChild( state.nodeChip );
-	headerLeft.appendChild( headerLeftMain );
+	headerInside.appendChild( headerLeftMain );
 
 	state.idChip           = document.createElement( 'span' );
 	state.idChip.className = 'wpbe-chip wpbe-chip--id';
@@ -379,12 +379,12 @@ export function createPanel( schema ) {
 		if ( state.cb_navigateEditor ) { state.cb_navigateEditor( 'element', 'identity', 'wpbe-node-id' ); }
 	} );
 
-	const headerLeftId = document.createElement( 'div' );
-	headerLeftId.className = 'wpbe-panel-header-left-id';
-	headerLeftId.appendChild( state.idChip );
-	headerLeft.appendChild( headerLeftId );
+	const headerRightSide = document.createElement( 'div' );
+	headerRightSide.className = 'wpbe-panel-header-right-side';
+	headerRightSide.appendChild( state.idChip );
+	headerInside.appendChild( headerRightSide );
 
-	header.appendChild( headerLeft );
+	header.appendChild( headerInside );
 
 	if ( ! ( state.config && state.config.isBuilderMode ) ) {
 		const closeBtn       = document.createElement( 'button' );
