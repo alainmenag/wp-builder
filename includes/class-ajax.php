@@ -6,9 +6,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Trait WP_Builder_Ajax
  *
- * Provides two AJAX endpoints used by the front-end element quick-editor:
- *   - wp_builder_get_element  — fetch a single element's data by ID.
- *   - wp_builder_save_element — update a single element and re-render the layout.
+ * Provides all AJAX endpoints used by the front-end element quick-editor:
+ *   - wp_builder_get_element   — fetch a single element's data and panel schema by ID.
+ *   - wp_builder_save_element  — update a single element and re-render the layout.
+ *   - wp_builder_get_layout    — return the full layout object for a post.
+ *   - wp_builder_add_element   — append a new child element to a parent and re-render.
+ *   - wp_builder_delete_element — remove an element and re-render.
+ *   - wp_builder_reset         — clear all builder data and reset the page template.
  */
 trait WP_Builder_Ajax {
 
@@ -213,13 +217,10 @@ trait WP_Builder_Ajax {
 	/**
 	 * Build the tab/accordion/field schema for the front-end quick-editor panel.
 	 *
-	 * The shape mirrors get_panel_schema() in class-editor-schema.php so the
-	 * JavaScript can use a single schema-driven renderer for both surfaces.
-	 *
 	 * Each tab entry:   key, label, accordions[].
 	 * Each accordion:   slug, label, open, fields[].
 	 * Each field:       type, id, label, and type-specific keys
-	 *                   (options, placeholder, attrs, hint).
+	 *                   (options, placeholder, attrs, hint, value).
 	 *
 	 * Field IDs use the wpbe- prefix to match the references in
 	 * editor.js (e.g. wpbe-node, wpbe-post-title).

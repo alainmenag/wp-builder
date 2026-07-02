@@ -15,6 +15,7 @@ WP Builder exposes five authenticated WordPress AJAX endpoints and one read-only
 	- [AJAX: get layout](#ajax-get-layout)
 	- [AJAX: add element](#ajax-add-element)
 	- [AJAX: delete element](#ajax-delete-element)
+	- [AJAX: reset builder](#ajax-reset-builder)
 
 ---
 
@@ -113,6 +114,7 @@ POST wp-admin/admin-ajax.php
     "post_title": "My Page",
     "post_status": "publish",
     "page_template": "wp-builder-canvas",
+    "hooks": "",
     "fields": [ /* panel schema — see below */ ]
   }
 }
@@ -125,6 +127,7 @@ POST wp-admin/admin-ajax.php
 | `post_title`    | string | Current post title. |
 | `post_status`   | string | Current post status. |
 | `page_template` | string | Active page-layout slug, or empty string for snippet CPTs. |
+| `hooks`         | string | Newline-separated hook locations for snippet CPTs; empty string for other post types. |
 | `fields`        | array  | Panel schema for dynamic front-end editor construction — see below. |
 
 ### `fields` panel schema
@@ -142,9 +145,9 @@ POST wp-admin/admin-ajax.php
         "label": "Settings",
         "open": true,
         "fields": [
-          { "type": "text",   "id": "wpbe-post-title",  "label": "Post Title" },
+          { "type": "text",   "id": "wpbe-post-title",  "label": "Title" },
           {
-            "type": "select", "id": "wpbe-post-status", "label": "Post Status",
+            "type": "select", "id": "wpbe-post-status", "label": "Status",
             "options": [
               { "value": "publish", "label": "Published" },
               { "value": "draft",   "label": "Draft" }
@@ -190,7 +193,7 @@ POST wp-admin/admin-ajax.php
         "label": "Style",
         "open": false,
         "fields": [
-          { "type": "textarea", "id": "wpbe-custom-style", "label": "Custom CSS", "hint": "Use <code>self</code> to target this element.", "attrs": { "rows": "6", "placeholder": "self {\n  background-color: red;\n}" } }
+          { "type": "textarea", "id": "wpbe-custom-style", "label": "CSS", "hint": "Use <code>self</code> to target this element.", "attrs": { "rows": "6", "placeholder": "self {\n  background-color: red;\n}" } }
         ]
       },
       {
@@ -268,6 +271,7 @@ POST wp-admin/admin-ajax.php
 | `post_status`    | string  | No       | New post status. Accepted values: `publish`, `draft`, `pending`, `private`. |
 | `title`          | string  | No       | New post title. |
 | `page_template`  | string  | No       | Page-layout slug. Not applied when saving a `wp_builder_template` CPT. |
+| `hooks`          | string  | No       | Newline-separated hook locations for snippet CPTs (e.g. `wp:head|10`). Only applied when saving a `wp_builder_template` CPT. |
 
 **Success response** — `200 OK`
 
@@ -276,10 +280,12 @@ POST wp-admin/admin-ajax.php
   "success": true,
   "data": {
     "element": { /* sanitised element object */ },
+    "layout": { /* updated full layout object */ },
     "html": "<div data-wp-builder-post-id=\"42\">…</div>",
     "post_title": "My Page",
     "post_status": "publish",
-    "page_template": "wp-builder-canvas"
+    "page_template": "wp-builder-canvas",
+    "hooks": ""
   }
 }
 ```
@@ -287,10 +293,12 @@ POST wp-admin/admin-ajax.php
 | Field           | Type   | Description |
 |-----------------|--------|-------------|
 | `element`       | object | The sanitised element data after the save. |
+| `layout`        | object | The updated full layout object after the save. |
 | `html`          | string | Re-rendered full layout HTML for the DOM swap on the front end. |
 | `post_title`    | string | Post title after the save. |
 | `post_status`   | string | Post status after the save. |
 | `page_template` | string | Active page-layout slug after the save. |
+| `hooks`         | string | Saved hook locations for snippet CPTs; empty string for other post types. |
 
 **Error responses** — see [Error responses](#error-responses).
 
@@ -415,6 +423,47 @@ POST wp-admin/admin-ajax.php
 
 **Error responses** — see [Error responses](#error-responses).
 
+---
+
+## AJAX: reset builder
+
+Clears all builder layout data and the page template setting for a post, then returns a URL for the standard WordPress post editor. Not available for snippet CPTs.
+
+**URL**
+
+```
+POST wp-admin/admin-ajax.php
+```
+
+**Authentication:** WordPress session cookie + nonce.
+
+**Request body** (`application/x-www-form-urlencoded`)
+
+| Field     | Type    | Required | Description |
+|-----------|---------|----------|-------------|
+| `action`  | string  | Yes      | Must be `wp_builder_reset`. |
+| `nonce`   | string  | Yes      | WordPress nonce created with `wp_create_nonce('wp_builder_reset')`. Injected as `window.wpBuilderEditor.resetNonce`. |
+| `post_id` | integer | Yes      | ID of the post to reset. Must not be a `wp_builder_template` CPT. |
+
+**Success response** — `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "editUrl": "https://example.com/wp-admin/post.php?post=42&action=edit"
+  }
+}
+```
+
+| Field     | Type   | Description |
+|-----------|--------|-------------|
+| `editUrl` | string | URL for the standard WordPress post editor, for redirect after reset. |
+
+**Error responses** — see [Error responses](#error-responses).
+
+---
+
 All AJAX endpoints return standard WordPress JSON error envelopes on failure.
 
 **400 Bad Request** — invalid or missing input:
@@ -422,24 +471,20 @@ All AJAX endpoints return standard WordPress JSON error envelopes on failure.
 ```json
 {
   "success": false,
-  "data": { "message": "Invalid layout data." }
+  "data": { "message": "Invalid request." }
 }
 ```
 
-Common 400 messages:
+Common 400/403/404 messages:
 
-| Message | Cause |
-|---------|-------|
-| `"Unsupported post type."` | `post_id` refers to a post whose type is not `post`, `page`, or `wp_builder_template`. |
-| `"Invalid layout data."` | The `layout` field is not valid JSON or does not decode to an array. |
-
-**403 Forbidden** — the current user lacks the required capability:
-
-```json
-{
-  "success": false,
-  "data": { "message": "You do not have permission to save this layout." }
-}
-```
+| Message | HTTP status | Cause |
+|---------|-------------|-------|
+| `"Invalid request."` | 400 | Required field (`post_id`, `element_id`, or `parent_id`) is missing or zero. |
+| `"Element not found."` | 404 | The specified element ID does not exist in the layout. |
+| `"Parent element not found."` | 404 | The specified parent ID does not exist in the layout. |
+| `"An element with that ID already exists."` | 409 | The requested `new_element_id` is already used by a different element. |
+| `"The root element cannot be deleted."` | 400 | Attempted to delete the layout root element. |
+| `"Reset is not available for snippets."` | 400 | Attempted to reset a `wp_builder_template` CPT. |
+| `"You do not have permission to edit this post."` | 403 | Current user lacks `edit_post` capability for the post. |
 
 **Nonce failure** — WordPress terminates with a `-1` response (HTTP 200 with body `-1`) when `check_ajax_referer()` fails. This typically means the nonce has expired (default lifetime: 12 hours) or is invalid.

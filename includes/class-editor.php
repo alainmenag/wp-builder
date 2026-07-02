@@ -7,9 +7,10 @@ exit;
  * Trait WP_Builder_Editor
  *
  * Handles routing and entry points for the builder editor.
- * Requests for action=builder are redirected to the frontend preview URL,
- * where the front-end quick-editor (editor.js) is loaded for
- * logged-in users with edit capabilities.
+ * Requests for action=builder render a full-page builder canvas inline (no
+ * HTTP redirect) so the front-end quick-editor (editor.js) is available
+ * for logged-in users with edit capabilities. The JSON export view is also
+ * served from this same action.
  */
 trait WP_Builder_Editor {
 
