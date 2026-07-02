@@ -24,7 +24,7 @@ trait WP_Builder_Frontend {
 		}
 
 		$post = get_post( $post_id );
-		if ( ! $post || 'publish' !== $post->post_status ) {
+		if ( ! $post || ! $this->can_view_builder_post( $post ) ) {
 			return '';
 		}
 
@@ -209,6 +209,37 @@ trait WP_Builder_Frontend {
 	}
 
 	/**
+	 * Determine whether the current visitor may view a builder post based on its status.
+	 *
+	 * - publish  → everyone.
+	 * - pending  → any logged-in user.
+	 * - draft    → the post author or users who can edit others' posts (admin/editor).
+	 * - private  → the post author only.
+	 *
+	 * @param WP_Post $post The post to check.
+	 * @return bool
+	 */
+	private function can_view_builder_post( WP_Post $post ): bool {
+		switch ( $post->post_status ) {
+			case 'publish':
+				return true;
+			case 'pending':
+				return is_user_logged_in();
+			case 'draft':
+				$user_id = get_current_user_id();
+				return $user_id && (
+					(int) $post->post_author === $user_id ||
+					current_user_can( 'edit_others_posts' )
+				);
+			case 'private':
+				$user_id = get_current_user_id();
+				return $user_id && (int) $post->post_author === $user_id;
+			default:
+				return false;
+		}
+	}
+
+	/**
 	 * Register each published snippet that has a hook location configured as a
 	 * callback on the appropriate WordPress action hook.
 	 *
@@ -224,9 +255,13 @@ trait WP_Builder_Frontend {
 
 		// Fetch snippets that have either the new multi-hook meta or the legacy
 		// single-hook meta set, so that pre-migration snippets still fire.
+		$post_statuses = is_user_logged_in()
+			? array( 'publish', 'draft', 'pending', 'private' )
+			: array( 'publish' );
+
 		$snippets = get_posts( array(
 			'post_type'      => self::TEMPLATE_CPT,
-			'post_status'    => 'publish',
+			'post_status'    => $post_statuses,
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
@@ -250,6 +285,11 @@ trait WP_Builder_Frontend {
 		}
 
 		foreach ( $snippets as $snippet_id ) {
+			$snippet = get_post( $snippet_id );
+			if ( ! $snippet || ! $this->can_view_builder_post( $snippet ) ) {
+				continue;
+			}
+
 			if ( ! $this->has_builder_layout( $snippet_id ) ) {
 				continue;
 			}
@@ -261,6 +301,10 @@ trait WP_Builder_Frontend {
 				add_action(
 					$hook['name'],
 					function () use ( $snippet_id ) {
+						$snippet = get_post( $snippet_id );
+						if ( ! $snippet || ! $this->can_view_builder_post( $snippet ) ) {
+							return;
+						}
 						$this->enqueue_frontend_style();
 						$this->enqueue_editor_assets( $snippet_id );
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-sanitized by render_element() via sanitize_layout()/wp_kses_post().
