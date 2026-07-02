@@ -316,7 +316,7 @@ trait WP_Builder_Ajax {
 						'type'  => 'textarea',
 						'id'    => 'wpbe-hooks',
 						'label' => __( 'Hook Locations', 'wp-builder' ),
-						'hint'  => __( 'One entry per line: <code>wp:hook_suffix|priority</code> or <code>menu:location_slug|priority</code><br>e.g. <code>wp:head|10</code> &nbsp; <code>menu:primary|10</code>', 'wp-builder' ),
+						'hint'  => __( 'One entry per line: <code>(wp/content/action/theme):hook|priority</code>', 'wp-builder' ),
 						'attrs' => array(
 							'rows'        => '4',
 							'placeholder' => "wp:head|10\nmenu:primary|10",
