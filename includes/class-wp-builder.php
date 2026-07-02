@@ -41,6 +41,7 @@ final class WP_Builder {
 		add_action( 'init', array( $this, 'maybe_flush_rewrite_rules' ), 20 );
 		add_action( 'admin_menu', array( $this, 'register_builder_page' ) );
 		add_action( 'admin_menu', array( $this, 'register_template_menu' ) );
+		add_action( 'load-edit.php', array( $this, 'setup_builder_list_hooks' ) );
 		add_action( 'load-post-new.php', array( $this, 'maybe_redirect_new_template' ) );
 		add_action( 'load-post.php', array( $this, 'maybe_redirect_template_edit' ) );
 		add_action( 'load-post.php', array( $this, 'maybe_render_builder_request' ) );
