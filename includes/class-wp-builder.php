@@ -133,10 +133,10 @@ final class WP_Builder {
 	 */
 	private function get_hook_locations(): array {
 		$locations = array(
-			''              => __( '— None —', 'wp-builder' ),
-			'wp_head'       => __( 'Head (<head>)', 'wp-builder' ),
-			'wp_body_open'  => __( 'After <body> Open', 'wp-builder' ),
-			'wp_footer'     => __( 'Footer (before </body>)', 'wp-builder' ),
+			''               => __( '— None —', 'wp-builder' ),
+			'wp:head'        => __( 'Head (<head>)', 'wp-builder' ),
+			'wp:body_open'   => __( 'After <body> Open', 'wp-builder' ),
+			'wp:footer'      => __( 'Footer (before </body>)', 'wp-builder' ),
 		);
 
 		foreach ( get_registered_nav_menus() as $slug => $name ) {
@@ -156,15 +156,13 @@ final class WP_Builder {
 	 * Parse the multi-hook textarea value into an array of hooks.
 	 *
 	 * Expected format — one entry per line:
-	 *   hook_name|priority
-	 *
-	 * Nav menu locations use the `menu:` prefix:
-	 *   menu:location_slug|priority
+	 *   wp:hook_suffix|priority   (WordPress wp_* action hooks, e.g. wp:head → wp_head)
+	 *   menu:location_slug|priority  (nav menu locations)
 	 *
 	 * Lines with no hook name are silently skipped. Priority defaults to 10.
 	 *
 	 * @param string $value Raw textarea content.
-	 * @return array[] Array of arrays with 'type' ('action'|'menu'), 'name' (string), and 'priority' (int) keys.
+	 * @return array[] Array of arrays with 'type' ('wp'|'menu'), 'name' (string), and 'priority' (int) keys.
 	 */
 	private function parse_hooks_textarea( string $value ): array {
 		$hooks = array();
@@ -183,12 +181,12 @@ final class WP_Builder {
 						'priority' => $priority,
 					);
 				}
-			} else {
-				$name = sanitize_key( $raw );
-				if ( $name ) {
+			} elseif ( 0 === strpos( $raw, 'wp:' ) ) {
+				$suffix = sanitize_key( substr( $raw, 3 ) );
+				if ( $suffix ) {
 					$hooks[] = array(
-						'type'     => 'action',
-						'name'     => $name,
+						'type'     => 'wp',
+						'name'     => $suffix,
 						'priority' => $priority,
 					);
 				}

@@ -325,7 +325,7 @@ trait WP_Builder_Frontend {
 					);
 				} else {
 					add_action(
-						$hook['name'],
+						'wp_' . $hook['name'],
 						function () use ( $snippet_id ) {
 							$snippet = get_post( $snippet_id );
 							if ( ! $snippet || ! $this->can_view_builder_post( $snippet ) ) {
