@@ -377,12 +377,6 @@ trait WP_Builder_Ajax {
 						'open'   => false,
 						'fields' => array(
 							array(
-								'type'        => 'text',
-								'id'          => 'wpbe-element-title',
-								'label'       => __( 'Title', 'wp-builder' ),
-								'placeholder' => __( 'e.g. Hero Section', 'wp-builder' ),
-							),
-							array(
 								'type'    => 'select',
 								'id'      => 'wpbe-node',
 								'label'   => __( 'Node', 'wp-builder' ),
@@ -393,6 +387,12 @@ trait WP_Builder_Ajax {
 								'id'          => 'wpbe-node-id',
 								'label'       => __( 'ID', 'wp-builder' ),
 								'placeholder' => __( 'e.g. my-element', 'wp-builder' ),
+							),
+							array(
+								'type'        => 'text',
+								'id'          => 'wpbe-element-title',
+								'label'       => __( 'Title', 'wp-builder' ),
+								'placeholder' => __( 'e.g. Hero Section', 'wp-builder' ),
 							),
 						),
 					),
