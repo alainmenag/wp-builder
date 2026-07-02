@@ -139,6 +139,9 @@ trait WP_Builder_Admin {
 			return;
 		}
 
+		remove_all_actions( 'admin_notices' );
+		remove_all_actions( 'all_admin_notices' );
+
 		add_action( 'pre_get_posts', array( $this, 'filter_builder_list_query' ) );
 		add_filter( 'views_edit-' . self::TEMPLATE_CPT, array( $this, 'get_builder_list_views' ) );
 		add_filter( 'manage_' . self::TEMPLATE_CPT . '_posts_columns', array( $this, 'add_builder_list_type_column' ) );
